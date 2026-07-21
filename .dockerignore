@@ -1,0 +1,27 @@
+# Maven output
+target/
+
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Git
+.git/
+.gitignore
+
+# Secrets
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Documentation
+README.md
+HELP.md
+
+# OS
+.DS_Store
+Thumbs.db

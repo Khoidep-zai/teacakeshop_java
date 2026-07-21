@@ -1,0 +1,1111 @@
+@cartToken = 1a4acefa3efb488e94829185197a06b3
+GET http://localhost:8080/api/categories
+###
+### Thêm danh mục Trà trái cây
+POST http://localhost:8080/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "Trà trái cây",
+  "description": "Các loại trà trái cây thanh mát, phù hợp với giới trẻ",
+  "active": true
+}
+### Thêm danh mục Trà sữa
+POST http://localhost:8080/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "Trà sữa",
+  "description": "Các loại trà sữa thơm béo",
+  "active": true
+}
+### Thêm danh mục Bánh ngọt
+POST http://localhost:8080/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "Bánh ngọt",
+  "description": "Các loại bánh ngọt dùng kèm trà",
+  "active": true
+}
+### Thêm danh mục Bánh ngọt
+POST http://localhost:8080/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "Bánh ngọt",
+  "description": "Các loại bánh ngọt dùng kèm trà",
+  "active": true
+}
+### Xem danh mục đang hoạt động
+GET http://localhost:8080/api/categories
+### Xem danh mục theo ID
+GET http://localhost:8080/api/categories/1
+### Admin xem toàn bộ danh mục
+GET http://localhost:8080/api/admin/categories
+### Sửa danh mục ID 1
+PUT http://localhost:8080/api/admin/categories/1
+Content-Type: application/json
+
+{
+  "name": "Trà trái cây hiện đại",
+  "description": "Trà trái cây theo mùa, thanh mát và trẻ trung",
+  "active": true
+}
+### Thử lỗi validation
+POST http://localhost:8080/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "",
+  "description": "Danh mục không có tên",
+  "active": true
+}
+### Thử thêm danh mục trùng tên
+POST http://localhost:8080/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "Bánh ngọt",
+  "description": "Tên bị trùng",
+  "active": true
+}
+### Tạo danh mục thử nghiệm
+POST http://localhost:8080/api/admin/categories
+Content-Type: application/json
+
+{
+  "name": "Danh mục thử nghiệm",
+  "description": "Dùng để kiểm tra chức năng ẩn",
+  "active": true
+}
+### Xác định ID danh mục
+GET http://localhost:8080/api/categories
+### Thêm Trà đào cam sả
+POST http://localhost:8080/api/admin/products
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "name": "Trà đào cam sả",
+  "description": "Trà đào thanh mát, thơm nhẹ mùi cam và sả",
+  "price": 45000,
+  "imageUrl": "/images/tra-dao-cam-sa.jpg",
+  "productType": "TEA",
+  "taste": "Thanh mát, chua nhẹ",
+  "temperatureType": "Lạnh",
+  "season": "Mùa hè",
+  "stockQuantity": 100,
+  "hot": true,
+  "bestSeller": false,
+  "active": true
+}
+### Thêm Trà sữa truyền thống
+POST http://localhost:8080/api/admin/products
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "name": "Trà sữa truyền thống",
+  "description": "Trà sữa thơm béo, vị trà đậm vừa phải",
+  "price": 39000,
+  "imageUrl": "/images/tra-sua-truyen-thong.jpg",
+  "productType": "TEA",
+  "taste": "Ngọt, béo",
+  "temperatureType": "Lạnh",
+  "season": "Tất cả mùa",
+  "stockQuantity": 120,
+  "hot": true,
+  "bestSeller": true,
+  "active": true
+}
+### Thêm Cheesecake chanh dây
+POST http://localhost:8080/api/admin/products
+Content-Type: application/json
+
+{
+  "categoryId": 3,
+  "name": "Cheesecake chanh dây",
+  "description": "Cheesecake mềm mịn với vị chanh dây chua nhẹ",
+  "price": 52000,
+  "imageUrl": "/images/cheesecake-chanh-day.jpg",
+  "productType": "CAKE",
+  "taste": "Béo, chua nhẹ",
+  "temperatureType": "Lạnh",
+  "season": "Mùa hè",
+  "stockQuantity": 50,
+  "hot": false,
+  "bestSeller": true,
+  "active": true
+}
+### Thêm Tiramisu cacao
+POST http://localhost:8080/api/admin/products
+Content-Type: application/json
+
+{
+  "categoryId": 3,
+  "name": "Tiramisu cacao",
+  "description": "Bánh tiramisu mềm, thơm vị cacao và cà phê",
+  "price": 55000,
+  "imageUrl": "/images/tiramisu-cacao.jpg",
+  "productType": "CAKE",
+  "taste": "Ngọt nhẹ, béo",
+  "temperatureType": "Lạnh",
+  "season": "Tất cả mùa",
+  "stockQuantity": 40,
+  "hot": true,
+  "bestSeller": false,
+  "active": true
+}
+### Xem tất cả sản phẩm
+GET http://localhost:8080/api/products
+### Xem sản phẩm ID 1
+GET http://localhost:8080/api/products/1
+### Tìm sản phẩm có chữ trà
+GET http://localhost:8080/api/products?keyword=trà
+### Tìm sản phẩm có chữ trà
+GET http://localhost:8080/api/products?keyword=trà
+###
+GET http://localhost:8080/api/products?keyword=đào
+###
+GET http://localhost:8080/api/products?type=CAKE
+###
+GET http://localhost:8080/api/products?page=0&size=4
+###
+GET http://localhost:8080/api/products/hot
+###
+GET http://localhost:8080/api/products/best-sellers
+###
+### Xem sản phẩm để lấy ID
+GET http://localhost:8080/api/products?page=0&size=20
+### Tạo Combo Mùa Hè
+POST http://localhost:8080/api/admin/combos
+Content-Type: application/json
+
+{
+  "name": "Combo Mùa Hè",
+  "description": "Combo trà đào và cheesecake thanh mát",
+  "imageUrl": "/images/combos/combo-mua-he.jpg",
+  "comboPrice": 89000,
+  "season": "Mùa hè",
+  "weatherType": "HOT",
+  "startDate": "2026-07-01",
+  "endDate": "2026-09-30",
+  "hot": true,
+  "bestSeller": true,
+  "active": true,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 3,
+      "quantity": 1
+    }
+  ]
+}
+### Tạo Combo Mùa Hè
+POST http://localhost:8080/api/admin/combos
+Content-Type: application/json
+
+{
+  "name": "Combo Mùa Hè",
+  "description": "Combo trà đào và cheesecake thanh mát",
+  "imageUrl": "/images/combos/combo-mua-he.jpg",
+  "comboPrice": 89000,
+  "season": "Mùa hè",
+  "weatherType": "HOT",
+  "startDate": "2026-07-01",
+  "endDate": "2026-09-30",
+  "hot": true,
+  "bestSeller": true,
+  "active": true,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 3,
+      "quantity": 1
+    }
+  ]
+}
+### Tạo Combo Mưa Chiều
+POST http://localhost:8080/api/admin/combos
+Content-Type: application/json
+
+{
+  "name": "Combo Mưa Chiều",
+  "description": "Trà sữa và tiramisu phù hợp những ngày mưa",
+  "imageUrl": "/images/combos/combo-mua-chieu.jpg",
+  "comboPrice": 85000,
+  "season": "Mùa mưa",
+  "weatherType": "RAINY",
+  "startDate": "2026-05-01",
+  "endDate": "2026-11-30",
+  "hot": true,
+  "bestSeller": false,
+  "active": true,
+  "items": [
+    {
+      "productId": 2,
+      "quantity": 1
+    },
+    {
+      "productId": 4,
+      "quantity": 1
+    }
+  ]
+}
+### Xem danh sách combo
+GET http://localhost:8080/api/combos
+### Xem combo ID 1
+GET http://localhost:8080/api/combos/1
+### Tìm combo mùa
+GET http://localhost:8080/api/combos?keyword=mùa
+### Combo hot
+GET http://localhost:8080/api/combos/hot
+### Combo best seller
+GET http://localhost:8080/api/combos/best-sellers
+### Combo mới
+GET http://localhost:8080/api/combos/newest
+### Combo cho thời tiết nóng
+GET http://localhost:8080/api/combos/weather/HOT
+### Lỗi combo chỉ có một sản phẩm
+POST http://localhost:8080/api/admin/combos
+Content-Type: application/json
+
+{
+  "name": "Combo lỗi một món",
+  "description": "Combo không hợp lệ",
+  "imageUrl": "",
+  "comboPrice": 40000,
+  "season": "Mùa hè",
+  "weatherType": "HOT",
+  "hot": false,
+  "bestSeller": false,
+  "active": true,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    }
+  ]
+}
+### Lỗi lặp sản phẩm
+POST http://localhost:8080/api/admin/combos
+Content-Type: application/json
+
+{
+  "name": "Combo lỗi trùng sản phẩm",
+  "description": "Kiểm tra trùng",
+  "imageUrl": "",
+  "comboPrice": 80000,
+  "season": "Mùa hè",
+  "weatherType": "HOT",
+  "hot": false,
+  "bestSeller": false,
+  "active": true,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 1,
+      "quantity": 2
+    }
+  ]
+}
+### Lỗi giá combo lớn hơn giá gốc
+POST http://localhost:8080/api/admin/combos
+Content-Type: application/json
+
+{
+  "name": "Combo giá không hợp lệ",
+  "description": "Giá combo quá cao",
+  "imageUrl": "",
+  "comboPrice": 999999,
+  "season": "Mùa hè",
+  "weatherType": "HOT",
+  "hot": false,
+  "bestSeller": false,
+  "active": true,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 3,
+      "quantity": 1
+    }
+  ]
+}
+### Lỗi thời gian combo
+POST http://localhost:8080/api/admin/combos
+Content-Type: application/json
+
+{
+  "name": "Combo ngày lỗi",
+  "description": "Ngày không hợp lệ",
+  "imageUrl": "",
+  "comboPrice": 80000,
+  "season": "Mùa hè",
+  "weatherType": "HOT",
+  "startDate": "2026-12-31",
+  "endDate": "2026-01-01",
+  "hot": false,
+  "bestSeller": false,
+  "active": true,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 3,
+      "quantity": 1
+    }
+  ]
+}
+### Sửa Combo Mùa Hè
+PUT http://localhost:8080/api/admin/combos/1
+Content-Type: application/json
+
+{
+  "name": "Combo Mùa Hè Đặc Biệt",
+  "description": "Combo mùa hè phiên bản mới",
+  "imageUrl": "/images/combos/combo-mua-he.jpg",
+  "comboPrice": 85000,
+  "season": "Mùa hè",
+  "weatherType": "SUNNY",
+  "startDate": "2026-07-01",
+  "endDate": "2026-09-30",
+  "hot": true,
+  "bestSeller": true,
+  "active": true,
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 3,
+      "quantity": 1
+    }
+  ]
+}
+### Ẩn combo ID 2
+DELETE http://localhost:8080/api/admin/combos/2
+### Combo đã ẩn không còn ở public
+GET http://localhost:8080/api/combos
+### Xem sản phẩm để lấy ID
+GET http://localhost:8080/api/products?page=0&size=20
+### Gợi ý Trà đào → Cheesecake
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 1,
+  "suggestedProductId": 3,
+  "reason": "Vị chua nhẹ và béo của cheesecake cân bằng vị thanh mát của trà đào",
+  "priority": 0,
+  "active": true
+}
+### Gợi ý Cheesecake → Trà đào
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 3,
+  "suggestedProductId": 1,
+  "reason": "Trà đào thanh mát giúp cân bằng độ béo của cheesecake",
+  "priority": 0,
+  "active": true
+}
+### Gợi ý Trà sữa → Tiramisu
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 2,
+  "suggestedProductId": 4,
+  "reason": "Tiramisu thơm cacao và cà phê phù hợp với vị béo của trà sữa",
+  "priority": 0,
+  "active": true
+}
+### Gợi ý Trà sữa → Tiramisu
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 2,
+  "suggestedProductId": 4,
+  "reason": "Tiramisu thơm cacao và cà phê phù hợp với vị béo của trà sữa",
+  "priority": 0,
+  "active": true
+}
+### Xem món dùng kèm Trà đào
+GET http://localhost:8080/api/products/1/suggestions
+### Xem món dùng kèm Cheesecake
+GET http://localhost:8080/api/products/3/suggestions
+### Admin xem toàn bộ gợi ý
+GET http://localhost:8080/api/admin/suggestions?page=0&size=10
+### Sửa gợi ý ID 1
+PUT http://localhost:8080/api/admin/suggestions/1
+Content-Type: application/json
+
+{
+  "sourceProductId": 1,
+  "suggestedProductId": 3,
+  "reason": "Cheesecake chanh dây có vị chua béo, rất phù hợp với trà đào thanh mát",
+  "priority": 1,
+  "active": true
+}
+### Ẩn gợi ý ID 1
+DELETE http://localhost:8080/api/admin/suggestions/1
+### Lỗi gợi ý chính sản phẩm đó
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 1,
+  "suggestedProductId": 1,
+  "reason": "Dữ liệu lỗi",
+  "priority": 0,
+  "active": true
+}
+### Lỗi gợi ý trà với trà
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 1,
+  "suggestedProductId": 2,
+  "reason": "Hai sản phẩm cùng loại",
+  "priority": 0,
+  "active": true
+}
+### Lỗi gợi ý trà với trà
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 1,
+  "suggestedProductId": 2,
+  "reason": "Hai sản phẩm cùng loại",
+  "priority": 0,
+  "active": true
+}
+### Lỗi gợi ý bánh với bánh
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 3,
+  "suggestedProductId": 4,
+  "reason": "Hai sản phẩm cùng loại",
+  "priority": 0,
+  "active": true
+}
+### Lỗi gợi ý trùng
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 2,
+  "suggestedProductId": 4,
+  "reason": "Tạo trùng",
+  "priority": 0,
+  "active": true
+}
+### Lỗi priority âm
+POST http://localhost:8080/api/admin/suggestions
+Content-Type: application/json
+
+{
+  "sourceProductId": 1,
+  "suggestedProductId": 3,
+  "reason": "Kiểm tra priority",
+  "priority": -1,
+  "active": true
+}
+### Tạo giỏ hàng mới
+POST http://localhost:8080/api/carts
+### Xem giỏ hàng
+GET http://localhost:8080/api/carts/{{cartToken}}
+### Xem ID sản phẩm
+GET http://localhost:8080/api/products?page=0&size=20
+### Thêm Cheesecake vào giỏ
+POST http://localhost:8080/api/carts/{{cartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 3,
+  "quantity": 1
+}
+### Thêm lại Trà đào
+POST http://localhost:8080/api/carts/{{cartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 1,
+  "quantity": 1
+}
+### Xem combo
+GET http://localhost:8080/api/combos?page=0&size=20
+### Cập nhật số lượng dòng giỏ ID 1
+PUT http://localhost:8080/api/carts/{{cartToken}}/items/1
+Content-Type: application/json
+
+{
+  "quantity": 4
+}
+### Xóa dòng giỏ ID 2
+DELETE http://localhost:8080/api/carts/{{cartToken}}/items/2
+### Xóa toàn bộ giỏ hàng
+DELETE http://localhost:8080/api/carts/{{cartToken}}/items
+### Lỗi số lượng bằng 0
+POST http://localhost:8080/api/carts/{{cartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 1,
+  "quantity": 0
+}
+### Lỗi vượt tồn kho
+POST http://localhost:8080/api/carts/{{cartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 1,
+  "quantity": 999999
+}
+### Lỗi sản phẩm không tồn tại
+POST http://localhost:8080/api/carts/{{cartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 999999,
+  "quantity": 1
+}
+### Lỗi combo không tồn tại
+POST http://localhost:8080/api/carts/{{cartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "COMBO",
+  "itemId": 999999,
+  "quantity": 1
+}
+### Lỗi itemType
+POST http://localhost:8080/api/carts/{{cartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "TEA",
+  "itemId": 1,
+  "quantity": 1
+}
+### Lỗi token giỏ hàng
+GET http://localhost:8080/api/carts/token-khong-ton-tai
+### Tạo giỏ cho checkout
+POST http://localhost:8080/api/carts
+###
+@checkoutCartToken = 46630f1e38a0408c88bd8fa6bb0bad00
+### Thêm sản phẩm vào giỏ checkout
+POST http://localhost:8080/api/carts/{{checkoutCartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 1,
+  "quantity": 2
+}
+### Thêm combo vào giỏ checkout
+POST http://localhost:8080/api/carts/{{checkoutCartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "COMBO",
+  "itemId": 1,
+  "quantity": 1
+}
+### Checkout đơn giao hàng
+POST http://localhost:8080/api/orders/checkout
+Content-Type: application/json
+
+{
+  "cartToken": "{{checkoutCartToken}}",
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "shippingAddress": "Quận Bình Thạnh, TP. Hồ Chí Minh",
+  "orderType": "NORMAL",
+  "pickupTime": null,
+  "note": "Trà ít ngọt, gọi trước khi giao"
+}
+### Tạo giỏ đặt trước
+POST http://localhost:8080/api/carts
+###
+@preorderCartToken = 3826aad2aa9a4008bc12ecc8c179ab8f
+### Thêm combo vào giỏ đặt trước
+POST http://localhost:8080/api/carts/{{preorderCartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "COMBO",
+  "itemId": 1,
+  "quantity": 2
+}
+### Checkout đơn mang về trước
+POST http://localhost:8080/api/orders/checkout
+Content-Type: application/json
+
+{
+  "cartToken": "{{preorderCartToken}}",
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "shippingAddress": null,
+  "orderType": "TAKEAWAY_PREORDER",
+  "pickupTime": "2026-07-15T18:30:00",
+  "note": "Đến cửa hàng nhận tại quầy"
+}
+### Admin xem tất cả đơn
+GET http://localhost:8080/api/admin/orders?page=0&size=10
+### Chỉ xem đơn PENDING
+GET http://localhost:8080/api/admin/orders?status=PENDING&page=0&size=10
+### Chỉ xem đơn COMPLETED
+GET http://localhost:8080/api/admin/orders?status=COMPLETED&page=0&size=10
+### Admin xem chi tiết đơn ID 1
+GET http://localhost:8080/api/admin/orders/1
+### Xác nhận đơn ID 1
+PATCH http://localhost:8080/api/admin/orders/1/status
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+### Chuẩn bị đơn ID 1
+PATCH http://localhost:8080/api/admin/orders/1/status
+Content-Type: application/json
+
+{
+"status": "PREPARING"
+}
+### Hoàn thành đơn ID 1
+PATCH http://localhost:8080/api/admin/orders/1/status
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+### Hoàn thành đơn ID 1
+PATCH http://localhost:8080/api/admin/orders/1/status
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+### Hủy đơn ID 2
+PATCH http://localhost:8080/api/admin/orders/2/status
+Content-Type: application/json
+
+{
+  "status": "CANCELLED"
+}
+### Chuyển trạng thái sai
+PATCH http://localhost:8080/api/admin/orders/3/status
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+### Checkout giỏ trống
+POST http://localhost:8080/api/orders/checkout
+Content-Type: application/json
+
+{
+  "cartToken": "TOKEN_GIO_TRONG",
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "shippingAddress": "TP. Hồ Chí Minh",
+  "orderType": "NORMAL",
+  "pickupTime": null,
+  "note": null
+}
+### Đơn NORMAL thiếu địa chỉ
+POST http://localhost:8080/api/orders/checkout
+Content-Type: application/json
+
+{
+  "cartToken": "{{checkoutCartToken}}",
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "shippingAddress": "",
+  "orderType": "NORMAL",
+  "pickupTime": null,
+  "note": null
+}
+### Xem danh sách đơn
+GET http://localhost:8080/api/admin/orders?page=0&size=20
+### Thanh toán toàn bộ đơn thường
+POST http://localhost:8080/api/payments/simulate
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "paymentMethod": "MOMO_SIMULATION",
+  "purpose": "FULL",
+  "note": "Thanh toán toàn bộ qua MoMo mô phỏng"
+}
+### Thanh toán cọc 50%
+POST http://localhost:8080/api/payments/simulate
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "paymentMethod": "VNPAY_SIMULATION",
+  "purpose": "DEPOSIT",
+  "note": "Thanh toán cọc cho đơn đặt trước"
+}
+### Thanh toán phần còn lại
+POST http://localhost:8080/api/payments/simulate
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "paymentMethod": "BANK_TRANSFER",
+  "purpose": "REMAINING",
+  "note": "Thanh toán phần tiền còn lại"
+}
+### Đăng ký thanh toán khi nhận hàng
+POST http://localhost:8080/api/payments/cash-on-delivery
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "note": "Khách trả tiền khi nhận hàng"
+}
+### Kiểm tra đơn ID 2
+GET http://localhost:8080/api/admin/orders/2
+### Thanh toán toàn bộ đơn thường
+POST http://localhost:8080/api/payments/simulate
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "paymentMethod": "VNPAY_SIMULATION",
+  "purpose": "FULL",
+  "note": "Thanh toán toàn bộ đơn hàng"
+}
+### Tạo giỏ đặt trước
+POST http://localhost:8080/api/carts
+
+> {%
+    client.global.set(
+        "preorderCartToken",
+        response.body.token
+    );
+%}
+### Thêm combo vào giỏ đặt trước
+POST http://localhost:8080/api/carts/{{preorderCartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "COMBO",
+  "itemId": 1,
+  "quantity": 1
+}
+### Kiểm tra chỗ trống
+GET http://localhost:8080/api/reservations/availability?reservationTime=2026-07-12T18:30:00&numberOfPeople=4
+### Đặt bàn thông thường
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "reservationTime": "2026-07-12T18:30:00",
+  "numberOfPeople": 4,
+  "orderId": null,
+  "note": "Ưu tiên khu vực gần cửa sổ"
+}
+###
+@reservationCode = RSV-20260710172102-85CC27
+### Khách xem đặt bàn
+GET http://localhost:8080/api/reservations/{{reservationCode}}?phone=0901234567
+### Sai số điện thoại
+GET http://localhost:8080/api/reservations/{{reservationCode}}?phone=0999999999
+### Khách hủy đặt bàn
+PATCH http://localhost:8080/api/reservations/{{reservationCode}}/cancel
+Content-Type: application/json
+
+{
+  "customerPhone": "0901234567"
+}
+### Admin xem tất cả đặt bàn
+GET http://localhost:8080/api/admin/reservations?page=0&size=20
+### Đặt bàn đang chờ
+GET http://localhost:8080/api/admin/reservations?status=PENDING&page=0&size=20
+### Xem đặt bàn ID 1
+GET http://localhost:8080/api/admin/reservations/1
+### Xác nhận đặt bàn ID 1
+PATCH http://localhost:8080/api/admin/reservations/1/status
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+### Tạo đặt bàn mới
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "reservationTime": "2026-07-12T18:30:00",
+  "numberOfPeople": 4,
+  "orderId": null,
+  "note": "Ưu tiên gần cửa sổ"
+}
+### Xác nhận đặt bàn ID 2
+PATCH http://localhost:8080/api/admin/reservations/2/status
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+### Khách đã đến
+PATCH http://localhost:8080/api/admin/reservations/2/status
+Content-Type: application/json
+
+{
+  "status": "SEATED"
+}
+### Hoàn thành
+PATCH http://localhost:8080/api/admin/reservations/2/status
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+### Admin xem tất cả đặt bàn
+GET http://localhost:8080/api/admin/reservations?page=0&size=20
+### Đặt bàn đang chờ
+GET http://localhost:8080/api/admin/reservations?status=PENDING&page=0&size=20
+### Xem đặt bàn ID 1
+GET http://localhost:8080/api/admin/reservations/1
+### Xác nhận đặt bàn ID 1
+PATCH http://localhost:8080/api/admin/reservations/1/status
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+### Khách đã đến
+PATCH http://localhost:8080/api/admin/reservations/1/status
+Content-Type: application/json
+
+{
+  "status": "SEATED"
+}
+### Admin xem tất cả đặt bàn
+GET http://localhost:8080/api/admin/reservations?page=0&size=20
+### Xác nhận đặt bàn ID 2
+PATCH http://localhost:8080/api/admin/reservations/2/status
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+### Admin xem tất cả đặt bàn
+GET http://localhost:8080/api/admin/reservations?page=0&size=20
+### Xác nhận đặt bàn ID 2
+PATCH http://localhost:8080/api/admin/reservations/2/status
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+###
+POST /api/reservations
+###
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "reservationTime": "2026-07-12T18:30:00",
+  "numberOfPeople": 4,
+  "orderId": null,
+  "note": "Ưu tiên gần cửa sổ"
+}
+###
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "reservationTime": "2026-07-12T18:30:00",
+  "numberOfPeople": 4,
+  "orderId": null,
+  "note": "Ưu tiên gần cửa sổ"
+}
+### Kiểm tra server
+GET http://localhost:8080/api/products?page=0&size=10
+###
+GET http://localhost:8080/api/combos?page=0&size=10
+###
+GET http://localhost:8080/api/admin/discounts?page=0&size=20
+### Tạo giảm 5% toàn cửa hàng
+POST http://localhost:8080/api/admin/discounts
+Content-Type: application/json
+
+{
+  "code": "STORE_5",
+  "name": "Giảm 5% toàn cửa hàng",
+  "description": "Khuyến mãi kiểm thử",
+  "discountType": "PERCENTAGE",
+  "discountValue": 5,
+  "maximumDiscountAmount": 20000,
+  "discountScope": "STORE",
+  "categoryId": null,
+  "productId": null,
+  "comboId": null,
+  "priority": 1,
+  "active": true,
+  "startAt": "2026-07-01T00:00:00",
+  "endAt": "2026-12-31T23:59:59"
+}
+###
+GET http://localhost:8080/api/discounts/price/products/1
+### Tạo giỏ mới
+POST http://localhost:8080/api/carts
+###
+POST http://localhost:8080/api/carts/2f67b513a9404a80a4fc6dc118a71456/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 1,
+  "quantity": 2
+}
+### Kiểm tra sản phẩm
+GET http://localhost:8080/api/products?page=0&size=10
+### Xem tất cả khuyến mãi
+GET http://localhost:8080/api/admin/discounts?page=0&size=20
+### Tạo giảm 5% toàn cửa hàng
+POST http://localhost:8080/api/admin/discounts
+Content-Type: application/json
+
+{
+  "code": "STORE_5_TEST",
+  "name": "Giảm 5% toàn cửa hàng",
+  "description": "Khuyến mãi kiểm thử",
+  "discountType": "PERCENTAGE",
+  "discountValue": 5,
+  "maximumDiscountAmount": 20000,
+  "discountScope": "STORE",
+  "categoryId": null,
+  "productId": null,
+  "comboId": null,
+  "priority": 1,
+  "active": true,
+  "startAt": "2026-07-01T00:00:00",
+  "endAt": "2026-12-31T23:59:59"
+}
+### Kiểm tra giá sản phẩm sau giảm
+GET http://localhost:8080/api/discounts/price/products/1
+### Tạo giỏ mới
+POST http://localhost:8080/api/carts
+
+> {%
+    client.global.set(
+        "discountCartToken",
+        response.body.token
+    );
+%}
+### Thêm sản phẩm
+POST http://localhost:8080/api/carts/{{discountCartToken}}/items
+Content-Type: application/json
+
+{
+  "itemType": "PRODUCT",
+  "itemId": 1,
+  "quantity": 2
+}
+### Checkout đơn mới
+POST http://localhost:8080/api/orders/checkout
+Content-Type: application/json
+
+{
+  "cartToken": "{{discountCartToken}}",
+  "customerName": "Trần Văn Khoa",
+  "customerPhone": "0901234567",
+  "customerEmail": "khoa@example.com",
+  "shippingAddress": "TP. Hồ Chí Minh",
+  "orderType": "NORMAL",
+  "pickupTime": null,
+  "note": "Test checkout có giảm giá"
+}
+### Xác nhận đơn
+PATCH http://localhost:8080/api/admin/orders/1/status
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED"
+}
+### 178. Dashboard tổng quan
+GET http://localhost:8080/api/admin/dashboard/overview
+### 179. Doanh thu 7 ngày
+GET http://localhost:8080/api/admin/dashboard/revenue/daily?days=7
+### Doanh thu 30 ngày
+GET http://localhost:8080/api/admin/dashboard/revenue/daily?days=30
+### 180. Top 5 sản phẩm
+GET http://localhost:8080/api/admin/dashboard/top-products?limit=5
+### 181. Top 5 combo
+GET http://localhost:8080/api/admin/dashboard/top-combos?limit=5
+### 182. Sản phẩm tồn kho từ 10 trở xuống
+GET http://localhost:8080/api/admin/dashboard/low-stock?threshold=10
+### Tồn kho từ 5 trở xuống
+GET http://localhost:8080/api/admin/dashboard/low-stock?threshold=5
+### 202. Đăng ký tài khoản khách hàng
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Trần Văn Khoa",
+  "email": "khoa@example.com",
+  "phone": "0901234567",
+  "password": "Khoa@123456"
+}
+
+> {%
+    client.global.set(
+        "customerToken",
+        response.body.accessToken
+    );
+
+    client.global.set(
+        "customerUserId",
+        response.body.user.id
+    );
+%}
