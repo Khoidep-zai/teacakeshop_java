@@ -1,276 +1,170 @@
-# 🍵🍰 TEA & CAKE SHOP BACKEND API
-**Hệ Thống Quản Lý Cửa Hàng Trà & Bánh Ngọt Cao Cấp (Spring Boot 3 + Java 21 + MySQL + Docker)**
+# 🍵🍰 TEA & CAKE SHOP - FULLSTACK APPLICATION
+**Hệ Thống Quản Lý & Cửa Hàng Trà & Bánh Ngọt Cao Cấp (Spring Boot 4 + React 18 Vite + MySQL + TailwindCSS)**
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat&logo=openjdk)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4%2F4.1-brightgreen.svg?style=flat&logo=springboot)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen.svg?style=flat&logo=springboot)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-blue.svg?style=flat&logo=react)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.0-purple.svg?style=flat&logo=vite)](https://vitejs.dev/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?style=flat&logo=tailwindcss)](https://tailwindcss.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.4-blue.svg?style=flat&logo=mysql)](https://www.mysql.com/)
-[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED.svg?style=flat&logo=docker)](https://www.docker.com/)
-[![Cloudinary](https://img.shields.io/badge/Cloudinary-Integrated-3448C5.svg?style=flat&logo=cloudinary)](https://cloudinary.com/)
 [![Swagger](https://img.shields.io/badge/OpenAPI%203-Swagger%20UI-85EA2D.svg?style=flat&logo=swagger)](http://localhost:8080/swagger-ui.html)
 
 ---
 
 ## 📖 Mục lục
-1. [Giới thiệu & Mục đích dự án](#1--giới-thiệu--mục-đích-dự-án)
+1. [Giới thiệu tổng quan](#1--giới-thiệu-tổng-quan)
 2. [Các tính năng nổi bật (Core Features)](#2--các-tính-năng-nổi-bật-core-features)
-3. [Công nghệ sử dụng (Tech Stack)](#3--công-nghệ-sử-dụng-tech-stack)
-4. [Luồng hoạt động của Hệ thống (System Workflows)](#4--luồng-hoạt-động-của-hệ-thống-system-workflows)
-5. [Mô hình Dữ liệu & Các Thực thể chính (Database Architecture)](#5--mô-hình-dữ-liệu--các-thực-thể-chính-database-architecture)
-6. [Hướng dẫn Cài đặt & Khởi chạy (Installation & Usage)](#6--hướng-dẫn-cài-đặt--khởi-chạy-installation--usage)
-7. [Tài liệu API & Cách Kiểm thử (API Testing)](#7--tài-liệu-api--cách-kiểm-thử-api-testing)
-8. [Cấu trúc Thư mục Mã nguồn (Folder Structure)](#8--cấu-trúc-thư-mục-mã-nguồn-folder-structure)
+3. [Giao diện ứng dụng (Screenshots & UI Design)](#3--giao-diện-ứng-dụng-screenshots--ui-design)
+4. [Công nghệ sử dụng (Tech Stack)](#4--công-nghệ-sử-dụng-tech-stack)
+5. [Hướng dẫn Cài đặt & Khởi chạy (Installation & Setup)](#5--hướng-dẫn-cài-đặt--khởi-chạy-installation--setup)
+6. [Cấu trúc Dự án (Folder Structure)](#6--cấu-trúc-dự-án-folder-structure)
 
 ---
 
-## 1. 🌟 Giới thiệu & Mục đích dự án
+## 1. 🌟 Giới thiệu tổng quan
 
-**Tea & Cake Shop Backend** là giải pháp phần mềm máy chủ (Backend API) toàn diện được thiết kế chuyên biệt cho mô hình **Tiệm Trà & Bánh Ngọt (Tea & Cake Shop)** hiện đại.
+**Tea & Cake Shop** là ứng dụng Web Fullstack hiện đại, toàn diện dành cho mô hình kinh doanh **Cửa hàng Trà & Bánh ngọt cao cấp**. 
 
-### 🎯 Mục đích phục vụ
-- **Tối ưu hóa quản lý kinh doanh**: Giúp chủ cửa hàng (Admin) dễ dàng quản lý toàn bộ thực đơn trà, bánh, phân loại danh mục, tồn kho, giá cả và hình ảnh sản phẩm.
-- **Trải nghiệm mua sắm thông minh (Smart Cross-selling)**: Thay vì chỉ bán các món lẻ, hệ thống tích hợp **cơ chế gợi ý kết hợp trà và bánh lý tưởng (Tea & Cake Pairing suggestions)** và các **Gói Combo ưu đãi tiết kiệm**, giúp tăng giá trị đơn hàng trung bình và mang đến trải nghiệm ẩm thực hoàn hảo cho khách hàng.
-- **Đa dạng hóa dịch vụ**: Đồng bộ trọn gói luồng **Mua hàng online/Giao tận nơi (E-commerce Order)** và luồng **Đặt bàn trước tại quán (Table Reservation)**.
-- **Bảo mật chuẩn doanh nghiệp**: Đảm bảo an toàn dữ liệu khách hàng và quyền quản trị nội bộ nhờ hệ thống bảo mật hai lớp **OAuth2 / JWT Access Token & Refresh Token** đi kèm cơ chế thu hồi (Blacklisting) token khi đăng xuất.
+Ứng dụng kết hợp giữa nền tảng **Spring Boot RESTful Backend API** bảo mật với giao diện **React Vite Frontend** được thiết kế hiện đại, lấy cảm hứng từ phong cách thân thiện của Duolingo với tông màu Trà xanh (#4CAF82) và Bánh ngọt (#FF7043).
+
+### 🎯 Điểm nổi bật
+- **Giao diện hiện đại & Đa nền tảng**: Hỗ trợ đầy đủ **Chế độ Sáng / Tối (Light & Dark Mode)** và **Đa ngôn ngữ Anh / Việt (i18n)**.
+- **Gợi ý món thông minh (Tea & Cake Pairing)**: Đề xuất bánh ăn kèm hoàn hảo khi chọn trà và gợi ý Combo tiết kiệm theo thời tiết (Nắng, Mưa, Se lạnh...).
+- **Đa dạng dịch vụ**: Mua hàng Online, Thanh toán thử nghiệm (Momo, VNPay, COD, Chuyển khoản) & Đặt bàn trước tại quán.
+- **Trang Quản trị Admin Dashboard**: Thống kê biểu đồ doanh thu daily, quản lý đơn hàng, người dùng, sản phẩm, combo và chương trình khuyến mãi.
 
 ---
 
 ## 2. 🚀 Các tính năng nổi bật (Core Features)
 
-### 🔐 1. Bảo mật & Phân quyền (Security & Authentication)
-- **Đăng ký / Đăng nhập an toàn**: Hỗ trợ xác thực người dùng dựa trên chuẩn **OAuth2 Resource Server** + **JWT (JSON Web Token)**.
-- **Quản lý Token thông minh**: Cấp phát đồng thời `AccessToken` (thời hạn ngắn, 15 phút) và `RefreshToken` (thời hạn dài, 30 ngày).
-- **Thu hồi Token (Token Blacklisting)**: Khi người dùng đăng xuất, Access Token và Refresh Token lập tức bị khóa trong bảng `revoked_access_tokens`, ngăn chặn triệt để việc tái sử dụng token trái phép.
-- **Phân quyền Role-based (RBAC)**: Phân rõ 2 vai trò:
-  - `ROLE_ADMIN`: Toàn quyền quản lý dashboard, danh mục, sản phẩm, combo, gợi ý, đơn hàng và người dùng.
-  - `ROLE_CUSTOMER`: Quyền khách hàng (mua sắm, quản lý giỏ hàng cá nhân, xem lịch sử đơn hàng, đặt bàn).
+### 🎨 1. Trải nghiệm Khách hàng (Client Portal)
+- 🌓 **Chuyển đổi Sáng / Tối**: Lưu trạng thái theme vào LocalStorage.
+- 🌐 **Đa ngôn ngữ Vi / En**: Tự động chuyển đổi toàn bộ giao diện bằng React i18next.
+- 🍵 **Thực đơn Trà & Bánh**: Phân loại theo danh mục, mức độ hot, bán chạy, lọc theo trà/bánh, lọc theo hương vị & nhiệt độ (Nóng / Lạnh).
+- 💡 **Gợi ý món thông minh**: Xem món gợi ý đi kèm khi vào trang chi tiết sản phẩm.
+- 🌤️ **Combo theo thời tiết**: Chọn combo phù hợp với thời tiết hiện tại.
+- 🛒 **Giỏ hàng & Thanh toán**: Thêm/sửa/xóa sản phẩm, chọn mã giảm giá và thanh toán nhanh.
+- 📅 **Đặt bàn trực tuyến**: Chọn ngày, giờ, số lượng khách và ghi chú đặc biệt.
+- 📦 **Theo dõi đơn hàng**: Xem tiến trình đơn hàng (Chờ xử lý ➔ Đã xác nhận ➔ Đang chuẩn bị ➔ Hoàn thành).
 
-### 🍵🍰 2. Quản lý Sản phẩm & Danh mục đa dạng
-- Phân loại rõ ràng theo `productType` (`TEA` - Trà hoặc `CAKE` - Bánh).
-- Ghi nhận chi tiết thông tin chuyên sâu cho ẩm thực: Hương vị (`taste`), Nhiệt độ phục vụ (`temperatureType`: Nóng/Lạnh), Phù hợp theo mùa (`season`), Số lượng tồn kho (`stockQuantity`).
-- Tích hợp **Cloudinary** cho phép Admin tải lên (`upload`) và quản lý hình ảnh sản phẩm chất lượng cao trực tiếp từ API.
-
-### 💡 3. Hệ thống Gợi ý Món & Combo Tiết kiệm (Pairing & Bundles)
-- **Gợi ý món ăn ý (`ProductSuggestion`)**: Hệ thống tự động đề xuất món đi kèm (Ví dụ: Khách chọn *Trà đào cam sả*, API sẽ gợi ý ăn kèm *Cheesecake chanh dây*), hiển thị rõ ràng **lý do kết hợp (`reason`)** và **độ ưu tiên (`priority`)**.
-- **Gói Combo Ưu đãi (`Combo` & `ComboItem`)**: Admin có thể tạo các combo gồm nhiều món trà + bánh với mức giá `combo_price` ưu đãi, tự động tính toán số tiền tiết kiệm (`saving_amount = original_price - combo_price`).
-
-### 🛒 4. Giỏ hàng & Đặt hàng (Cart & Checkout)
-- **Giỏ hàng linh hoạt (`Cart` & `CartItem`)**: Hỗ trợ giỏ hàng theo định danh `token` (cho khách vãng lai) hoặc gắn kết định danh với `userAccount`. Khách có thể thêm sản phẩm lẻ hoặc nguyên gói Combo vào giỏ.
-- **Quản lý Đơn hàng (`CustomerOrder` & `OrderItem`)**: Theo dõi đầy đủ trạng thái đơn hàng từ lúc đặt, xử lý đến khi hoàn thành.
-- **Chiến dịch khuyến mãi (`DiscountCampaign`)**: Áp dụng mã giảm giá và chương trình khuyến mãi tự động vào đơn hàng.
-
-### 🪑 5. Đặt bàn Trực tuyến tại Quán (Table Reservations)
-- Khách hàng có thể đặt bàn trước, chọn ngày giờ, số lượng người (`partySize`) và ghi chú đặc biệt.
-- Admin dễ dàng duyệt, xác nhận hoặc hủy lịch đặt bàn từ trang quản trị (`AdminReservationController`).
-
-### 📊 6. Thống kê & Báo cáo Quản trị (Admin Dashboard)
-- Cung cấp số liệu tổng quan về doanh thu, số lượng đơn hàng, món ăn bán chạy (best-sellers) phục vụ việc định hướng kinh doanh (`AdminDashboardController`).
+### 🛠️ 2. Trang Quản trị (Admin Portal)
+- 📊 **Dashboard Thống kê**: Biểu đồ doanh thu theo ngày (Recharts), tổng số đơn hàng, khách hàng và danh sách món sắp hết hàng.
+- 🛍️ **Quản lý Thực đơn & Combo**: Thêm, sửa, xóa sản phẩm, danh mục, gói combo và hình ảnh Cloudinary.
+- 🏷️ **Quản lý Khuyến mãi**: Tạo và quản lý mã giảm giá (Discount Campaigns).
+- 📋 **Quản lý Đơn hàng & Đặt bàn**: Cập nhật trạng thái đơn hàng và duyệt lịch đặt bàn của khách.
+- 👥 **Quản lý Người dùng**: Phân quyền (ADMIN / CUSTOMER / STAFF) và khóa/mở khóa tài khoản.
 
 ---
 
-## 3. 🛠️ Công nghệ sử dụng (Tech Stack)
+## 3. 🖼️ Giao diện ứng dụng (Screenshots & UI Design)
 
-| Lớp (Layer) | Công nghệ / Thư viện | Vai trò & Mục đích |
+| Feature | Trang Khách Hàng | Trang Quản Trị Admin |
 | :--- | :--- | :--- |
-| **Ngôn ngữ chính** | **Java 21 (LTS)** | Tận dụng các tính năng hiện đại (Pattern Matching, Records, Virtual Threads ready). |
-| **Core Framework** | **Spring Boot 3.4.x / 4.1.0** | Khung nền tảng xây dựng RESTful API mạnh mẽ, chuẩn kiến trúc Enterprise. |
-| **Bảo mật** | **Spring Security + OAuth2** | Resource Server xác thực và cấp phát JWT, phân quyền endpoints. |
-| **Cơ sở dữ liệu** | **MySQL 8.4** | Hệ quản trị cơ sở dữ liệu quan hệ (RDBMS) mạnh mẽ, lưu trữ giao dịch an toàn. |
-| **ORM / JPA** | **Spring Data JPA + Hibernate** | Ánh xạ thực thể (ORM), tự động hóa truy vấn và quản lý transaction. |
-| **Lưu trữ hình ảnh** | **Cloudinary SDK (`cloudinary-http5`)** | Upload và lưu trữ hình ảnh sản phẩm trên cloud, tối ưu hóa băng thông. |
-| **Tài liệu API** | **Springdoc OpenAPI 3 (Swagger UI)** | Tự động tạo giao diện tài liệu API trực quan và công cụ test trực tiếp. |
-| **Khởi tạo & Build** | **Maven** + **Spring Boot DevTools** | Quản lý phụ thuộc (dependencies) và hỗ trợ Hot-reload khi phát triển. |
-| **Đóng gói & Deploy**| **Docker & Docker Compose** | Container hóa ứng dụng với Multi-Stage Build, đảm bảo chạy ổn định trên mọi môi trường. |
+| **Theme** | Support Light / Dark Mode | Modern Sidebar Layout |
+| **Language** | Tiếng Việt / English | Vi / En i18n ready |
+
+### 📸 Ảnh mẫu giao diện chính:
+- **Trang chủ (Hero & Featured Items)**: Banner hoạt hình, danh sách sản phẩm nổi bật & combo ưu đãi.
+- **Chi tiết sản phẩm & Gợi ý**: Hình ảnh sắc nét, tùy chọn số lượng, danh sách món gợi ý đi kèm.
+- **Giỏ hàng & Thanh toán**: Tóm tắt đơn hàng, lựa chọn 4 phương thức thanh toán.
+- **Admin Dashboard**: Biểu đồ doanh thu Recharts & các thẻ chỉ số tổng quan.
 
 ---
 
-## 4. 🔄 Luồng hoạt động của Hệ thống (System Workflows)
+## 4. 🛠️ Công nghệ sử dụng (Tech Stack)
 
-### 1️⃣ Luồng Xác thực & Phân quyền (Authentication Flow)
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Client as Khách hàng / App
-    participant Auth as AuthController
-    participant Security as Spring Security / JWT
-    participant DB as MySQL Database
+### 🔹 Backend Stack
+- **Language**: Java 21 (LTS)
+- **Framework**: Spring Boot 4.1.0 / 3.4.x
+- **Security**: Spring Security + OAuth2 Resource Server + JWT (Access Token & Refresh Token Blacklisting)
+- **Database**: MySQL 8.4
+- **ORM**: Spring Data JPA + Hibernate 7
+- **Cloud Media**: Cloudinary SDK (`cloudinary-http5`)
+- **API Docs**: Springdoc OpenAPI 3 (Swagger UI)
 
-    Client->>Auth: POST /api/auth/login (username, password)
-    Auth->>DB: Kiểm tra UserAccount & mật khẩu (BCrypt)
-    DB-->>Auth: Hợp lệ (Role: CUSTOMER/ADMIN)
-    Auth->>Security: Tạo Access Token (15p) & Refresh Token (30 ngày)
-    Security-->>Auth: Trả về Token Pair
-    Auth-->>Client: { accessToken, refreshToken, userInfo }
-
-    Note over Client, DB: Khi gọi API cần bảo vệ (Ví dụ: Đặt hàng / Admin API)
-    Client->>Security: Request kèm Header: [Authorization: Bearer <AccessToken>]
-    Security->>DB: Kiểm tra Token có trong Blacklist (RevokedAccessToken) không?
-    DB-->>Security: Không bị thu hồi -> Hợp lệ!
-    Security-->>Client: Cho phép truy cập Controller
-```
-
-### 2️⃣ Luồng Mua sắm, Gợi ý Món & Đặt hàng (Cross-selling & Order Flow)
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Customer as Khách hàng
-    participant API as Public API (Product/Suggestion)
-    participant Cart as CartController
-    participant Order as OrderController
-    participant DB as MySQL Database
-
-    Customer->>API: GET /api/products (Xem danh sách Trà & Bánh)
-    API-->>Customer: Trả về danh sách sản phẩm
-    Customer->>API: GET /api/suggestions?productId=1 (Chọn Trà Đào Cam Sả)
-    API->>DB: Tìm các món đi kèm (Bánh Cheesecake) có độ ưu tiên cao
-    DB-->>API: Danh sách ProductSuggestion
-    API-->>Customer: Gợi ý: "Ăn kèm Cheesecake Chanh Dây giảm ngấy!"
-
-    Customer->>Cart: POST /api/cart/items (Thêm Trà + Bánh hoặc nguyên Combo vào Giỏ)
-    Cart->>DB: Cập nhật Cart & CartItem
-    Cart-->>Customer: Trả về giỏ hàng chi tiết
-
-    Customer->>Order: POST /api/orders (Tạo đơn hàng từ Giỏ hàng + Mã giảm giá)
-    Order->>DB: Tạo CustomerOrder & OrderItem, khấu trừ tồn kho
-    DB-->>Order: Xác nhận Đơn hàng #ORD-1029
-    Order-->>Customer: Đặt hàng thành công!
-```
-
-### 3️⃣ Luồng Đặt bàn Trực tuyến (Reservation Flow)
-```mermaid
-stateDiagram-v2
-    [*] --> PENDING: Khách hàng gửi yêu cầu đặt bàn<br/>(POST /api/reservations)
-    PENDING --> CONFIRMED: Admin xác nhận giữ chỗ<br/>(PUT /api/admin/reservations/{id})
-    PENDING --> CANCELLED: Khách hoặc Admin hủy đặt bàn
-    CONFIRMED --> COMPLETED: Khách đã đến quán & sử dụng dịch vụ
-    CONFIRMED --> CANCELLED: Khách hủy phút chót hoặc Không đến (No-show)
-    COMPLETED --> [*]
-    CANCELLED --> [*]
-```
+### 🔹 Frontend Stack
+- **Framework**: React 18 + TypeScript + Vite 5
+- **Styling**: TailwindCSS 3 + Custom Color Variables + Lucide Icons
+- **Animation**: Framer Motion
+- **State & Context**: Context API (AuthContext, CartContext, ThemeContext)
+- **Http Client**: Axios với JWT Request Interceptors & Auto Refresh Token Queue
+- **Internationalization**: react-i18next (Vi / En)
+- **Charts**: Recharts
 
 ---
 
-## 5. 🗄️ Mô hình Dữ liệu & Các Thực thể chính (Database Architecture)
+## 5. 💻 Hướng dẫn Cài đặt & Khởi chạy (Installation & Setup)
 
-Hệ thống cơ sở dữ liệu `tea_cake_shop` được thiết kế tối chuẩn hóa với các bảng (Entities) cốt lõi:
+### 1️⃣ Khởi chạy Backend (Spring Boot)
+1. Đảm bảo MySQL 8.x đang chạy ở `localhost:3306` (Password default trong application.properties: `12345`).
+2. Mở terminal tại thư mục gốc `teacakeshop` và chạy:
+   ```powershell
+   # Windows:
+   .\mvnw.cmd spring-boot:run
 
-- **`user_accounts` & `refresh_tokens` & `revoked_access_tokens`**: Quản lý tài khoản người dùng, vai trò (`role`), và vòng đời bảo mật của JWT.
-- **`categories` & `products`**: Danh mục (Trà trái cây, Trà sữa, Bánh ngọt...) và sản phẩm chi tiết.
-- **`combos` & `combo_items`**: Quản lý các set combo ưu đãi, liên kết N-N giữa Combo và Sản phẩm.
-- **`product_suggestions`**: Lưu trữ luật gợi ý món ăn kèm (Sản phẩm nguồn `source_product` -> Sản phẩm được gợi ý `suggested_product`).
-- **`carts` & `cart_items`**: Giỏ hàng tạm thời hoặc cố định của người dùng, chứa các sản phẩm lẻ và combo.
-- **`orders` & `order_items`**: Đơn đặt hàng chính thức của khách hàng.
-- **`discount_campaigns`**: Chương trình khuyến mãi, giảm giá áp dụng cho đơn hàng.
-- **`payments`**: Ghi nhận phương thức và trạng thái thanh toán.
-- **`reservations`**: Lịch đặt bàn tại quán (Ngày giờ, số người, trạng thái).
-
----
-
-## 6. 💻 Hướng dẫn Cài đặt & Khởi chạy (Installation & Usage)
-
-Bạn có thể chạy dự án bằng **Docker (Khuyến nghị - Nhanh chóng nhất)** hoặc chạy **Trực tiếp với Java & Maven**.
-
-### 🔹 Cách 1: Khởi chạy bằng Docker & Docker Compose (Khuyến nghị)
-> 💡 *Xem chi tiết đầy đủ tại tài liệu riêng:* **[DOCKER_README.md](DOCKER_README.md)**
-
-1. **Chuẩn bị file cấu hình `.env`**:
-   Sao chép file mẫu `.env.example` thành `.env` tại thư mục gốc của dự án (`teacakeshop`):
-   ```bash
-   cp .env.example .env
+   # Linux/macOS:
+   ./mvnw spring-boot:run
    ```
-2. **Khởi chạy bằng 1 câu lệnh**:
+3. Backend sẽ khởi chạy tại: `http://localhost:8080` (Swagger UI: `http://localhost:8080/swagger-ui.html`).
+
+### 2️⃣ Khởi chạy Frontend (React Vite)
+1. Di chuyển vào thư mục `frontend`:
    ```bash
-   docker-compose up -d --build
+   cd frontend
    ```
-3. Hệ thống sẽ tự động khởi tạo MySQL container (`port 3307`), chờ DB sẵn sàng, sau đó build và chạy Spring Boot backend (`port 8080`).
+2. Cài đặt các thư viện (nếu chưa cài):
+   ```bash
+   npm install --legacy-peer-deps
+   ```
+3. Khởi chạy server phát triển:
+   ```bash
+   npm run dev
+   ```
+4. Trình duyệt sẽ **tự động mở trang web** tại: `http://localhost:5173`.
 
 ---
 
-### 🔹 Cách 2: Khởi chạy thủ công (Local Development)
-
-**Yêu cầu môi trường local:**
-- **JDK 21** (Eclipse Temurin hoặc Oracle JDK).
-- **MySQL 8.x** đang chạy trên máy ở cổng `3306`.
-- **Maven 3.9+** (Hoặc dùng `mvnw` đi kèm trong thư mục).
-
-**Bước 1: Cấu hình Cơ sở dữ liệu MySQL local**
-Tạo database trống trong MySQL của bạn:
-```sql
-CREATE DATABASE tea_cake_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-**Bước 2: Cấu hình `application.properties` hoặc biến môi trường**
-Bạn có thể cập nhật trực tiếp thông tin trong file `src/main/resources/application.properties` hoặc set biến môi trường tương ứng:
-```properties
-DB_URL=jdbc:mysql://localhost:3306/tea_cake_shop?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
-DB_USERNAME=root
-DB_PASSWORD=mật_khẩu_mysql_của_bạn
-```
-
-**Bước 3: Tải dependencies và chạy ứng dụng**
-Sử dụng Maven Wrapper có sẵn trong dự án:
-```bash
-# Trên Windows PowerShell / CMD:
-.\mvnw.cmd clean spring-boot:run
-
-# Trên Linux / macOS:
-./mvnw clean spring-boot:run
-```
-
----
-
-## 7. 🧪 Tài liệu API & Cách Kiểm thử (API Testing)
-
-Khi ứng dụng đã khởi chạy thành công (trên cổng `8080`), bạn có hai cách tiện lợi để khám phá và kiểm thử API:
-
-### 1. Trải nghiệm trực quan qua Swagger UI (OpenAPI 3)
-Mở trình duyệt và truy cập:
-👉 **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
-- Giao diện Swagger liệt kê toàn bộ các endpoints được chia theo nhóm: `Public API`, `Auth API`, `Customer API`, `Admin API`.
-- Bạn có thể nhấn **Try it out** để test trực tiếp trên trình duyệt.
-
-### 2. Kiểm thử tự động với file `api-test.http`
-Dự án đi kèm một file kiểm thử toàn diện **[`api-test.http`](api-test.http)** ngay tại thư mục gốc.
-- Nếu bạn sử dụng **IntelliJ IDEA Ultimate** hoặc **VS Code (với extension REST Client)**, bạn chỉ cần mở file `api-test.http` lên.
-- Nhấn nút **Run / Send Request** bên cạnh từng request (như Tạo danh mục, Thêm trà/bánh, Đăng ký, Đăng nhập, Gửi đơn hàng...).
-
----
-
-## 8. 📂 Cấu trúc Thư mục Mã nguồn (Folder Structure)
+## 6. 📂 Cấu trúc Dự án (Folder Structure)
 
 ```text
 teacakeshop/
-├── .mvn/                     # Cấu hình Maven Wrapper
-├── src/
-│   ├── main/
-│   │   ├── java/com/example/teacakeshop/
-│   │   │   ├── config/       # Cấu hình Spring Security, Cloudinary, OpenAPI, Cors...
-│   │   │   ├── constant/     # Các hằng số (Role, Status, Enums...)
-│   │   │   ├── controller/   # REST Controllers
-│   │   │   │   ├── admin/    # APIs dành riêng cho Admin (Quản lý sản phẩm, combo, đơn hàng...)
-│   │   │   │   ├── customer/ # APIs dành riêng cho Khách hàng đã đăng nhập
-│   │   │   │   └── publicapi/# APIs công khai (Xem menu, đăng nhập, đăng ký...)
-│   │   │   ├── dto/          # Data Transfer Objects (Request / Response DTOs)
-│   │   │   ├── entity/       # Thực thể JPA mapping với MySQL table
-│   │   │   ├── exception/    # Global Exception Handler (Xử lý lỗi chuẩn hóa JSON)
-│   │   │   ├── repository/   # JPA Repositories truy xuất cơ sở dữ liệu
-│   │   │   ├── security/     # Bộ lọc JWT, Custom UserDetails, Token Provider
-│   │   │   └── service/      # Business Logic Layer (Xử lý nghiệp vụ chính)
-│   │   └── resources/
-│   │       └── application.properties # Cấu hình Spring Boot chính
-├── .dockerignore             # Danh sách bỏ qua khi build Docker
-├── .env.example              # File mẫu cấu hình biến môi trường
-├── .gitignore                # Danh sách bỏ qua của Git
-├── Dockerfile                # Cấu hình Multi-Stage build cho Docker
-├── DOCKER_README.md          # Hướng dẫn chi tiết sử dụng và triển khai Docker
-├── README.md                 # Tài liệu tổng quan dự án (File này)
-├── api-test.http             # Bộ kịch bản kiểm thử HTTP API trọn gói
-├── docker-compose.yml        # Cấu hình orchestration cho MySQL + Backend
-├── pom.xml                   # File quản lý thư viện Maven
-└── teacakeshop.sql           # File script SQL tham khảo/khởi tạo mẫu
+├── frontend/                       # React 18 + Vite Frontend Application
+│   ├── public/                     # Favicon và các tài nguyên tĩnh
+│   ├── src/
+│   │   ├── api/                    # Axios API Modules (Auth, Products, Combos, Cart, Orders...)
+│   │   ├── components/             # Reusable Components (Navbar, Footer, ProductCard, ComboCard, AdminSidebar...)
+│   │   ├── contexts/               # React Contexts (AuthContext, CartContext, ThemeContext)
+│   │   ├── hooks/                  # Custom Hooks (useAuth, useCart, useTheme)
+│   │   ├── i18n/                   # Cấu hình đa ngôn ngữ (vi.json, en.json)
+│   │   ├── pages/                  # Các trang chính (Home, Products, Combos, Cart, Checkout, Profile...)
+│   │   │   └── admin/              # Các trang Admin (Dashboard, AdminProducts, AdminOrders...)
+│   │   ├── styles/                 # Global CSS & Tailwind utilities
+│   │   ├── types/                  # TypeScript Data Types & Interfaces
+│   │   ├── App.tsx                 # Main Routing & App Layout
+│   │   └── main.tsx                # Entry point
+│   ├── package.json
+│   └── vite.config.ts              # Proxy /api sang http://localhost:8080 & Auto-open browser
+│
+├── src/main/java/com/example/teacakeshop/  # Spring Boot Backend
+│   ├── config/                     # Security, CORS, Jackson, Cloudinary configs
+│   ├── controller/                 # Admin, Customer & Public REST Controllers
+│   ├── dto/                        # Request & Response DTOs
+│   ├── entity/                     # JPA Entities (Product, Combo, Order, Cart, Reservation...)
+│   ├── repository/                 # Spring Data JPA Repositories
+│   └── service/                    # Business Logic Layer
+│
+├── README.md                       # Tài liệu tổng quan dự án này
+├── pom.xml                         # Maven dependencies config
+└── api-test.http                   # File kịch bản test HTTP APIs
 ```
 
 ---
 
-## 👨‍💻 Tác giả & Đóng góp
-Dự án được phát triển và tối ưu với tinh thần chuẩn sạch, kiến trúc chuyên nghiệp phục vụ đồ án kỹ thuật cao và sẵn sàng cho môi trường thực tế.
-Mọi ý kiến đóng góp hoặc câu hỏi vui lòng liên hệ qua repository Git hoặc mở Issue trên GitHub! 🎉🍵🍰
+## 👨‍💻 Tài khoản dùng thử mặc định
+
+- **Admin Account**:
+  - Email: `admin@teacakeshop.com`
+  - Password: `Admin@123`
+
+---
+🎉 **Chúc bạn có trải nghiệm tuyệt vời với ứng dụng Tea & Cake Shop!** 🍵🍰

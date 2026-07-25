@@ -1,0 +1,10 @@
+import api from './axios';
+import type { LoginRequest, RegisterRequest, AuthResponse, UserProfile } from '../types';
+export const login = (data: LoginRequest) => api.post<AuthResponse>('/auth/login', data).then(r => r.data);
+export const register = (data: RegisterRequest) => api.post<AuthResponse>('/auth/register', data).then(r => r.data);
+export const getMe = () => api.get<UserProfile>('/auth/me').then(r => r.data);
+export const logout = (data: { accessToken: string; refreshToken: string }) => api.post('/auth/logout', data);
+export const getCustomerSummary = () => api.get('/customer/summary').then(r => r.data);
+export const getAdminUsers = () => api.get('/admin/users').then(r => r.data);
+export const updateUserRole = (id: number, role: string) => api.patch(`/admin/users/${id}/role`, { role });
+export const updateUserActive = (id: number, active: boolean) => api.patch(`/admin/users/${id}/active`, { active });
