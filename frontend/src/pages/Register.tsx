@@ -7,6 +7,29 @@ import { register as registerApi } from '../api/auth';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
+const getRegistrationErrorMessage = (error: any): string => {
+  const response = error?.response;
+  const data = response?.data;
+
+  if (data?.validationErrors && typeof data.validationErrors === 'object') {
+    const firstValidationError = Object.values(data.validationErrors).find(
+      (value): value is string => typeof value === 'string' && value.length > 0
+    );
+    if (firstValidationError) return firstValidationError;
+  }
+
+  if (typeof data?.message === 'string' && data.message.trim()) {
+    return data.message;
+  }
+
+  // Vite returns an empty 500 response when its API proxy cannot reach the backend.
+  if (!response || (response.status === 500 && !data)) {
+    return 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra backend đang chạy ở cổng 8080.';
+  }
+
+  return 'Đăng ký thất bại. Vui lòng thử lại.';
+};
+
 const Register: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -46,14 +69,14 @@ const Register: React.FC = () => {
       const response = await registerApi({
         fullName: formData.fullName,
         email: formData.email,
-        phone: formData.phone || '0901234567',
+        phone: formData.phone.trim(),
         password: formData.password
       });
       await login(response.accessToken, response.refreshToken); 
       toast.success('Đăng ký tài khoản thành công! ✨', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
       navigate('/');
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+      const message = getRegistrationErrorMessage(err);
       setError(message);
       toast.error(message, { style: { borderRadius: '20px' } });
     } finally {

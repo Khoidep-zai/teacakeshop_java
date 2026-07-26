@@ -22,6 +22,10 @@ public class AdminAccountSeeder
     private final String adminEmail;
     private final String adminPassword;
     private final String adminPhone;
+    private final String staffFullName;
+    private final String staffEmail;
+    private final String staffPassword;
+    private final String staffPhone;
 
     public AdminAccountSeeder(
             UserAccountRepository userAccountRepository,
@@ -37,7 +41,19 @@ public class AdminAccountSeeder
             String adminPassword,
 
             @Value("${app.admin.phone}")
-            String adminPhone
+            String adminPhone,
+
+            @Value("${app.staff.full-name}")
+            String staffFullName,
+
+            @Value("${app.staff.email}")
+            String staffEmail,
+
+            @Value("${app.staff.password}")
+            String staffPassword,
+
+            @Value("${app.staff.phone}")
+            String staffPhone
     ) {
         this.userAccountRepository =
                 userAccountRepository;
@@ -56,53 +72,83 @@ public class AdminAccountSeeder
 
         this.adminPhone =
                 adminPhone;
+
+        this.staffFullName =
+                staffFullName;
+
+        this.staffEmail =
+                staffEmail;
+
+        this.staffPassword =
+                staffPassword;
+
+        this.staffPhone =
+                staffPhone;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
+        seedAccount(
+                adminFullName,
+                adminEmail,
+                adminPassword,
+                adminPhone,
+                Role.ADMIN
+        );
+
+        seedAccount(
+                staffFullName,
+                staffEmail,
+                staffPassword,
+                staffPhone,
+                Role.STAFF
+        );
+    }
+
+    private void seedAccount(
+            String fullName,
+            String email,
+            String password,
+            String phone,
+            Role role
+    ) {
         String normalizedEmail =
-                adminEmail
+                email
                         .trim()
                         .toLowerCase(
                                 Locale.ROOT
                         );
 
-        if (userAccountRepository
-                .existsByEmailIgnoreCase(
-                        normalizedEmail
-                )) {
-            return;
-        }
+        UserAccount account =
+                userAccountRepository
+                        .findByEmailIgnoreCase(normalizedEmail)
+                        .orElseGet(UserAccount::new);
 
-        UserAccount admin =
-                new UserAccount();
-
-        admin.setFullName(
-                adminFullName.trim()
+        account.setFullName(
+                fullName.trim()
         );
 
-        admin.setEmail(
+        account.setEmail(
                 normalizedEmail
         );
 
-        admin.setPhone(
-                adminPhone.trim()
+        account.setPhone(
+                phone.trim()
         );
 
-        admin.setPasswordHash(
+        account.setPasswordHash(
                 passwordEncoder.encode(
-                        adminPassword
+                        password
                 )
         );
 
-        admin.setRole(
-                Role.ADMIN
+        account.setRole(
+                role
         );
 
-        admin.setActive(true);
+        account.setActive(true);
 
-        userAccountRepository.save(admin);
-
+        userAccountRepository.save(account);
     }
 }
