@@ -58,20 +58,35 @@ public class PublicOrderController {
     }
 
     /*
-     * Khách xem đơn bằng mã đơn
-     * và số điện thoại.
+     * Khách xem đơn bằng mã đơn.
+     * - Có phone: khách vãng lai xem qua phone + orderCode
+     * - Không có phone nhưng có auth: user đăng nhập xem đơn của mình
+     * - Không có cả hai: trả 400
      */
     @GetMapping("/{orderCode}")
     public OrderResponse getOrder(
             @PathVariable
             String orderCode,
 
-            @RequestParam
-            String phone
+            @RequestParam(required = false)
+            String phone,
+
+            Authentication authentication
     ) {
-        return orderService.getPublicOrder(
-                orderCode,
-                phone
+        // Nếu có phone, dùng public lookup (cả guest và logged-in)
+        if (phone != null && !phone.isBlank()) {
+            return orderService.getPublicOrder(orderCode, phone);
+        }
+
+        // Nếu user đã đăng nhập, cho phép xem đơn của mình không cần phone
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getName())) {
+            return orderService.getOrderByCodeForUser(orderCode, authentication.getName());
+        }
+
+        throw new com.example.teacakeshop.exception.BadRequestException(
+                "Vui lòng cung cấp số điện thoại để tra cứu đơn hàng"
         );
     }
 }

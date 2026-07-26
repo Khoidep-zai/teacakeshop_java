@@ -392,6 +392,33 @@ public class OrderService {
     }
 
     /*
+     * User đã đăng nhập xem đơn bằng orderCode.
+     * Validate đơn phải thuộc về user đó.
+     */
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByCodeForUser(
+            String orderCode,
+            String authenticatedEmail
+    ) {
+        UserAccount account =
+                findUserByEmail(authenticatedEmail);
+
+        CustomerOrder order =
+                orderRepository
+                        .findByOrderCodeAndUserAccount_Id(
+                                orderCode,
+                                account.getId()
+                        )
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Không tìm thấy đơn hàng"
+                                )
+                        );
+
+        return toResponse(order);
+    }
+
+    /*
      * Admin xem danh sách đơn hàng.
      */
     @Transactional(readOnly = true)

@@ -155,7 +155,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       // ignore
     }
-    setCart(prev => prev ? { ...prev, items: [], totalAmount: 0, itemCount: 0 } : null);
+    // Xóa token cũ (cart đã bị inactive sau checkout),
+    // lần sau initCart sẽ tạo cart mới từ server.
+    localStorage.removeItem('cartToken');
+    setToken(null);
+    setCart(null);
   };
 
   const itemCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;

@@ -31,9 +31,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
 # Environment / secrets
 .env
 .env.*
 !.env.example
+
 # Maven
 target/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Logs
+*.log
+npm-debug.log*

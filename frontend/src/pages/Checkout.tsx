@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Banknote, Landmark, Smartphone, ShieldCheck, Sparkles, Lock } from 'lucide-react';
+import { CreditCard, Banknote, Landmark, Smartphone, ShieldCheck, Sparkles, Lock, MapPin } from 'lucide-react';
 import { checkout } from '../api/orders';
+import { simulatePayment, cashOnDelivery } from '../api/payments';
 import { useCart } from '../hooks/useCart';
+import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { addOrder } from '../data/userStore';
+import type { OrderType } from '../types';
 
 const PAYMENT_METHODS = [
   { id: 'CASH_ON_DELIVERY', label: 'Thanh toán khi nhận hàng (COD)', icon: Banknote },
@@ -13,15 +16,24 @@ const PAYMENT_METHODS = [
   { id: 'BANK_TRANSFER', label: 'Chuyển Khoản Ngân Hàng Quick Pay', icon: Landmark },
 ];
 
+const ORDER_TYPES: { id: OrderType; label: string }[] = [
+  { id: 'NORMAL', label: 'Giao hàng tận nơi' },
+  { id: 'TAKEAWAY_PREORDER', label: 'Đặt trước - Tự lấy' },
+  { id: 'RESERVATION_COMBO', label: 'Kết hợp đặt bàn' },
+];
+
 export default function Checkout() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { cart, token, clearCart } = useCart();
   const [formData, setFormData] = useState({
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-    note: ''
+    customerName: user?.fullName || '',
+    customerEmail: user?.email || '',
+    customerPhone: user?.phone || '',
+    shippingAddress: '',
+    note: '',
   });
+  const [orderType, setOrderType] = useState<OrderType>('NORMAL');
   const [paymentMethod, setPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [loading, setLoading] = useState(false);
 
@@ -31,65 +43,104 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cart || !token) return;
-    setLoading(true);
+    if (!cart || !token) {
+      toast.error('Giỏ hàng không hợp lệ. Vui lòng thử lại.');
+      return;
+    }
 
+    if (!formData.customerName.trim()) {
+      toast.error('Vui lòng nhập họ và tên.');
+      return;
+    }
+    if (!formData.customerPhone.trim()) {
+      toast.error('Vui lòng nhập số điện thoại.');
+      return;
+    }
+    if (!formData.customerEmail.trim()) {
+      toast.error('Vui lòng nhập email.');
+      return;
+    }
+    if (orderType === 'NORMAL' && !formData.shippingAddress.trim()) {
+      toast.error('Vui lòng nhập địa chỉ giao hàng cho đơn giao tận nơi.');
+      return;
+    }
+
+    setLoading(true);
     try {
+      // Gọi checkout API với đầy đủ thông tin
       const order = await checkout({
         cartToken: token,
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail,
-        customerPhone: formData.customerPhone,
-        note: formData.note
+        customerName: formData.customerName.trim(),
+        customerEmail: formData.customerEmail.trim(),
+        customerPhone: formData.customerPhone.trim(),
+        shippingAddress: formData.shippingAddress.trim() || null,
+        orderType: orderType,
+        note: formData.note.trim() || null,
       });
 
-      const createdOrder = addOrder({
-        orderCode: order?.orderCode || 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000),
-        customerName: formData.customerName || 'Khách Hàng',
-        customerPhone: formData.customerPhone || '0901234567',
-        customerEmail: formData.customerEmail || 'nguyenkhoidk2005@gmail.com',
-        note: formData.note || 'Địa chỉ giao hàng',
-        status: 'CONFIRMED',
-        totalAmount: cart.totalAmount,
-        finalAmount: cart.totalAmount,
-        items: cart.items.map((i, idx) => ({
-          id: idx + 1,
+      // Tạo payment sau khi đặt hàng thành công
+      if (order?.orderCode) {
+        try {
+          if (paymentMethod === 'CASH_ON_DELIVERY') {
+            await cashOnDelivery({
+              orderCode: order.orderCode,
+              paymentMethod: 'CASH_ON_DELIVERY',
+            });
+          } else {
+            await simulatePayment({
+              orderCode: order.orderCode,
+              paymentMethod: paymentMethod,
+            });
+          }
+        } catch (payErr) {
+          // Payment có thể thất bại nhưng order vẫn đã tạo thành công
+          console.warn('Payment init warning (non-critical):', payErr);
+        }
+      }
+
+      // Lưu vào local store để hiển thị ngay khi offline
+      addOrder({
+        orderCode: order?.orderCode,
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        customerEmail: formData.customerEmail,
+        note: formData.note,
+        status: order?.status || 'PENDING',
+        orderType: order?.orderType || orderType,
+        totalAmount: order?.totalAmount ?? cart.totalAmount,
+        finalAmount: order?.totalAmount ?? cart.totalAmount,
+        shippingAddress: formData.shippingAddress || undefined,
+        items: order?.items?.map((i) => ({
+          id: i.id,
           itemType: i.itemType,
-          name: i.productName || i.comboName || 'Món thưởng trà',
-          imageUrl: i.imageUrl || '/images/products/matcha_cake.png',
+          itemName: i.itemName,
+          name: i.itemName,
+          imageUrl: i.imageUrl,
           quantity: i.quantity,
           unitPrice: i.unitPrice,
-          totalPrice: i.totalPrice
-        }))
+          lineTotal: i.lineTotal,
+          totalPrice: i.lineTotal,
+        })) ?? cart.items.map((i, idx) => ({
+          id: idx + 1,
+          itemType: i.itemType,
+          itemName: i.productName || i.comboName || 'Sản phẩm',
+          name: i.productName || i.comboName || 'Sản phẩm',
+          imageUrl: i.imageUrl,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          lineTotal: i.totalPrice,
+          totalPrice: i.totalPrice,
+        })),
       });
 
       await clearCart();
       toast.success('Đặt hàng thành công! ✨', {
-        style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
+        style: { borderRadius: '20px', background: '#0F172A', color: '#fff' },
       });
-      navigate(`/orders/${createdOrder.orderCode}`);
+      navigate(`/orders/${order?.orderCode}?phone=${encodeURIComponent(formData.customerPhone)}`);
     } catch (err: any) {
-      const createdOrder = addOrder({
-        orderCode: 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000),
-        customerName: formData.customerName || 'Khách Hàng',
-        customerPhone: formData.customerPhone || '0901234567',
-        customerEmail: formData.customerEmail || 'nguyenkhoidk2005@gmail.com',
-        note: formData.note || 'Địa chỉ nhận hàng',
-        status: 'CONFIRMED',
-        totalAmount: cart.totalAmount,
-        finalAmount: cart.totalAmount,
-        items: cart.items.map((i, idx) => ({
-          id: idx + 1,
-          itemType: i.itemType,
-          name: i.productName || i.comboName || 'Món thưởng trà',
-          imageUrl: i.imageUrl || '/images/products/matcha_cake.png',
-          quantity: i.quantity,
-          unitPrice: i.unitPrice,
-          totalPrice: i.totalPrice
-        }))
-      });
-      await clearCart();
-      navigate(`/orders/${createdOrder.orderCode}`);
+      const msg = err?.response?.data?.message || 'Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin.';
+      toast.error(msg, { style: { borderRadius: '20px' } });
     } finally {
       setLoading(false);
     }
@@ -124,10 +175,35 @@ export default function Checkout() {
         {/* Left Column: Form & Payment */}
         <div className="lg:w-2/3 space-y-6">
           
+          {/* Order Type */}
+          <div className="glass-card p-6 sm:p-8 space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white font-serif-title border-b border-slate-200 dark:border-slate-800 pb-3">
+              1. Loại Đơn Hàng
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {ORDER_TYPES.map((ot) => {
+                const selected = orderType === ot.id;
+                return (
+                  <div
+                    key={ot.id}
+                    onClick={() => setOrderType(ot.id)}
+                    className={`p-4 rounded-2xl cursor-pointer flex items-center gap-3 transition-all border ${
+                      selected
+                        ? 'bg-slate-900 text-white border-cyber-teal shadow-lg shadow-cyber-teal/20 scale-[1.02]'
+                        : 'bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    <span className="font-bold text-xs">{ot.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Customer Info */}
           <div className="glass-card p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white font-serif-title border-b border-slate-200 dark:border-slate-800 pb-3">
-              1. Thông Tin Nhận Hàng
+              2. Thông Tin Nhận Hàng
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -140,31 +216,48 @@ export default function Checkout() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">Email Nhận Hóa Đơn AI</label>
-              <input type="email" name="customerEmail" value={formData.customerEmail} onChange={handleInputChange} className="input-field text-xs" placeholder="email@example.com" />
+              <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">Email Nhận Hóa Đơn *</label>
+              <input type="email" name="customerEmail" required value={formData.customerEmail} onChange={handleInputChange} className="input-field text-xs" placeholder="email@example.com" />
             </div>
+            {orderType === 'NORMAL' && (
+              <div>
+                <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
+                  <MapPin className="inline w-3.5 h-3.5 mr-1" />
+                  Địa Chỉ Giao Hàng *
+                </label>
+                <input
+                  type="text"
+                  name="shippingAddress"
+                  required={orderType === 'NORMAL'}
+                  value={formData.shippingAddress}
+                  onChange={handleInputChange}
+                  className="input-field text-xs"
+                  placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành..."
+                />
+              </div>
+            )}
             <div>
-              <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">Địa Chỉ Giao Hàng & Ghi Chú</label>
-              <textarea name="note" rows={3} value={formData.note} onChange={handleInputChange} className="input-field text-xs" placeholder="Nhập địa chỉ nhận hàng chi tiết (Tòa nhà, số phòng, ghi chú thêm...)..."></textarea>
+              <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">Ghi Chú Thêm</label>
+              <textarea name="note" rows={3} value={formData.note} onChange={handleInputChange} className="input-field text-xs" placeholder="Ghi chú đặc biệt cho đơn hàng (ít ngọt, không đá, dị ứng...)"></textarea>
             </div>
           </div>
 
           {/* Payment Method */}
           <div className="glass-card p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white font-serif-title border-b border-slate-200 dark:border-slate-800 pb-3">
-              2. Phương Thức Thanh Toán
+              3. Phương Thức Thanh Toán
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {PAYMENT_METHODS.map((pm) => {
                 const Icon = pm.icon;
                 const selected = paymentMethod === pm.id;
                 return (
-                  <div 
-                    key={pm.id} 
-                    onClick={() => setPaymentMethod(pm.id)} 
+                  <div
+                    key={pm.id}
+                    onClick={() => setPaymentMethod(pm.id)}
                     className={`p-4 rounded-2xl cursor-pointer flex items-center gap-3 transition-all border ${
-                      selected 
-                        ? 'bg-slate-900 text-white border-cyber-teal shadow-lg shadow-cyber-teal/20 scale-[1.02]' 
+                      selected
+                        ? 'bg-slate-900 text-white border-cyber-teal shadow-lg shadow-cyber-teal/20 scale-[1.02]'
                         : 'bg-white/70 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                     }`}
                   >
@@ -204,9 +297,9 @@ export default function Checkout() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={loading} 
+            <button
+              type="submit"
+              disabled={loading}
               className="w-full btn-primary py-4 text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg"
             >
               <ShieldCheck size={18} />

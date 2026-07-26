@@ -53,12 +53,53 @@ export interface Cart { token: string; items: CartItem[]; totalAmount: number; i
 // ============================================================
 export type OrderType = 'NORMAL' | 'RESERVATION_COMBO' | 'TAKEAWAY_PREORDER';
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'COMPLETED' | 'CANCELLED';
-export interface OrderItem { id: number; itemType: CartItemType; name: string; quantity: number; unitPrice: number; totalPrice: number; imageUrl?: string; }
+
+/**
+ * Khớp chính xác với backend OrderItemResponse.
+ * Các field alias (name, totalPrice) để tương thích ngược với local store.
+ */
+export interface OrderItem {
+  id: number;
+  itemType: CartItemType;
+  itemId?: number;
+  itemName: string;       // BE: itemName
+  name?: string;          // alias ngược: local store dùng name
+  imageUrl?: string;
+  originalUnitPrice?: number;
+  discountAmount?: number;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;      // BE: lineTotal
+  totalPrice?: number;    // alias ngược: local store dùng totalPrice
+  discountCode?: string;
+  discountName?: string;
+}
+
+/**
+ * Khớp với backend OrderResponse.
+ * discountAmount / finalAmount là computed fields cho local store.
+ */
 export interface Order {
-  id: number; orderCode: string; orderType: OrderType; status: OrderStatus;
-  totalAmount: number; discountAmount: number; finalAmount: number;
-  note: string; items: OrderItem[]; createdAt: string; updatedAt: string;
-  customerName?: string; customerEmail?: string; customerPhone?: string;
+  id: number;
+  orderCode: string;
+  orderType: OrderType;
+  status: OrderStatus;
+  totalAmount: number;
+  depositRequired?: boolean;
+  depositAmount?: number;
+  remainingAmount?: number;
+  shippingAddress?: string;
+  pickupTime?: string;
+  note?: string;
+  items: OrderItem[];
+  createdAt: string;
+  updatedAt: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  // Computed / local store fields
+  discountAmount?: number;
+  finalAmount?: number;
 }
 
 // ============================================================

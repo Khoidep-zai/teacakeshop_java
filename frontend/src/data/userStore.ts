@@ -103,17 +103,25 @@ export const addOrder = (orderData: Partial<Order>): Order => {
     id: Date.now(),
     orderCode: orderData.orderCode || `ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
     orderType: orderData.orderType || 'NORMAL',
-    status: orderData.status || 'CONFIRMED',
+    status: orderData.status || 'PENDING',
     totalAmount: orderData.totalAmount || 0,
     discountAmount: orderData.discountAmount || 0,
     finalAmount: orderData.finalAmount || orderData.totalAmount || 0,
     note: orderData.note || '',
-    customerName: orderData.customerName || 'Khoi Nguyen',
-    customerEmail: orderData.customerEmail || 'nguyenkhoidk2005@gmail.com',
-    customerPhone: orderData.customerPhone || '0902094421',
-    items: orderData.items || [],
+    customerName: orderData.customerName || '',
+    customerEmail: orderData.customerEmail || '',
+    customerPhone: orderData.customerPhone || '',
+    shippingAddress: orderData.shippingAddress,
+    // Normalize items: đảm bảo cả itemName/name và lineTotal/totalPrice đều có giá trị
+    items: (orderData.items || []).map(i => ({
+      ...i,
+      itemName: (i as any).itemName || i.name || 'Sản phẩm',
+      name: i.name || (i as any).itemName || 'Sản phẩm',
+      lineTotal: (i as any).lineTotal ?? i.totalPrice ?? 0,
+      totalPrice: i.totalPrice ?? (i as any).lineTotal ?? 0,
+    })),
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
   orders.unshift(newOrder);
   saveStorage('store_orders', orders);

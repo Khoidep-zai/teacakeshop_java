@@ -1,26 +1,35 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, CheckCircle2, Truck, XCircle, Clock, Sparkles } from 'lucide-react';
+import { ShoppingCart, Search, CheckCircle2, Package, XCircle, Clock, Sparkles } from 'lucide-react';
 import { getAdminOrders, updateOrderStatus as updateApiOrderStatus } from '../../api/orders';
-import type { Order } from '../../types';
+import type { Order, Page } from '../../types';
 import { getUserOrders, updateOrderStatus } from '../../data/userStore';
 import toast from 'react-hot-toast';
+
+// Helper: lấy itemName an toàn từ OrderItem
+const getItemName = (item: any): string => item.itemName || item.name || 'Sản phẩm';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  // FIXED: Dùng đúng enum backend (PREPARING thay vì SHIPPING)
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   const fetchOrders = async () => {
     setLoading(true);
     const storeOrders = getUserOrders();
     try {
-      const data = await getAdminOrders();
-      const list = (data as any).content || data;
-      if (Array.isArray(list) && list.length > 0) {
-        const combined = [...storeOrders];
-        list.forEach(o => {
-          if (!combined.some(x => x.orderCode === o.orderCode)) combined.push(o);
+      // getAdminOrders() trả về Page<Order> object
+      const pageData = await getAdminOrders({ page: 0, size: 100 }) as Page<Order>;
+      const apiList: Order[] = pageData?.content ?? [];
+
+      if (apiList.length > 0) {
+        // Merge: API orders trước, local store orders chưa có trong API thêm sau
+        const combined: Order[] = [...apiList];
+        storeOrders.forEach(o => {
+          if (!combined.some(x => x.orderCode === o.orderCode)) {
+            combined.push(o);
+          }
         });
         setOrders(combined);
       } else {
@@ -35,23 +44,39 @@ export default function AdminOrders() {
 
   useEffect(() => {
     fetchOrders();
-    const handleUpdate = () => setOrders(getUserOrders());
+    const handleUpdate = () => fetchOrders();
     window.addEventListener('user_store_updated', handleUpdate);
     return () => window.removeEventListener('user_store_updated', handleUpdate);
   }, []);
 
-  const handleStatusChange = async (orderId: number, newStatus: Order['status']) => {
-    try {
-      await updateApiOrderStatus(orderId, newStatus);
-    } catch (err) {
-      console.warn('Backend order status update warning:', err);
+  const handleStatusChange = async (ord: Order, newStatus: Order['status']) => {
+    // Dùng ord.id từ API (nếu có) để gọi backend
+    // ord.id từ API sẽ là số nhỏ, từ local store sẽ là Date.now() lớn
+    const isApiOrder = ord.id < 1_000_000_000; // heuristic: API IDs nhỏ
+    
+    if (isApiOrder) {
+      try {
+        await updateApiOrderStatus(ord.id, newStatus);
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'Không thể cập nhật trạng thái';
+        toast.error(msg);
+        return;
+      }
     }
-    updateOrderStatus(orderId, newStatus);
-    toast.success(`Đã cập nhật trạng thái đơn hàng sang "${newStatus}" và đồng bộ tới Khách hàng! ✨`, {
-      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
+    
+    // Cập nhật local store
+    updateOrderStatus(ord.id, newStatus);
+    
+    toast.success(`Đã cập nhật trạng thái → "${newStatus}" ✨`, {
+      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' },
     });
-    setOrders(getUserOrders());
+    
+    // Re-fetch để đồng bộ
+    await fetchOrders();
   };
+
+  // FIXED: Dùng đúng status backend (PREPARING thay vì SHIPPING)
+  const STATUS_FILTERS = ['ALL', 'PENDING', 'CONFIRMED', 'PREPARING', 'COMPLETED', 'CANCELLED'];
 
   const filtered = orders
     .filter(o => statusFilter === 'ALL' || o.status === statusFilter)
@@ -67,8 +92,8 @@ export default function AdminOrders() {
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-500 border border-amber-500/20"><Clock size={12} /> Chờ xử lý</span>;
       case 'CONFIRMED':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-cyber-teal/10 text-cyber-teal border border-cyber-teal/20"><CheckCircle2 size={12} /> Đã xác nhận</span>;
-      case 'SHIPPING':
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-500 border border-sky-500/20"><Truck size={12} /> Đang giao hàng</span>;
+      case 'PREPARING':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-500 border border-sky-500/20"><Package size={12} /> Đang chế tác</span>;
       case 'COMPLETED':
         return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"><CheckCircle2 size={12} /> Hoàn tất</span>;
       default:
@@ -84,12 +109,15 @@ export default function AdminOrders() {
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-1">
             <Sparkles className="w-4 h-4 text-cyber-teal" />
-            <span>Quản Lý Đơn Hàng Thưởng Trà Đồng Bộ 2026</span>
+            <span>Quản Lý Đơn Hàng Thưởng Trà 2026</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-serif-title">
-            Danh Sách Đơn Hàng Khách Đặt ({orders.length})
+            Danh Sách Đơn Hàng ({orders.length})
           </h1>
         </div>
+        <button onClick={fetchOrders} className="btn-secondary text-xs px-4 py-2">
+          🔄 Làm mới
+        </button>
       </div>
 
       {/* Filter Bar */}
@@ -105,8 +133,8 @@ export default function AdminOrders() {
           />
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
-          {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED'].map((st) => (
+        <div className="flex gap-2 flex-wrap w-full sm:w-auto">
+          {STATUS_FILTERS.map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
@@ -134,7 +162,7 @@ export default function AdminOrders() {
                 <th className="px-6 py-4">Tổng Tiền</th>
                 <th className="px-6 py-4">Ngày Đặt</th>
                 <th className="px-6 py-4">Trạng Thái</th>
-                <th className="px-6 py-4 text-center">Cập Nhật Trạng Thái</th>
+                <th className="px-6 py-4 text-center">Cập Nhật</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -152,32 +180,35 @@ export default function AdminOrders() {
                 </tr>
               ) : (
                 filtered.map((ord) => (
-                  <tr key={ord.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                  <tr key={`${ord.id}-${ord.orderCode}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-primary flex items-center gap-1.5">
                       <ShoppingCart size={14} />
                       <span>#{ord.orderCode}</span>
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-bold text-slate-900 dark:text-white">{ord.customerName || 'Khách Hàng'}</p>
-                      <p className="text-[11px] text-slate-400">{ord.customerPhone || '0901234567'}</p>
+                      <p className="text-[11px] text-slate-400">{ord.customerPhone || '---'}</p>
                     </td>
                     <td className="px-6 py-4 max-w-xs font-semibold">
-                      {ord.items && ord.items.length > 0 ? ord.items.map(i => `${i.name} (x${i.quantity})`).join(', ') : 'Đơn hàng trà bánh'}
+                      {ord.items && ord.items.length > 0
+                        ? ord.items.map(i => `${getItemName(i)} (x${i.quantity})`).join(', ')
+                        : 'Đơn hàng trà bánh'}
                     </td>
                     <td className="px-6 py-4 font-extrabold text-primary dark:text-primary-glow">
-                      {(ord.finalAmount || ord.totalAmount).toLocaleString('vi-VN')}₫
+                      {(ord.finalAmount ?? ord.totalAmount).toLocaleString('vi-VN')}₫
                     </td>
                     <td className="px-6 py-4">{new Date(ord.createdAt).toLocaleString('vi-VN')}</td>
                     <td className="px-6 py-4">{getStatusBadge(ord.status)}</td>
                     <td className="px-6 py-4">
+                      {/* FIXED: Dùng đúng enum backend (PREPARING thay vì SHIPPING) */}
                       <select
                         value={ord.status}
-                        onChange={(e) => handleStatusChange(ord.id, e.target.value as any)}
+                        onChange={(e) => handleStatusChange(ord, e.target.value as Order['status'])}
                         className="input-field text-xs font-extrabold py-1 px-2.5"
                       >
                         <option value="PENDING">Chờ xử lý</option>
                         <option value="CONFIRMED">Xác nhận & Chế biến</option>
-                        <option value="SHIPPING">Đang giao hàng 🚚</option>
+                        <option value="PREPARING">Đang chế tác 🍵</option>
                         <option value="COMPLETED">Hoàn tất đơn ✅</option>
                         <option value="CANCELLED">Hủy đơn</option>
                       </select>

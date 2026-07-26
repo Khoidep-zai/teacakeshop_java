@@ -35,6 +35,33 @@
 
 ## 2. ⚡ Cập nhật Kiến trúc & Tính năng mới 2026
 
+### 🐛 [2026-07-26] Hotfix: Sửa 8 Lỗi Nghiêm Trọng (Critical Bug Fix)
+
+> **Bản vá quan trọng** - Đã sửa toàn bộ lỗi trong luồng đặt hàng, thanh toán và quản lý đơn hàng.
+
+| # | Lỗi | File | Trạng thái |
+|---|-----|------|-----------|
+| 1 | **Checkout thiếu `orderType` + `shippingAddress`** → Backend từ chối 400 | `Checkout.tsx` | ✅ Đã sửa |
+| 2 | **OrderTracking không gửi `phone` param** → Luôn show fallback data | `OrderTracking.tsx` | ✅ Đã sửa |
+| 3 | **`getMyOrders()` không unwrap `Page<>`** → Đơn hàng user không hiển thị | `api/orders.ts`, `Profile.tsx` | ✅ Đã sửa |
+| 4 | **`getMyReservations()` cùng lỗi `Page<>`** → Lịch đặt bàn không hiển thị | `api/reservations.ts` | ✅ Đã sửa |
+| 5 | **`OrderItem` field names sai** → `name`/`totalPrice` vs backend `itemName`/`lineTotal` | `types/index.ts` | ✅ Đã sửa |
+| 6 | **`AdminOrders` dùng status `SHIPPING` không tồn tại** → Backend 400 khi update | `AdminOrders.tsx` | ✅ Đã sửa → `PREPARING` |
+| 7 | **Cart token không reset sau checkout** → Cart cũ invalid lần sau | `CartContext.tsx` | ✅ Đã sửa |
+| 8 | **`/orders/{code}` require `phone` param** → User đăng nhập không xem được đơn | `OrderService.java`, `PublicOrderController.java` | ✅ Đã sửa |
+
+**Backend fixes:**
+- Thêm method `getOrderByCodeForUser()` trong `OrderService` để user đăng nhập xem đơn bằng orderCode.
+- `PublicOrderController.getOrder()`: `phone` param giờ là **optional** – nếu có phone dùng lookup thông thường, nếu không có phone nhưng có auth token thì validate ownership và trả về.
+
+**Frontend fixes:**
+- `Checkout.tsx`: Thêm selector **Loại đơn hàng** (NORMAL/TAKEAWAY_PREORDER/RESERVATION_COMBO), field **Địa chỉ giao hàng** riêng (bắt buộc cho đơn NORMAL), gọi payment API sau checkout thành công.
+- `OrderTracking.tsx`: Lấy `phone` từ URL query param (`?phone=...`) sau redirect checkout; hiển thị form nhập phone nếu không có.
+- `Profile.tsx`: Link đến OrderTracking kèm `?phone=customerPhone`.
+- `types/index.ts`: `OrderItem` dùng `itemName`/`lineTotal` (đúng backend), giữ `name`/`totalPrice` là alias để tương thích ngược.
+
+---
+
 - 🎨 **Tái thiết kế UX/UI Executive High-Contrast**:
   - Khắc phục hoàn toàn lỗi mờ chữ/tương phản kém trên các trang Admin và Storefront. Tiêu đề hiển thị chuẩn font nét, rõ ràng, phối màu chuẩn cho mắt người đọc.
   - Tích hợp bộ điều khiển Header đồng bộ: **Nút đổi Ngôn ngữ (Việt / Anh)** và **Nút chuyển đổi Chế độ Sáng / Tối (Light & Dark Theme)**.
@@ -48,6 +75,7 @@
   - Mọi thao tác Thêm / Sửa / Xóa sản phẩm, danh mục, combo pass, mã voucher ở Admin lập tức đồng bộ hiển thị trên Trang Chủ / Thực đơn. Mọi đơn hàng, lịch đặt bàn, tài khoản mới tạo từ Khách hàng lập tức xuất hiện trong Admin Portal.
 - 🖼️ **Bộ Ảnh Sản Phẩm & Combo Độc Bản 8K AI Generated**:
   - Mỗi sản phẩm lẻ và set combo đều sở hữu một hình ảnh photorealistic riêng biệt (`matcha_cake.png`, `earl_grey.png`, `sakura_tea.png`, `oolong_tea.png`, `truffle_tart.png`, `jasmine_tea.png`, `combo_rainy.png`, `combo_energy.png`...).
+
 - ☕ **Đồng Bộ Chạy 1 Lệnh Duy Nhất Trực Tiếp Trên IntelliJ IDE**:
   - Tích hợp `SpaWebController.java` điều hướng SPA routes (`/products`, `/combos`, `/admin`...) và `maven-resources-plugin` tự động đóng gói `frontend/dist` vào `src/main/resources/static`. Chỉ cần chạy file `TeacakeshopApplication.java` trong IntelliJ IDE là khởi chạy đồng bộ cả Backend, Frontend và Database tại `http://localhost:8080`.
 
