@@ -1,5 +1,6 @@
 import api from './axios';
 import type { Product, Page, ProductSuggestion } from '../types';
+import { normalizeProductSuggestions } from './suggestions';
 
 export const getProducts = (params?: Record<string,any>) => api.get<Page<Product>>('/products', { params }).then(r => r.data);
 export const getAdminProducts = (params?: Record<string,any>) => api.get<Page<Product>>('/admin/products', { params }).then(r => r.data);
@@ -7,7 +8,9 @@ export const getProduct = (id: number) => api.get<Product>(`/products/${id}`).th
 export const getHotProducts = () => api.get<Product[]>('/products/hot').then(r => r.data);
 export const getBestSellerProducts = () => api.get<Product[]>('/products/best-sellers').then(r => r.data);
 export const getNewestProducts = () => api.get<Product[]>('/products/newest').then(r => r.data);
-export const getProductSuggestions = (id: number) => api.get<ProductSuggestion[]>(`/products/${id}/suggestions`).then(r => r.data);
+export const getProductSuggestions = (id: number) =>
+  api.get<ProductSuggestion[]>(`/products/${id}/suggestions`)
+    .then(r => normalizeProductSuggestions(r.data));
 
 // Admin
 export const createProduct = (data: any) => api.post<Product>('/admin/products', data).then(r => r.data);

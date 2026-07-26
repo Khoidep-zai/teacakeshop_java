@@ -108,7 +108,7 @@ const ComboDetail: React.FC = () => {
             </div>
 
             <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-full text-xs font-extrabold shadow-lg">
-              Tiết kiệm ngay {combo.savingAmount ? `${combo.savingAmount.toLocaleString('vi-VN')}₫` : '30.000₫'}
+              Tiết kiệm ngay {(combo.savingAmount ?? Math.max(0, combo.originalPrice - combo.comboPrice)).toLocaleString('vi-VN')}₫
             </div>
           </div>
 
@@ -146,7 +146,7 @@ const ComboDetail: React.FC = () => {
                       <div key={it.id} className="flex items-center justify-between text-xs text-slate-800 dark:text-slate-200">
                         <span className="flex items-center gap-2 font-bold">
                           <CheckCircle2 className="w-4 h-4 text-accent" />
-                          {it.product?.name || `Món món #${it.id}`}
+                          {it.productName || it.product?.name || `Món #${it.productId ?? it.id}`}
                         </span>
                         <span className="text-slate-400 font-semibold">x{it.quantity}</span>
                       </div>
@@ -188,7 +188,9 @@ const ComboDetail: React.FC = () => {
         <section className="mt-12">
           <h2 className="section-title mb-6">Có Thể Bạn Sẽ Thích</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {suggestions.map(item => <ProductCard key={item.id} product={item.suggestedProduct} />)}
+            {suggestions
+              .filter(item => item.suggestedProduct?.id)
+              .map(item => <ProductCard key={item.id} product={item.suggestedProduct} />)}
           </div>
         </section>
       )}

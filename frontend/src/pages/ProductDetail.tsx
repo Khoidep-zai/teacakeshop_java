@@ -234,7 +234,7 @@ const ProductDetail: React.FC = () => {
         <div className="mt-16">
           <h2 className="section-title text-center mb-8">Món Gợi Ý Phối Hợp Tuyệt Vời</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {suggestions.map((item) => (
+            {suggestions.filter(item => item.suggestedProduct?.id).map((item) => (
               <ProductCard key={item.id} product={item.suggestedProduct} />
             ))}
           </div>
