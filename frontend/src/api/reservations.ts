@@ -11,11 +11,12 @@ export const checkAvailability = (reservationTime: string, numberOfPeople: numbe
 export const createReservation = (data: any) =>
   api.post<Reservation>('/reservations', data).then(r => r.data);
 
-export const getReservation = (code: string) =>
-  api.get<Reservation>(`/reservations/${code}`).then(r => r.data);
+// BE bắt buộc ?phone= để xác thực danh tính khách
+export const getReservation = (code: string, phone: string) =>
+  api.get<Reservation>(`/reservations/${code}`, { params: { phone } }).then(r => r.data);
 
-export const cancelReservation = (code: string) =>
-  api.patch(`/reservations/${code}/cancel`).then(r => r.data);
+export const cancelReservation = (code: string, phone: string) =>
+  api.patch(`/reservations/${code}/cancel`, null, { params: { phone } }).then(r => r.data);
 
 /**
  * Lấy danh sách đặt bàn của user (Page<ReservationResponse>).

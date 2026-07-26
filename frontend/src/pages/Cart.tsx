@@ -2,20 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Sparkles, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '../hooks/useCart';
+import { getCartItemImageUrl } from '../utils/imageHelpers';
 
 export default function Cart() {
   const navigate = useNavigate();
   const { cart, updateItem, removeItem, clearCart, loading } = useCart();
-
-  const getItemImage = (item: any) => {
-    if (item.imageUrl && item.imageUrl !== '/favicon.svg') return item.imageUrl;
-    if (item.itemType === 'COMBO') return '/images/combos/royal_tea_set.png';
-    const name = (item.productName || '').toLowerCase();
-    if (name.includes('matcha')) return '/images/products/matcha_cake.png';
-    if (name.includes('earl')) return '/images/products/earl_grey.png';
-    if (name.includes('sakura')) return '/images/products/sakura_tea.png';
-    return '/images/products/matcha_cake.png';
-  };
 
   if (loading) {
     return (
@@ -77,7 +68,7 @@ export default function Cart() {
             >
               <div className="flex items-center gap-4 w-full sm:w-auto">
                 <img 
-                  src={getItemImage(item)} 
+                  src={getCartItemImageUrl(item)} 
                   alt={item.productName || item.comboName || 'Item'} 
                   className="w-20 h-20 object-cover rounded-2xl bg-slate-100 dark:bg-slate-800 shadow-sm" 
                 />

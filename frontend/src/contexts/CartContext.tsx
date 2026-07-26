@@ -145,7 +145,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!token) return;
     try {
       const updated = await cartApi.updateCartItem(token, cartItemId, quantity);
-      setCart(updated);
+      setCart(mapCart(updated));
     } catch (e) {
       setCart(prev => {
         if (!prev) return null;
@@ -160,7 +160,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!token) return;
     try {
       const updated = await cartApi.removeCartItem(token, cartItemId);
-      setCart(updated);
+      setCart(mapCart(updated));
     } catch (e) {
       setCart(prev => {
         if (!prev) return null;

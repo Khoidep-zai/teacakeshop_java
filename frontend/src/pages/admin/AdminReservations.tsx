@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CalendarCheck, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { CalendarCheck, CheckCircle2, XCircle, Sparkles, Clock } from 'lucide-react';
 import { getAdminReservations, updateReservationStatus as updateApiResStatus } from '../../api/reservations';
 import type { Reservation } from '../../types';
 import toast from 'react-hot-toast';
@@ -117,6 +117,10 @@ export default function AdminReservations() {
                       ) : res.status === 'COMPLETED' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-500 border border-sky-500/20">
                           <CheckCircle2 size={12} /> Đã đón khách
+                        </span>
+                      ) : res.status === 'PENDING' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                          <Clock size={12} /> Đang chờ xác nhận
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/10 text-red-500 border border-red-500/20">

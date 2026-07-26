@@ -2,7 +2,9 @@ package com.example.teacakeshop.controller.publicapi;
 
 import com.example.teacakeshop.constant.WeatherType;
 import com.example.teacakeshop.dto.response.ComboResponse;
+import com.example.teacakeshop.dto.response.ProductSuggestionResponse;
 import com.example.teacakeshop.service.ComboService;
+import com.example.teacakeshop.service.ProductSuggestionService;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +15,14 @@ import java.util.List;
 public class PublicComboController {
 
     private final ComboService comboService;
+    private final ProductSuggestionService suggestionService;
 
-    public PublicComboController(ComboService comboService) {
+    public PublicComboController(
+            ComboService comboService,
+            ProductSuggestionService suggestionService
+    ) {
         this.comboService = comboService;
+        this.suggestionService = suggestionService;
     }
 
     @GetMapping
@@ -52,5 +59,17 @@ public class PublicComboController {
     @GetMapping("/{id}")
     public ComboResponse getById(@PathVariable Long id) {
         return comboService.getById(id);
+    }
+
+    /**
+     * Lấy danh sách sản phẩm gợi ý dựa trên
+     * các sản phẩm thành phần của combo.
+     * Không cần Access Token.
+     */
+    @GetMapping("/{id}/suggestions")
+    public List<ProductSuggestionResponse> getSuggestions(
+            @PathVariable Long id
+    ) {
+        return suggestionService.getPublicSuggestionsForCombo(id);
     }
 }

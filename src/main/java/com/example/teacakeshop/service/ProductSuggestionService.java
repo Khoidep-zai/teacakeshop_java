@@ -2,29 +2,37 @@ package com.example.teacakeshop.service;
 
 import com.example.teacakeshop.dto.request.ProductSuggestionRequest;
 import com.example.teacakeshop.dto.response.ProductSuggestionResponse;
+import com.example.teacakeshop.entity.Combo;
 import com.example.teacakeshop.entity.Product;
 import com.example.teacakeshop.entity.ProductSuggestion;
 import com.example.teacakeshop.exception.BadRequestException;
 import com.example.teacakeshop.exception.ResourceNotFoundException;
 import com.example.teacakeshop.repository.ProductSuggestionRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ProductSuggestionService {
 
     private final ProductSuggestionRepository suggestionRepository;
     private final ProductService productService;
+    private final ComboService comboService;
 
     public ProductSuggestionService(
             ProductSuggestionRepository suggestionRepository,
-            ProductService productService
+            ProductService productService,
+            @Lazy ComboService comboService
     ) {
         this.suggestionRepository = suggestionRepository;
         this.productService = productService;
+        this.comboService = comboService;
     }
 
     /*
@@ -52,6 +60,52 @@ public class ProductSuggestionService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /*
+     * API public:
+     * Gợi ý dựa trên các sản phẩm bên trong combo.
+     * Tổng hợp suggestion từ tất cả sản phẩm thành phần,
+     * loại trùng và giới hạn tối đa 6 kết quả.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductSuggestionResponse> getPublicSuggestionsForCombo(
+            Long comboId
+    ) {
+        Combo combo = comboService.findEntityById(comboId);
+
+        if (Boolean.FALSE.equals(combo.getActive())) {
+            throw new ResourceNotFoundException(
+                    "Không tìm thấy combo có ID " + comboId
+            );
+        }
+
+        Set<Long> seenSuggestedProductIds = new LinkedHashSet<>();
+        List<ProductSuggestionResponse> results = new ArrayList<>();
+
+        for (com.example.teacakeshop.entity.ComboItem comboItem : combo.getItems()) {
+            Long productId = comboItem.getProduct().getId();
+
+            List<ProductSuggestion> suggestions =
+                    suggestionRepository
+                            .findBySourceProduct_IdAndActiveTrueOrderByPriorityAscCreatedAtDesc(
+                                    productId
+                            );
+
+            for (ProductSuggestion suggestion : suggestions) {
+                Long suggestedId = suggestion.getSuggestedProduct().getId();
+
+                if (seenSuggestedProductIds.add(suggestedId) && results.size() < 6) {
+                    results.add(toResponse(suggestion));
+                }
+            }
+
+            if (results.size() >= 6) {
+                break;
+            }
+        }
+
+        return results;
     }
 
     /*

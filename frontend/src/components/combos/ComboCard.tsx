@@ -4,7 +4,7 @@ import { useCart } from '../../hooks/useCart';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { Combo } from '../../types';
-import { fallbackCombos } from '../../data/mockCatalog';
+import { getComboImageUrl } from '../../utils/imageHelpers';
 
 interface ComboCardProps {
   combo: Combo;
@@ -13,15 +13,6 @@ interface ComboCardProps {
 const ComboCard: React.FC<ComboCardProps> = ({ combo }) => {
   const { addItem } = useCart();
   const [adding, setAdding] = useState(false);
-
-  const getComboImage = () => {
-    if (combo.imageUrl && combo.imageUrl !== '/favicon.svg') return combo.imageUrl;
-    const found = fallbackCombos.find(c => c.id === combo.id);
-    if (found) return found.imageUrl;
-    if (combo.id === 2) return '/images/combos/combo_rainy.png';
-    if (combo.id === 3) return '/images/combos/combo_energy.png';
-    return '/images/combos/royal_tea_set.png';
-  };
 
   const getWeatherIcon = (weather?: string) => {
     switch (weather) {
@@ -65,7 +56,7 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo }) => {
         {/* Image Box */}
         <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4 shadow-sm">
           <img 
-            src={getComboImage()} 
+            src={getComboImageUrl(combo)} 
             alt={combo.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
           />

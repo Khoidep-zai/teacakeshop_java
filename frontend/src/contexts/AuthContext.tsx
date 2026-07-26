@@ -1,19 +1,19 @@
 import React, { createContext, useState, useEffect } from 'react';
 import type { UserProfile } from '../types';
-import { getMe } from '../api/auth';
+import { getMe, logout as logoutApi } from '../api/auth';
 
 export interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   login: (accessToken: string, refreshToken: string) => Promise<UserProfile | null>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   login: async () => null,
-  logout: () => {},
+  logout: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,7 +60,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Gọi backend để thu hồi token trước khi xóa local storage
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        await logoutApi({ accessToken: sessionStorage.getItem('accessToken') || '', refreshToken });
+      }
+    } catch {
+      // Bỏ qua lỗi — vẫn xóa token phía client dù backend thất bại
+    }
     sessionStorage.removeItem('accessToken');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');

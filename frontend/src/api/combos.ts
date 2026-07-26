@@ -6,6 +6,7 @@ export const getHotCombos = () => api.get<Combo[]>('/combos/hot').then(r => r.da
 export const getBestSellerCombos = () => api.get<Combo[]>('/combos/best-sellers').then(r => r.data);
 export const getNewestCombos = () => api.get<Combo[]>('/combos/newest').then(r => r.data);
 export const getCombosByWeather = (w: WeatherType) => api.get<Combo[]>(`/combos/weather/${w}`).then(r => r.data);
+export const getComboSuggestions = (id: number) => api.get<any[]>(`/combos/${id}/suggestions`).then(r => r.data);
 export const createCombo = (data: any) => api.post('/admin/combos', data).then(r => r.data);
 export const updateCombo = (id: number, data: any) => api.put(`/admin/combos/${id}`, data).then(r => r.data);
 export const deleteCombo = (id: number) => api.delete(`/admin/combos/${id}`);

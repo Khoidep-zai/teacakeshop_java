@@ -5,6 +5,7 @@ import { getCombo } from '../api/combos';
 import { useCart } from '../hooks/useCart';
 import type { Combo } from '../types';
 import { fallbackCombos } from '../data/mockCatalog';
+import { getComboImageUrl } from '../utils/imageHelpers';
 import toast from 'react-hot-toast';
 
 const ComboDetail: React.FC = () => {
@@ -88,7 +89,7 @@ const ComboDetail: React.FC = () => {
           {/* Image */}
           <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-xl border border-white/60 dark:border-slate-800">
             <img 
-              src={combo.imageUrl || '/images/combos/royal_tea_set.png'} 
+              src={getComboImageUrl(combo)} 
               alt={combo.name} 
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
             />

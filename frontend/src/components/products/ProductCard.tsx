@@ -4,7 +4,7 @@ import { useCart } from '../../hooks/useCart';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { Product } from '../../types';
-import { fallbackProducts } from '../../data/mockCatalog';
+import { getProductImageUrl } from '../../utils/imageHelpers';
 
 interface ProductCardProps {
   product: Product;
@@ -13,21 +13,6 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
   const [adding, setAdding] = useState(false);
-
-  // Match unique high-res image for each product ID
-  const getProductImage = () => {
-    if (product.imageUrl && product.imageUrl !== '/favicon.svg') return product.imageUrl;
-    const found = fallbackProducts.find(p => p.id === product.id);
-    if (found) return found.imageUrl;
-    const lower = product.name.toLowerCase();
-    if (lower.includes('matcha')) return '/images/products/matcha_cake.png';
-    if (lower.includes('earl')) return '/images/products/earl_grey.png';
-    if (lower.includes('sakura')) return '/images/products/sakura_tea.png';
-    if (lower.includes('oolong')) return '/images/products/oolong_tea.png';
-    if (lower.includes('truffle') || lower.includes('tart')) return '/images/products/truffle_tart.png';
-    if (lower.includes('jasmine') || lower.includes('nhài')) return '/images/products/jasmine_tea.png';
-    return '/images/products/matcha_cake.png';
-  };
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -62,7 +47,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       {/* Image Container */}
       <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4 shadow-sm">
         <img 
-          src={getProductImage()} 
+          src={getProductImageUrl(product)} 
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
         />

@@ -6,6 +6,7 @@ import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/products/ProductCard';
 import type { Product, ProductSuggestion } from '../types';
 import { fallbackProducts } from '../data/mockCatalog';
+import { getProductImageUrl } from '../utils/imageHelpers';
 import toast from 'react-hot-toast';
 
 const ProductDetail: React.FC = () => {
@@ -129,7 +130,7 @@ const ProductDetail: React.FC = () => {
           {/* Left Column: Image & Badges */}
           <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-xl border border-white/60 dark:border-slate-800">
             <img 
-              src={product.imageUrl || '/images/products/matcha_cake.png'} 
+              src={getProductImageUrl(product)} 
               alt={product.name}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
             />

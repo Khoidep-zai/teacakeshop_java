@@ -60,8 +60,8 @@ api.interceptors.response.use(
         isRefreshing = false;
       }
     }
-    const msg = error.response?.data?.message || 'Đã xảy ra lỗi';
-    if (error.response?.status !== 401) toast.error(msg);
+    // const msg = error.response?.data?.message || 'Đã xảy ra lỗi';
+    // if (error.response?.status !== 401) toast.error(msg);
     return Promise.reject(error);
   }
 );
