@@ -1,0 +1,169 @@
+1. Tài khoản và đăng nhập
+
+Hệ thống hỗ trợ đăng ký, đăng nhập, đăng xuất và duy trì phiên đăng nhập bằng access token và refresh token.
+
+Khách hàng khi đăng ký sẽ được tạo với vai trò khách hàng mặc định. Người dùng không được tự chọn vai trò quản trị hoặc nhân viên.
+
+Sau khi đăng nhập, frontend cần lưu thông tin người dùng và token để gửi kèm trong những thao tác cần xác thực.
+
+Khi access token hết hạn, frontend cần dùng refresh token để lấy token mới. Khi refresh token cũng hết hạn hoặc không hợp lệ, người dùng phải đăng nhập lại.
+
+Khi người dùng đăng xuất, token cũ không được tiếp tục sử dụng.
+
+Frontend phải ẩn hoặc hiện chức năng dựa theo vai trò, nhưng việc phân quyền thật sự vẫn do backend kiểm tra.
+2. Phân quyền
+
+Hệ thống có ba vai trò chính:
+
+CUSTOMER: khách hàng.
+STAFF: nhân viên.
+ADMIN: quản trị viên.
+
+Khách hàng chỉ được xem và thao tác trên dữ liệu của chính mình.
+
+Nhân viên được xử lý các nghiệp vụ vận hành như đơn hàng và đặt bàn, nhưng không mặc nhiên có toàn bộ quyền quản trị.
+
+Quản trị viên được quản lý toàn bộ hệ thống, bao gồm người dùng, sản phẩm, combo, khuyến mãi, báo cáo và cấu hình quản trị.
+
+Frontend không được xem việc ẩn nút là biện pháp bảo mật. Backend luôn là nơi quyết định người dùng có quyền thực hiện thao tác hay không.
+3. Danh mục sản phẩm
+
+Hệ thống cho phép tạo và quản lý các danh mục dùng để phân loại trà, bánh và các mặt hàng khác.
+
+Danh mục có thể được bật hoặc tắt hoạt động.
+
+Danh mục đang bị tắt không nên hiển thị trong khu vực mua hàng của khách.
+
+Khi chỉnh sửa hoặc xóa danh mục, frontend cần cảnh báo vì danh mục có thể đang được nhiều sản phẩm sử dụng.
+
+Danh mục được dùng để lọc và tổ chức sản phẩm trên giao diện.
+4. Sản phẩm
+
+Hệ thống hỗ trợ quản lý đầy đủ sản phẩm, bao gồm:
+
+Tên sản phẩm.
+Mô tả.
+Giá bán.
+Hình ảnh.
+Danh mục.
+Số lượng tồn kho.
+Số lượng đã bán.
+Trạng thái đang bán hoặc ngừng bán.
+Trạng thái nổi bật.
+Giá sau khuyến mãi.
+
+Khách hàng có thể xem danh sách, xem chi tiết, tìm kiếm, lọc theo danh mục và xem sản phẩm nổi bật.
+
+Sản phẩm hết hàng không được phép thêm vào giỏ.
+
+Sản phẩm đã ngừng bán không nên xuất hiện trên trang công khai.
+
+Frontend được phép hiển thị giá, nhưng giá cuối cùng và số lượng tồn kho phải luôn lấy từ backend.
+
+Frontend không được tự quyết định giá chính thức hoặc tự trừ tồn kho.
+5. Combo
+
+Combo là một nhóm gồm nhiều sản phẩm, trong đó mỗi sản phẩm có số lượng riêng.
+
+Hệ thống hỗ trợ:
+
+Tạo và chỉnh sửa combo.
+Chọn các sản phẩm trong combo.
+Đặt số lượng cho từng sản phẩm.
+Thiết lập giá combo.
+Thiết lập hình ảnh.
+Bật hoặc tắt combo.
+Thiết lập thời gian bắt đầu và kết thúc bán.
+Áp dụng khuyến mãi.
+Theo dõi số lượng đã bán.
+
+Khả năng bán combo phụ thuộc vào tồn kho của các sản phẩm bên trong.
+
+Nếu một sản phẩm thành phần không đủ hàng, backend có thể không cho phép mua combo.
+
+Frontend không được tự tính số lượng combo tối đa có thể mua. Backend sẽ kiểm tra tại thời điểm thêm giỏ và checkout.
+
+Combo ngoài thời gian bán hoặc đã bị tắt không được phép đặt mua.
+6. Gợi ý sản phẩm và combo
+
+Backend có chức năng cung cấp danh sách gợi ý để frontend hiển thị.
+
+Frontend có thể dùng dữ liệu gợi ý ở:
+
+Trang chủ.
+Trang chi tiết sản phẩm.
+Trang chi tiết combo.
+Giỏ hàng.
+Khu vực “Có thể bạn sẽ thích”.
+Khu vực “Mua kèm”.
+
+Frontend không cần tự xây thuật toán gợi ý mà chỉ hiển thị kết quả backend cung cấp.
+7. Khuyến mãi
+
+Hệ thống hỗ trợ chương trình giảm giá cho sản phẩm và combo.
+
+Mỗi chương trình có thể bao gồm:
+
+Mã chương trình.
+Tên chương trình.
+Nội dung mô tả.
+Kiểu giảm giá.
+Giá trị giảm.
+Thời gian bắt đầu.
+Thời gian kết thúc.
+Trạng thái hoạt động.
+Danh sách sản phẩm hoặc combo được áp dụng.
+
+Backend chịu trách nhiệm xác định chương trình có còn hiệu lực hay không và tính giá cuối cùng.
+
+Frontend có thể hiển thị:
+
+Giá gốc.
+Số tiền được giảm.
+Giá sau giảm.
+Tên chương trình.
+Nhãn khuyến mãi.
+
+Frontend không được tự áp dụng khuyến mãi làm giá chính thức.
+
+Khi checkout, backend sẽ tính lại toàn bộ giá và khuyến mãi để tránh dùng dữ liệu cũ.
+8. Giỏ hàng
+
+Hệ thống hỗ trợ giỏ hàng cho cả khách đã đăng nhập và khách chưa đăng nhập.
+
+Khách chưa đăng nhập sử dụng một mã giỏ hàng được lưu trên trình duyệt.
+
+Giỏ hàng có thể chứa hai loại mặt hàng:
+
+Sản phẩm.
+Combo.
+
+Người dùng có thể:
+
+Thêm mặt hàng.
+Tăng hoặc giảm số lượng.
+Cập nhật số lượng.
+Xóa từng dòng.
+Xóa toàn bộ giỏ.
+Xem tổng giá trị.
+Xem tổng giảm giá.
+Xem số tiền cuối cùng.
+
+Mỗi lần lấy lại giỏ hàng, backend có thể tính lại giá hiện tại và kiểm tra tồn kho.
+
+Frontend không được giữ giá cũ làm giá chính thức.
+
+Số lượng tối thiểu là một và không được vượt quá tồn kho thực tế.
+
+Khi checkout thành công, giỏ hàng sẽ được đóng hoặc làm rỗng theo xử lý của backend.
+9. Checkout và tạo đơn hàng
+
+Checkout là bước chuyển giỏ hàng thành đơn hàng.
+
+Backend sẽ thực hiện:
+
+Kiểm tra giỏ hàng.
+Kiểm tra sản phẩm còn hoạt động.
+Kiểm tra combo còn bán.
+Kiểm tra tồn kho.
+Tính lại giá
