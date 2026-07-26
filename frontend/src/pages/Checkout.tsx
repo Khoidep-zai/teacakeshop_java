@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Banknote, Landmark, Smartphone, ShieldCheck, Sparkles, Lock, MapPin, Clock, AlertCircle } from 'lucide-react';
+import { CreditCard, Banknote, Landmark, Smartphone, ShieldCheck, Sparkles, Lock, MapPin, Clock, AlertCircle, TicketPercent } from 'lucide-react';
 import { checkout } from '../api/orders';
+import { previewVoucher } from '../api/discounts';
 import { simulatePayment, cashOnDelivery } from '../api/payments';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
-import type { OrderType, Order } from '../types';
+import type { OrderType, Order, VoucherPreview } from '../types';
 
 // COD chỉ áp dụng cho đơn NORMAL (giao hàng tận nơi)
 const ALL_PAYMENT_METHODS = [
@@ -124,6 +125,9 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('MOMO_SIMULATION');
   const [pickupTime, setPickupTime] = useState('');
   const [loading, setLoading] = useState(false);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState<VoucherPreview | null>(null);
+  const [applyingVoucher, setApplyingVoucher] = useState(false);
 
   // Sau khi checkout xong, nếu cần cọc thì hiện màn hình cọc
   const [pendingDepositOrder, setPendingDepositOrder] = useState<Order | null>(null);
@@ -136,8 +140,29 @@ export default function Checkout() {
   // Nếu orderType thay đổi và COD đang được chọn nhưng không còn hợp lệ, reset
   const handleOrderTypeChange = (newType: OrderType) => {
     setOrderType(newType);
+    setAppliedVoucher(null);
     if (newType !== 'NORMAL' && paymentMethod === 'CASH_ON_DELIVERY') {
       setPaymentMethod('MOMO_SIMULATION');
+    }
+  };
+
+  const handleApplyVoucher = async () => {
+    const code = voucherCode.trim().toUpperCase();
+    if (!code) {
+      toast.error('Vui lòng nhập mã voucher.');
+      return;
+    }
+    setApplyingVoucher(true);
+    try {
+      const result = await previewVoucher(code, cart?.totalAmount ?? 0, orderType);
+      setVoucherCode(result.code);
+      setAppliedVoucher(result);
+      toast.success(`Áp dụng ${result.code} thành công.`);
+    } catch (err: any) {
+      setAppliedVoucher(null);
+      toast.error(err?.response?.data?.message || 'Voucher không hợp lệ.');
+    } finally {
+      setApplyingVoucher(false);
     }
   };
 
@@ -176,6 +201,7 @@ export default function Checkout() {
         shippingAddress: formData.shippingAddress.trim() || null,
         orderType,
         pickupTime: pickupTime || null,
+        voucherCode: voucherCode.trim() || null,
         note: formData.note.trim() || null,
       });
 
@@ -396,9 +422,41 @@ export default function Checkout() {
               ))}
             </div>
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="space-y-2 pb-3">
+                <label className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                  <TicketPercent size={15} className="text-primary" /> Mã voucher
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    value={voucherCode}
+                    onChange={event => {
+                      setVoucherCode(event.target.value.toUpperCase());
+                      setAppliedVoucher(null);
+                    }}
+                    className="input-field text-xs min-w-0"
+                    placeholder="Ví dụ: WELCOME10"
+                    maxLength={50}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleApplyVoucher()}
+                    disabled={applyingVoucher}
+                    className="btn-secondary px-3 text-xs whitespace-nowrap"
+                  >
+                    {applyingVoucher ? 'Đang kiểm tra' : 'Áp dụng'}
+                  </button>
+                </div>
+                {appliedVoucher && (
+                  <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 p-2 text-xs text-emerald-700 dark:text-emerald-300">
+                    <b>{appliedVoucher.code}</b> — giảm {appliedVoucher.discountAmount.toLocaleString('vi-VN')}₫
+                  </div>
+                )}
+              </div>
               <div className="flex justify-between text-lg font-black text-slate-900 dark:text-white">
                 <span>Tổng cộng:</span>
-                <span className="text-primary dark:text-primary-glow">{cart.totalAmount.toLocaleString('vi-VN')}₫</span>
+                <span className="text-primary dark:text-primary-glow">
+                  {(appliedVoucher?.finalAmount ?? cart.totalAmount).toLocaleString('vi-VN')}₫
+                </span>
               </div>
               {(orderType === 'RESERVATION_COMBO' || orderType === 'TAKEAWAY_PREORDER') && (
                 <div className="flex justify-between text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded-xl">

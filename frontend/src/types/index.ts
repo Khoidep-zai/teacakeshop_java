@@ -120,6 +120,9 @@ export interface Order {
   orderType: OrderType;
   status: OrderStatus;
   totalAmount: number;
+  voucherCode?: string;
+  voucherName?: string;
+  voucherDiscountAmount?: number;
   depositRequired?: boolean;
   depositAmount?: number;
   remainingAmount?: number;
@@ -202,8 +205,14 @@ export interface Discount {
   id: number; name: string; code: string; discountType: DiscountType;
   description?: string; discountScope: DiscountScope; discountValue: number;
   maximumDiscountAmount?: number; categoryId?: number; productId?: number;
+  codeRequired?: boolean; minimumOrderAmount?: number; requiredOrderType?: OrderType;
   comboId?: number; priority: number; startAt: string; endAt: string;
   active: boolean; currentlyEffective?: boolean;
+}
+export interface VoucherPreview {
+  campaignId: number; code: string; name: string; orderAmount: number;
+  discountAmount: number; finalAmount: number; minimumOrderAmount?: number;
+  requiredOrderType?: OrderType;
 }
 
 // ============================================================

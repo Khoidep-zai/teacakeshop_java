@@ -201,6 +201,9 @@ public class DiscountService {
                         )
                         .stream()
                         .filter(campaign ->
+                                !Boolean.TRUE.equals(campaign.getCodeRequired())
+                        )
+                        .filter(campaign ->
                                 appliesToProduct(
                                         campaign,
                                         product
@@ -228,6 +231,9 @@ public class DiscountService {
                         )
                         .stream()
                         .filter(campaign ->
+                                !Boolean.TRUE.equals(campaign.getCodeRequired())
+                        )
+                        .filter(campaign ->
                                 appliesToCombo(
                                         campaign,
                                         combo
@@ -252,6 +258,80 @@ public class DiscountService {
                 );
     }
 
+    @Transactional(readOnly = true)
+    public VoucherPreviewResponse previewVoucher(
+            String code,
+            BigDecimal orderAmount,
+            OrderType orderType
+    ) {
+        if (code == null || code.isBlank()) {
+            throw new BadRequestException("Vui lòng nhập mã voucher");
+        }
+        if (orderAmount == null
+                || orderAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Giá trị đơn hàng phải lớn hơn 0");
+        }
+        if (orderType == null) {
+            throw new BadRequestException("Vui lòng chọn loại đơn hàng");
+        }
+
+        DiscountCampaign campaign = campaignRepository
+                .findByCodeIgnoreCase(code.trim())
+                .orElseThrow(() -> new BadRequestException(
+                        "Mã voucher không tồn tại"
+                ));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (!Boolean.TRUE.equals(campaign.getActive())
+                || now.isBefore(campaign.getStartAt())
+                || now.isAfter(campaign.getEndAt())) {
+            throw new BadRequestException(
+                    "Mã voucher chưa có hiệu lực hoặc đã hết hạn"
+            );
+        }
+        if (!Boolean.TRUE.equals(campaign.getCodeRequired())) {
+            throw new BadRequestException(
+                    "Đây là chương trình giảm giá tự động, không phải voucher"
+            );
+        }
+        if (campaign.getMinimumOrderAmount() != null
+                && orderAmount.compareTo(
+                campaign.getMinimumOrderAmount()
+        ) < 0) {
+            throw new BadRequestException(
+                    "Đơn hàng phải đạt tối thiểu "
+                            + campaign.getMinimumOrderAmount()
+                                    .stripTrailingZeros().toPlainString()
+                            + "₫ để dùng voucher này"
+            );
+        }
+        if (campaign.getRequiredOrderType() != null
+                && campaign.getRequiredOrderType() != orderType) {
+            throw new BadRequestException(
+                    "Voucher này chỉ áp dụng cho loại đơn "
+                            + campaign.getRequiredOrderType()
+            );
+        }
+
+        BigDecimal discountAmount =
+                calculateDiscountAmount(orderAmount, campaign);
+        BigDecimal finalAmount = orderAmount
+                .subtract(discountAmount)
+                .max(BigDecimal.ZERO)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return new VoucherPreviewResponse(
+                campaign.getId(),
+                campaign.getCode(),
+                campaign.getName(),
+                orderAmount,
+                discountAmount,
+                finalAmount,
+                campaign.getMinimumOrderAmount(),
+                campaign.getRequiredOrderType()
+        );
+    }
+
     private void applyRequest(
             DiscountCampaign campaign,
             DiscountCampaignRequest request
@@ -268,6 +348,15 @@ public class DiscountService {
         );
         campaign.setMaximumDiscountAmount(
                 request.maximumDiscountAmount()
+        );
+        boolean codeRequired =
+                Boolean.TRUE.equals(request.codeRequired());
+        campaign.setCodeRequired(codeRequired);
+        campaign.setMinimumOrderAmount(
+                codeRequired ? request.minimumOrderAmount() : null
+        );
+        campaign.setRequiredOrderType(
+                codeRequired ? request.requiredOrderType() : null
         );
         campaign.setDiscountScope(
                 request.discountScope()
@@ -416,6 +505,13 @@ public class DiscountService {
                 && request.maximumDiscountAmount() != null) {
             throw new BadRequestException(
                     "Giảm số tiền cố định không cần mức giảm tối đa"
+            );
+        }
+
+        if (Boolean.TRUE.equals(request.codeRequired())
+                && request.discountScope() != DiscountScope.STORE) {
+            throw new BadRequestException(
+                    "Voucher nhập mã hiện chỉ hỗ trợ phạm vi toàn cửa hàng"
             );
         }
     }
@@ -607,6 +703,9 @@ public class DiscountService {
                 campaign.getDiscountType(),
                 campaign.getDiscountValue(),
                 campaign.getMaximumDiscountAmount(),
+                campaign.getCodeRequired(),
+                campaign.getMinimumOrderAmount(),
+                campaign.getRequiredOrderType(),
                 campaign.getDiscountScope(),
 
                 campaign.getCategory() == null

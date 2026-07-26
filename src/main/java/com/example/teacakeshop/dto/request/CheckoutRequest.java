@@ -39,6 +39,9 @@ public record CheckoutRequest(
 
         LocalDateTime pickupTime,
 
+        @Size(max = 50, message = "Mã voucher tối đa 50 ký tự")
+        String voucherCode,
+
         @Size(
                 max = 1000,
                 message = "Ghi chú tối đa 1000 ký tự"

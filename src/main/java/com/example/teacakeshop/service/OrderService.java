@@ -10,6 +10,7 @@ import com.example.teacakeshop.dto.response.DiscountPriceResponse;
 import com.example.teacakeshop.dto.response.OrderItemResponse;
 import com.example.teacakeshop.dto.response.OrderResponse;
 import com.example.teacakeshop.dto.response.OrderSummaryResponse;
+import com.example.teacakeshop.dto.response.VoucherPreviewResponse;
 import com.example.teacakeshop.entity.Cart;
 import com.example.teacakeshop.entity.CartItem;
 import com.example.teacakeshop.entity.Combo;
@@ -226,6 +227,17 @@ public class OrderService {
                 productsById
         );
 
+        VoucherPreviewResponse voucher = null;
+        if (request.voucherCode() != null
+                && !request.voucherCode().isBlank()) {
+            voucher = discountService.previewVoucher(
+                    request.voucherCode(),
+                    totalAmount,
+                    request.orderType()
+            );
+            totalAmount = voucher.finalAmount();
+        }
+
         boolean depositRequired =
                 request.orderType()
                         == OrderType.TAKEAWAY_PREORDER
@@ -301,6 +313,14 @@ public class OrderService {
         order.setTotalAmount(
                 totalAmount
         );
+
+        if (voucher != null) {
+            order.setVoucherCode(voucher.code());
+            order.setVoucherName(voucher.name());
+            order.setVoucherDiscountAmount(
+                    voucher.discountAmount()
+            );
+        }
 
         order.setDepositRequired(
                 depositRequired
@@ -1352,6 +1372,9 @@ public class OrderService {
                 order.getOrderType(),
                 order.getStatus(),
                 order.getTotalAmount(),
+                order.getVoucherCode(),
+                order.getVoucherName(),
+                order.getVoucherDiscountAmount(),
                 order.getDepositRequired(),
                 order.getDepositAmount(),
                 order.getRemainingAmount(),

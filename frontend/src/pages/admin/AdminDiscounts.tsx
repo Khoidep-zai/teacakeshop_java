@@ -10,6 +10,7 @@ import type { Category, Combo, Discount, DiscountScope, Product } from '../../ty
 const emptyDiscount = (): Partial<Discount> => ({
   code: '', name: '', description: '', discountType: 'PERCENTAGE',
   discountValue: 10, discountScope: 'STORE', priority: 0, active: true,
+  codeRequired: false,
   startAt: new Date().toISOString().slice(0, 16),
   endAt: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16),
 });
@@ -90,7 +91,7 @@ export default function AdminDiscounts() {
         {discounts.map(discount => <tr key={discount.id} className="border-b last:border-0">
           <td className="p-4"><b>{discount.code}</b><div>{discount.name}</div></td>
           <td>{discount.discountType === 'PERCENTAGE' ? `${discount.discountValue}%` : `${discount.discountValue.toLocaleString('vi-VN')}₫`}</td>
-          <td>{discount.discountScope}</td>
+          <td>{discount.codeRequired ? 'VOUCHER' : discount.discountScope}</td>
           <td>{new Date(discount.startAt).toLocaleString('vi-VN')}<br />→ {new Date(discount.endAt).toLocaleString('vi-VN')}</td>
           <td>{discount.currentlyEffective ? 'Đang áp dụng' : discount.active ? 'Chưa/đã hết hạn' : 'Đã tắt'}</td>
           <td className="text-right pr-4"><button className="p-2" onClick={() => setEditing({
@@ -126,6 +127,27 @@ export default function AdminDiscounts() {
           onChange={e => setScope(e.target.value as DiscountScope)}>
           <option value="STORE">Toàn cửa hàng</option><option value="CATEGORY">Danh mục</option>
           <option value="PRODUCT">Sản phẩm</option><option value="COMBO">Combo</option></select></label>
+        <label className="flex gap-2 font-bold">
+          <input type="checkbox" checked={editing.codeRequired ?? false}
+            onChange={e => setEditing({ ...editing, codeRequired: e.target.checked })} />
+          Khách phải nhập mã voucher
+        </label>
+        {editing.codeRequired && <div className="grid md:grid-cols-2 gap-4">
+          <label className="text-xs font-bold">Giá trị đơn tối thiểu
+            <input type="number" min="0" className="input-field mt-1"
+              value={editing.minimumOrderAmount ?? ''}
+              onChange={e => setEditing({ ...editing, minimumOrderAmount: e.target.value ? Number(e.target.value) : undefined })} />
+          </label>
+          <label className="text-xs font-bold">Loại đơn bắt buộc
+            <select className="input-field mt-1" value={editing.requiredOrderType || ''}
+              onChange={e => setEditing({ ...editing, requiredOrderType: (e.target.value || undefined) as any })}>
+              <option value="">Mọi loại đơn</option>
+              <option value="NORMAL">Giao hàng</option>
+              <option value="TAKEAWAY_PREORDER">Đặt trước tự lấy</option>
+              <option value="RESERVATION_COMBO">Combo đặt bàn</option>
+            </select>
+          </label>
+        </div>}
         {editing.discountScope === 'CATEGORY' && <select required className="input-field" value={editing.categoryId || ''}
           onChange={e => setEditing({ ...editing, categoryId: Number(e.target.value) })}><option value="">Chọn danh mục</option>
           {categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>}

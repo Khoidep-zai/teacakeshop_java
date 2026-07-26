@@ -27,6 +27,12 @@ public record OrderResponse(
 
         BigDecimal totalAmount,
 
+        String voucherCode,
+
+        String voucherName,
+
+        BigDecimal voucherDiscountAmount,
+
         Boolean depositRequired,
 
         BigDecimal depositAmount,

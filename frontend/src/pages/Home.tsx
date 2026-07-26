@@ -145,8 +145,8 @@ const Home: React.FC = () => {
       {discounts.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <h2 className="section-title mb-5">Khuyến Mãi Đang Áp Dụng</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {discounts.slice(0, 3).map(discount => (
+          <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4">
+            {discounts.slice(0, 5).map(discount => (
               <div key={discount.id} className="glass-card p-5">
                 <p className="font-mono text-xs font-bold text-accent">{discount.code}</p>
                 <h3 className="font-bold text-lg mt-1">{discount.name}</h3>
@@ -155,6 +155,13 @@ const Home: React.FC = () => {
                     ? `Giảm ${discount.discountValue}%`
                     : `Giảm ${discount.discountValue.toLocaleString('vi-VN')}₫`}
                 </p>
+                {discount.codeRequired && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Đơn tối thiểu {(discount.minimumOrderAmount ?? 0).toLocaleString('vi-VN')}₫
+                    {discount.requiredOrderType === 'TAKEAWAY_PREORDER' && ' · Đặt trước tự lấy'}
+                    {discount.requiredOrderType === 'RESERVATION_COMBO' && ' · Combo đặt bàn'}
+                  </p>
+                )}
                 <p className="text-[11px] text-slate-400 mt-2">
                   Đến {new Date(discount.endAt).toLocaleString('vi-VN')}
                 </p>

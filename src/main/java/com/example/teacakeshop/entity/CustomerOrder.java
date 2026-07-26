@@ -103,6 +103,20 @@ public class CustomerOrder {
     )
     private BigDecimal totalAmount;
 
+    @Column(name = "voucher_code", length = 50)
+    private String voucherCode;
+
+    @Column(name = "voucher_name", length = 150)
+    private String voucherName;
+
+    @Column(
+            name = "voucher_discount_amount",
+            nullable = false,
+            precision = 12,
+            scale = 2
+    )
+    private BigDecimal voucherDiscountAmount;
+
     /*
      * true với đơn TAKEAWAY_PREORDER.
      */
@@ -190,6 +204,10 @@ public class CustomerOrder {
         if (totalAmount == null) {
             totalAmount = BigDecimal.ZERO;
         }
+
+        if (voucherDiscountAmount == null) {
+            voucherDiscountAmount = BigDecimal.ZERO;
+        }
     }
 
     @PreUpdate
@@ -249,6 +267,18 @@ public class CustomerOrder {
 
     public BigDecimal getTotalAmount() {
         return totalAmount;
+    }
+
+    public String getVoucherCode() {
+        return voucherCode;
+    }
+
+    public String getVoucherName() {
+        return voucherName;
+    }
+
+    public BigDecimal getVoucherDiscountAmount() {
+        return voucherDiscountAmount;
     }
 
     public Boolean getDepositRequired() {
@@ -341,6 +371,20 @@ public class CustomerOrder {
             BigDecimal totalAmount
     ) {
         this.totalAmount = totalAmount;
+    }
+
+    public void setVoucherCode(String voucherCode) {
+        this.voucherCode = voucherCode;
+    }
+
+    public void setVoucherName(String voucherName) {
+        this.voucherName = voucherName;
+    }
+
+    public void setVoucherDiscountAmount(
+            BigDecimal voucherDiscountAmount
+    ) {
+        this.voucherDiscountAmount = voucherDiscountAmount;
     }
 
     public void setDepositRequired(

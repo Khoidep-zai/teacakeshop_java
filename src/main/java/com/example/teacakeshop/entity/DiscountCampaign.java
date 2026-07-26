@@ -2,6 +2,7 @@ package com.example.teacakeshop.entity;
 
 import com.example.teacakeshop.constant.DiscountScope;
 import com.example.teacakeshop.constant.DiscountType;
+import com.example.teacakeshop.constant.OrderType;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -82,6 +83,16 @@ public class DiscountCampaign {
             scale = 2
     )
     private BigDecimal maximumDiscountAmount;
+
+    @Column(name = "code_required", nullable = false)
+    private Boolean codeRequired;
+
+    @Column(name = "minimum_order_amount", precision = 12, scale = 2)
+    private BigDecimal minimumOrderAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "required_order_type", length = 30)
+    private OrderType requiredOrderType;
 
     @Enumerated(EnumType.STRING)
     @Column(
@@ -173,6 +184,10 @@ public class DiscountCampaign {
         if (active == null) {
             active = true;
         }
+
+        if (codeRequired == null) {
+            codeRequired = false;
+        }
     }
 
     @PreUpdate
@@ -209,6 +224,18 @@ public class DiscountCampaign {
 
     public BigDecimal getMaximumDiscountAmount() {
         return maximumDiscountAmount;
+    }
+
+    public Boolean getCodeRequired() {
+        return codeRequired;
+    }
+
+    public BigDecimal getMinimumOrderAmount() {
+        return minimumOrderAmount;
+    }
+
+    public OrderType getRequiredOrderType() {
+        return requiredOrderType;
     }
 
     public DiscountScope getDiscountScope() {
@@ -280,6 +307,18 @@ public class DiscountCampaign {
     ) {
         this.maximumDiscountAmount =
                 maximumDiscountAmount;
+    }
+
+    public void setCodeRequired(Boolean codeRequired) {
+        this.codeRequired = codeRequired;
+    }
+
+    public void setMinimumOrderAmount(BigDecimal minimumOrderAmount) {
+        this.minimumOrderAmount = minimumOrderAmount;
+    }
+
+    public void setRequiredOrderType(OrderType requiredOrderType) {
+        this.requiredOrderType = requiredOrderType;
     }
 
     public void setDiscountScope(

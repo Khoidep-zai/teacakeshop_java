@@ -5,6 +5,8 @@ import com.example.teacakeshop.service.DiscountService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.math.BigDecimal;
+import com.example.teacakeshop.constant.OrderType;
 
 @RestController
 @RequestMapping("/api/discounts")
@@ -38,5 +40,18 @@ public class PublicDiscountController {
     ) {
         return discountService
                 .calculateComboPrice(comboId);
+    }
+
+    @GetMapping("/vouchers/{code}/preview")
+    public VoucherPreviewResponse previewVoucher(
+            @PathVariable String code,
+            @RequestParam BigDecimal orderAmount,
+            @RequestParam OrderType orderType
+    ) {
+        return discountService.previewVoucher(
+                code,
+                orderAmount,
+                orderType
+        );
     }
 }

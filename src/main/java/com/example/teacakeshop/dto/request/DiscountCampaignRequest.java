@@ -2,6 +2,7 @@ package com.example.teacakeshop.dto.request;
 
 import com.example.teacakeshop.constant.DiscountScope;
 import com.example.teacakeshop.constant.DiscountType;
+import com.example.teacakeshop.constant.OrderType;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -44,6 +45,13 @@ public record DiscountCampaignRequest(
                 message = "Mức giảm tối đa phải lớn hơn 0"
         )
         BigDecimal maximumDiscountAmount,
+
+        Boolean codeRequired,
+
+        @PositiveOrZero(message = "Giá trị đơn tối thiểu không được âm")
+        BigDecimal minimumOrderAmount,
+
+        OrderType requiredOrderType,
 
         @NotNull(message = "Phạm vi giảm giá không được để trống")
         DiscountScope discountScope,
