@@ -1,12 +1,15 @@
 package com.example.teacakeshop.controller.admin;
 
 import com.example.teacakeshop.constant.ReservationStatus;
+import com.example.teacakeshop.dto.request.ReservationBookingControlRequest;
 import com.example.teacakeshop.dto.request.ReservationStatusUpdateRequest;
 import com.example.teacakeshop.dto.response.*;
+import com.example.teacakeshop.service.ReservationBookingControlService;
 import com.example.teacakeshop.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -19,10 +22,34 @@ public class AdminReservationController {
 
     private final ReservationService reservationService;
 
+    private final ReservationBookingControlService
+            reservationBookingControlService;
+
     public AdminReservationController(
-            ReservationService reservationService
+            ReservationService reservationService,
+            ReservationBookingControlService
+                    reservationBookingControlService
     ) {
         this.reservationService = reservationService;
+        this.reservationBookingControlService =
+                reservationBookingControlService;
+    }
+
+    @GetMapping("/booking-control")
+    public ReservationBookingControlResponse getBookingControl() {
+        return reservationBookingControlService.getStatus();
+    }
+
+    @PatchMapping("/booking-control")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ReservationBookingControlResponse updateBookingControl(
+            @Valid
+            @RequestBody
+            ReservationBookingControlRequest request
+    ) {
+        return reservationBookingControlService.updateStatus(
+                request.acceptingReservations()
+        );
     }
 
     @GetMapping

@@ -169,6 +169,11 @@ export interface InventoryAdjustment {
 // RESERVATION
 // ============================================================
 export type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'SEATED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+export interface ReservationBookingControl {
+  acceptingReservations: boolean;
+  message: string;
+  updatedAt: string;
+}
 /**
  * Khớp chính xác với backend ReservationResponse.
  * BE trả reservationTime là ISO LocalDateTime (yyyy-MM-ddTHH:mm:ss).

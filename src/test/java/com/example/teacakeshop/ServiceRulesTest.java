@@ -154,7 +154,8 @@ class ServiceRulesTest {
                 reservationRepository,
                 mock(OrderService.class),
                 paymentRepository,
-                mock(com.example.teacakeshop.repository.UserAccountRepository.class)
+                mock(com.example.teacakeshop.repository.UserAccountRepository.class),
+                mock(ReservationBookingControlService.class)
         );
 
         assertThrows(

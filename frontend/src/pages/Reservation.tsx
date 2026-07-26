@@ -18,6 +18,7 @@ export default function Reservation() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [reservationCode, setReservationCode] = useState('');
+  const [reservationError, setReservationError] = useState('');
   const [selectedZone, setSelectedZone] = useState<'chill' | 'balcony' | 'vip'>('chill');
 
   const [formData, setFormData] = useState({
@@ -36,6 +37,7 @@ export default function Reservation() {
 
   const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();
+    setReservationError('');
     setLoading(true);
     try {
       // BE expect: reservationTime (ISO LocalDateTime) + numberOfPeople
@@ -47,13 +49,16 @@ export default function Reservation() {
       }
       setStep(2);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể kiểm tra chỗ trống.');
+      const message = error?.response?.data?.message || 'Không thể kiểm tra chỗ trống.';
+      setReservationError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleConfirm = async () => {
+    setReservationError('');
     setLoading(true);
     try {
       // BE expect: reservationTime (ISO LocalDateTime), numberOfPeople (không phải partySize)
@@ -73,6 +78,7 @@ export default function Reservation() {
       setStep(3);
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Không thể kết nối server. Vui lòng thử lại.';
+      setReservationError(message);
       toast.error(`Đặt bàn thất bại: ${message}`);
     } finally {
       setLoading(false);
@@ -117,6 +123,23 @@ export default function Reservation() {
         <div className={`flex-1 h-1 mx-2 rounded-full transition-all ${step >= 3 ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-800'}`} />
         <div className={`flex items-center justify-center w-10 h-10 rounded-2xl font-black text-sm transition-all ${step >= 3 ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>3</div>
       </div>
+
+      {reservationError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-3 rounded-2xl border border-red-300 bg-red-50 px-5 py-4 text-red-800 shadow-sm dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-extrabold">
+              Rất tiếc, hiện chưa thể nhận đặt bàn
+            </p>
+            <p className="mt-1 text-sm leading-relaxed">
+              {reservationError}
+            </p>
+          </div>
+        </div>
+      )}
 
       {step === 1 && (
         <div className="glass-card p-6 sm:p-10 space-y-8">

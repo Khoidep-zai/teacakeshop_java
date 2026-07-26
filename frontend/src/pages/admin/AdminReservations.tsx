@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
-import { CalendarCheck, CheckCircle2, XCircle, Sparkles, Clock, Search } from 'lucide-react';
-import { getAdminReservation, getAdminReservations, updateReservationStatus as updateApiResStatus } from '../../api/reservations';
+import { CalendarCheck, CheckCircle2, XCircle, Sparkles, Clock, Search, Ban, DoorOpen } from 'lucide-react';
+import {
+  getAdminReservation,
+  getAdminReservationBookingControl,
+  getAdminReservations,
+  updateAdminReservationBookingControl,
+  updateReservationStatus as updateApiResStatus
+} from '../../api/reservations';
 import { getAdminPaymentSummary } from '../../api/payments';
-import type { OrderPaymentSummary, Reservation } from '../../types';
+import type { OrderPaymentSummary, Reservation, ReservationBookingControl } from '../../types';
+import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 
 const RESERVATION_STATUS_LABELS: Record<Reservation['status'], string> = {
@@ -15,6 +22,7 @@ const RESERVATION_STATUS_LABELS: Record<Reservation['status'], string> = {
 };
 
 export default function AdminReservations() {
+  const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -25,6 +33,10 @@ export default function AdminReservations() {
   const [detail, setDetail] = useState<Reservation | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<OrderPaymentSummary | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [bookingControl, setBookingControl] =
+    useState<ReservationBookingControl | null>(null);
+  const [updatingBookingControl, setUpdatingBookingControl] =
+    useState(false);
 
   const fetchReservations = async () => {
     setLoading(true);
@@ -55,6 +67,53 @@ export default function AdminReservations() {
   useEffect(() => {
     fetchReservations();
   }, []);
+
+  useEffect(() => {
+    if (user?.role !== 'ADMIN') return;
+
+    getAdminReservationBookingControl()
+      .then(setBookingControl)
+      .catch((err: any) => {
+        toast.error(
+          err?.response?.data?.message
+          || 'Không thể tải trạng thái nhận đặt bàn'
+        );
+      });
+  }, [user?.role]);
+
+  const handleToggleBookingControl = async () => {
+    if (user?.role !== 'ADMIN' || !bookingControl) return;
+
+    const isStopping = bookingControl.acceptingReservations;
+    if (
+      isStopping
+      && !window.confirm(
+        'Dừng nhận đặt bàn ngay bây giờ? Khách hàng sẽ không thể gửi yêu cầu đặt bàn mới.'
+      )
+    ) {
+      return;
+    }
+
+    setUpdatingBookingControl(true);
+    try {
+      const updated = await updateAdminReservationBookingControl(
+        !bookingControl.acceptingReservations
+      );
+      setBookingControl(updated);
+      toast.success(
+        updated.acceptingReservations
+          ? 'Đã mở lại chức năng đặt bàn cho khách hàng.'
+          : 'Đã dừng nhận đặt bàn. Khách hàng sẽ nhận thông báo hết bàn.'
+      );
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message
+        || 'Không thể cập nhật trạng thái nhận đặt bàn'
+      );
+    } finally {
+      setUpdatingBookingControl(false);
+    }
+  };
 
   const handleStatusChange = async (resId: number, status: Reservation['status']) => {
     setUpdatingId(resId);
@@ -125,7 +184,47 @@ export default function AdminReservations() {
         <input type="time" className="input-field w-36" value={fromTime} onChange={e => setFromTime(e.target.value)} title="Từ giờ" />
         <input type="time" className="input-field w-36" value={toTime} onChange={e => setToTime(e.target.value)} title="Đến giờ" />
         <button className="btn-primary text-xs px-4" onClick={() => void fetchReservations()}>Áp dụng</button>
+        {user?.role === 'ADMIN' && bookingControl && (
+          <button
+            type="button"
+            onClick={() => void handleToggleBookingControl()}
+            disabled={updatingBookingControl}
+            className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-extrabold text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
+              bookingControl.acceptingReservations
+                ? 'bg-red-600 hover:bg-red-700 shadow-red-500/25'
+                : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/25'
+            }`}
+          >
+            {bookingControl.acceptingReservations
+              ? <Ban className="w-4 h-4" />
+              : <DoorOpen className="w-4 h-4" />}
+            {updatingBookingControl
+              ? 'Đang cập nhật...'
+              : bookingControl.acceptingReservations
+                ? 'Dừng đặt bàn'
+                : 'Mở đặt bàn'}
+          </button>
+        )}
       </div>
+
+      {user?.role === 'ADMIN'
+        && bookingControl
+        && !bookingControl.acceptingReservations && (
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-2xl border border-red-300 bg-red-50 px-5 py-4 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+          >
+            <Ban className="mt-0.5 h-5 w-5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-extrabold">
+                Hệ thống đang dừng nhận đặt bàn
+              </p>
+              <p className="mt-1 text-xs leading-relaxed">
+                {bookingControl.message}
+              </p>
+            </div>
+          </div>
+        )}
 
       {/* Reservations Table */}
       <div className="glass-card overflow-hidden">

@@ -2,7 +2,9 @@ package com.example.teacakeshop.controller.publicapi;
 
 import com.example.teacakeshop.dto.request.ReservationRequest;
 import com.example.teacakeshop.dto.response.ReservationAvailabilityResponse;
+import com.example.teacakeshop.dto.response.ReservationBookingControlResponse;
 import com.example.teacakeshop.dto.response.ReservationResponse;
+import com.example.teacakeshop.service.ReservationBookingControlService;
 import com.example.teacakeshop.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,11 +20,24 @@ public class PublicReservationController {
 
     private final ReservationService reservationService;
 
+    private final ReservationBookingControlService
+            reservationBookingControlService;
+
     public PublicReservationController(
-            ReservationService reservationService
+            ReservationService reservationService,
+            ReservationBookingControlService
+                    reservationBookingControlService
     ) {
         this.reservationService =
                 reservationService;
+
+        this.reservationBookingControlService =
+                reservationBookingControlService;
+    }
+
+    @GetMapping("/booking-control")
+    public ReservationBookingControlResponse getBookingControl() {
+        return reservationBookingControlService.getStatus();
     }
 
     /*

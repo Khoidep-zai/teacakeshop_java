@@ -1,29 +1,49 @@
 # =========================
-# GIAI ĐOẠN 1: BUILD
+# STAGE 1: BUILD FRONTEND
 # =========================
 
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM node:22-alpine AS frontend-build
+
+WORKDIR /frontend
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+
+# =========================
+# STAGE 2: BUILD BACKEND
+# =========================
+
+FROM maven:3.9-eclipse-temurin-21 AS backend-build
 
 WORKDIR /app
 
-COPY pom.xml .
-
+COPY pom.xml ./
 RUN mvn dependency:go-offline -B
 
 COPY src ./src
+COPY --from=frontend-build /frontend/dist ./frontend/dist
 
-RUN mvn clean package -DskipTests
+# Maven copies frontend/dist into src/main/resources/static
+RUN mvn clean package -DskipTests -B
 
 
 # =========================
-# GIAI ĐOẠN 2: RUN
+# STAGE 3: RUN APPLICATION
 # =========================
 
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-COPY --from=build /app/target/*.jar app.jar
+RUN useradd --system --uid 10001 appuser
+
+COPY --from=backend-build /app/target/*.jar app.jar
+
+USER appuser
 
 EXPOSE 8080
 

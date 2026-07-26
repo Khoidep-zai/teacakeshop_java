@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Reservation, Page } from '../types';
+import type { Reservation, ReservationBookingControl, Page } from '../types';
 
 /**
  * Kiểm tra khung giờ còn chỗ.
@@ -10,6 +10,9 @@ export const checkAvailability = (reservationTime: string, numberOfPeople: numbe
 
 export const createReservation = (data: any) =>
   api.post<Reservation>('/reservations', data).then(r => r.data);
+
+export const getReservationBookingControl = () =>
+  api.get<ReservationBookingControl>('/reservations/booking-control').then(r => r.data);
 
 // BE bắt buộc ?phone= để xác thực danh tính khách
 export const getReservation = (code: string, phone: string) =>
@@ -35,6 +38,15 @@ export const getAdminReservations = (params?: any) =>
   api.get('/admin/reservations', { params }).then(r => r.data);
 export const getAdminReservation = (id: number) =>
   api.get<Reservation>(`/admin/reservations/${id}`).then(r => r.data);
+
+export const getAdminReservationBookingControl = () =>
+  api.get<ReservationBookingControl>('/admin/reservations/booking-control').then(r => r.data);
+
+export const updateAdminReservationBookingControl = (acceptingReservations: boolean) =>
+  api.patch<ReservationBookingControl>(
+    '/admin/reservations/booking-control',
+    { acceptingReservations }
+  ).then(r => r.data);
 
 export const updateReservationStatus = (id: number, status: string) =>
   api.patch(`/admin/reservations/${id}/status`, { status }).then(r => r.data);

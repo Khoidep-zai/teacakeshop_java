@@ -74,11 +74,16 @@ public class ReservationService {
 
     private final UserAccountRepository userAccountRepository;
 
+    private final ReservationBookingControlService
+            reservationBookingControlService;
+
     public ReservationService(
             ReservationRepository reservationRepository,
             OrderService orderService,
             PaymentRepository paymentRepository,
-            UserAccountRepository userAccountRepository
+            UserAccountRepository userAccountRepository,
+            ReservationBookingControlService
+                    reservationBookingControlService
     ) {
         this.reservationRepository =
                 reservationRepository;
@@ -91,6 +96,9 @@ public class ReservationService {
 
         this.userAccountRepository =
                 userAccountRepository;
+
+        this.reservationBookingControlService =
+                reservationBookingControlService;
     }
 
     /*
@@ -145,6 +153,13 @@ public class ReservationService {
             ReservationRequest request,
             String authenticatedEmail
     ) {
+        /*
+         * Luôn kiểm tra ở backend để khách không thể bỏ qua trạng thái
+         * dừng nhận bàn bằng cách gọi API trực tiếp.
+         */
+        reservationBookingControlService
+                .ensureReservationsAreOpen();
+
         validateReservationTime(
                 request.reservationTime()
         );

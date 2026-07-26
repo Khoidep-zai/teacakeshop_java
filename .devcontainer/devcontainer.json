@@ -1,0 +1,31 @@
+{
+  "name": "Tea & Cake Shop - Java 21, React, MySQL",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [
+    8080
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "Tea & Cake Shop",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "secrets": {
+    "MYSQL_ROOT_PASSWORD": {
+      "description": "Mật khẩu root MySQL dùng riêng cho Codespace"
+    },
+    "JWT_SECRET": {
+      "description": "Chuỗi Base64 giải mã được ít nhất 32 bytes"
+    },
+    "ADMIN_PASSWORD": {
+      "description": "Mật khẩu tài khoản admin được tạo lần đầu"
+    },
+    "STAFF_PASSWORD": {
+      "description": "Mật khẩu tài khoản staff được tạo lần đầu"
+    }
+  },
+  "postCreateCommand": "docker compose config --quiet"
+}

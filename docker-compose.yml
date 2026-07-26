@@ -1,50 +1,55 @@
 services:
-
   mysql:
     image: mysql:8.4
-    container_name: tea-cake-shop-mysql
     restart: unless-stopped
-
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-
-    ports:
-      - "3307:3306"
-
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-tea_cake_shop}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in Codespaces secrets or .env}
     volumes:
       - tea_cake_shop_mysql_data:/var/lib/mysql
-
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "mysqladmin ping -h localhost -uroot -p${MYSQL_ROOT_PASSWORD} --silent"
+          "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
         ]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 15
       start_period: 30s
-
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-
-    container_name: tea-cake-shop-backend
     restart: unless-stopped
-
-    env_file:
-      - .env
-
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-tea_cake_shop}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in Codespaces secrets or .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in Codespaces secrets or .env}
+      JWT_ISSUER: ${JWT_ISSUER:-tea-cake-shop}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-900}
+      REFRESH_TOKEN_EXPIRATION_SECONDS: ${REFRESH_TOKEN_EXPIRATION_SECONDS:-2592000}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      ADMIN_FULL_NAME: ${ADMIN_FULL_NAME:-Admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@teacakeshop.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in Codespaces secrets or .env}
+      ADMIN_PHONE: ${ADMIN_PHONE:-0900000000}
+      STAFF_FULL_NAME: ${STAFF_FULL_NAME:-Staff}
+      STAFF_EMAIL: ${STAFF_EMAIL:-staff@teacakeshop.com}
+      STAFF_PASSWORD: ${STAFF_PASSWORD:?Set STAFF_PASSWORD in Codespaces secrets or .env}
+      STAFF_PHONE: ${STAFF_PHONE:-0900000001}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      SERVER_PORT: 8080
     ports:
-      - "${SERVER_PORT:-8080}:8080"
-
+      - "8080:8080"
     depends_on:
       mysql:
         condition: service_healthy
-
 
 volumes:
   tea_cake_shop_mysql_data:
