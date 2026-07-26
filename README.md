@@ -121,9 +121,64 @@ graph TD
 - 📁 **Quản lý Danh mục (`/admin/categories`)**: CRUD danh mục bánh trà.
 - 🍱 **Quản lý Set Combo (`/admin/combos`)**: CRUD gói combo phối vị.
 - 🎟️ **Quản lý Mã Khuyến Mãi (`/admin/discounts`)**: Tạo voucher giảm giá, thiết hạn sử dụng, sửa lỗi trắng trang.
-- 📋 **Quản lý Đơn hàng (`/admin/orders`)**: Cập nhật trạng thái đơn (`PENDING` ➔ `CONFIRMED` ➔ `SHIPPING` ➔ `COMPLETED`), tự động đồng bộ về phía Khách hàng.
+- 📋 **Quản lý Đơn hàng (`/admin/orders`)**: Cập nhật trạng thái đơn (`PENDING` ➔ `CONFIRMED` ➔ `PREPARING` ➔ `COMPLETED`), tự động đồng bộ về phía Khách hàng.
 - 📅 **Quản lý Đặt bàn (`/admin/reservations`)**: Duyệt và cập nhật lịch đặt bàn.
 - 👥 **Quản lý Thành viên (`/admin/users`)**: Xem danh sách người dùng đăng ký mới, phân quyền `ADMIN` / `CUSTOMER`.
+
+---
+
+## 🧠 5. 🧠 THUẬT TOÁN HỆ THỐNG & ĐỒNG BỘ NGHỆ AN VẬN HÀNH
+
+Hệ thống **Tea & Cake Shop 2026** được xây dựng trên nền tảng các thuật toán kinh doanh thông minh và sự đồng bộ chặt chẽ 3 lớp **Frontend (React) ↔ Backend (Spring Boot) ↔ Database (MySQL)**.
+
+### 🎭 1. Ma Trận Phân Quyền & Đồng Bộ Vai Trò (User, Staff, Admin)
+
+| Vai trò | Phân quyền Frontend (UI) | Kiểm soát Backend (Security) | Đồng bộ CSDL (MySQL) |
+| :--- | :--- | :--- | :--- |
+| **CUSTOMER** *(Khách hàng)* | Xem thực đơn, giỏ hàng, tạo đơn hàng, thanh toán cọc 50%, đặt bàn Lounge, xem trang cá nhân `/profile` | REST Controller chặn truy vấn chéo (`@AuthenticationPrincipal Jwt jwt`), kiểm tra đơn hàng thuộc chính chủ `userId` | Bảng `orders` & `reservations` ghi nhận `user_account_id` khớp với Token ID |
+| **STAFF** *(Nhân viên)* | Quản lý quy trình chế biến đơn hàng (`PENDING` ➔ `PREPARING` ➔ `COMPLETED`), xác nhận/xếp bàn cho khách | `@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")` cho phép thao tác nghiệp vụ vận hành đơn & đặt bàn | Cập nhật trực tiếp cột `status` trong `orders` & `reservations` |
+| **ADMIN** *(Quản trị viên)* | Toàn quyền Dashboard `/admin`, thống kê doanh thu, quản lý danh mục, sản phẩm, combo, mã giảm giá, thành viên | `@PreAuthorize("hasRole('ADMIN')")` bảo mật 100% tất cả các endpoints quản trị `/api/admin/**` | CRUD trực tiếp lên các bảng `products`, `combos`, `categories`, `discount_campaigns`, `user_accounts` |
+
+---
+
+### 💡 2. Thuật Toán Gợi Ý Nhu Cầu Người Dùng (Tea & Cake Cross-Suggestion Algorithm)
+
+Thuật toán ghép đôi vị giác thông minh (`ProductSuggestionService.java`) giúp tối ưu trải nghiệm khách hàng và tăng tỷ lệ chuyển đổi:
+- **Quy luật Ghép đôi Vị giác (Pair-Matching Rules)**:
+  - Bắt buộc ghép đôi đối ứng giữa Trà và Bánh: $\text{TEA} \rightarrow \text{CAKE}$ hoặc $\text{CAKE} \rightarrow \text{TEA}$ (Ví dụ: Khách chọn trà đắng thanh như *Earl Grey* ➔ Hệ thống gợi ý bánh ngọt đậm đà như *Matcha Mousse Layered* hoặc *Truffle Tart*).
+  - Tự động lọc các sản phẩm đang ngừng kinh doanh (`active = false`) hoặc hết hàng (`stockQuantity = 0`).
+- **Xếp hạng Ưu tiên (Priority Matrix)**:
+  - Gợi ý được sắp xếp theo cấp độ ưu tiên `priority` tăng dần và thời gian khởi tạo mới nhất `createdAt DESC`.
+- **Gợi ý Theo Thời Tiết (Weather-Based Combo Recommendation)**:
+  - Phân loại gói Combo theo đặc trưng thời tiết (`CLOUDY`, `COLD`, `HOT`, `RAINY`, `SUNNY`) để tự động gợi ý bộ thưởng trà phù hợp nhất với trải nghiệm thực tế của khách hàng.
+
+---
+
+### 💰 3. Thuật Toán Buôn Bán & Tối Ưu Hóa Doanh Thu (Sales & Pricing Matrix Algorithm)
+
+Hệ thống quản lý giá và tồn kho đa tầng (`CartService.java` & `DiscountService.java`):
+- **Thuật toán Kiểm tra Tồn kho Combo Linh hoạt (Dynamic Component Stock Allocation)**:
+  - Khả năng bán của 1 Combo được tính bằng giới hạn tồn kho nhỏ nhất của các sản phẩm đơn cấu thành:
+    $$Stock_{\text{combo}} = \min_{i \in \text{Items}} \left( \left\lfloor \frac{Stock_i}{Qty_i} \right\rfloor \right)$$
+  - Khi khách thêm Combo vào giỏ hàng hoặc Checkout, Backend tự động quy đổi và re-validate tồn kho thực tế từng sản phẩm thành phần.
+- **Thuật toán Tính Giá Sau Khuyến Mãi (Multi-Tier Discount Calculator)**:
+  - Áp dụng mã giảm giá theo 4 phạm vi: Toàn cửa hàng (`STORE`), Theo danh mục (`CATEGORY`), Theo sản phẩm (`PRODUCT`), Theo Combo (`COMBO`).
+  - Hỗ trợ 2 kiểu giảm giá: Theo phần trăm (`PERCENTAGE`) hoặc Tiền mặt cố định (`FIXED_AMOUNT`), tự động áp dụng mức trần giảm tối đa `maxDiscountAmount` và điều kiện giá trị đơn tối thiểu `minOrderAmount`.
+- **Thuật toán Đặt Cọc 50% & Chống Hủy Đơn Ảo (Deposit Risk Mitigation Algorithm)**:
+  - Áp dụng tỷ lệ cọc $\text{DEPOSIT\_RATE} = 50\%$ cho các đơn hàng `TAKEAWAY_PREORDER` (Đặt lấy sau) và `RESERVATION_COMBO` (Đặt bàn kết hợp combo).
+  - Hệ thống tự động tính $\text{depositAmount} = \text{totalAmount} \times 0.50$, yêu cầu xác nhận giao dịch `PAID` trước khi liên kết với lịch đặt bàn Lounge, loại bỏ 100% tình trạng giữ chỗ ảo gây thất thoát doanh thu.
+
+---
+
+### 📊 4. Thuật Toán Phân Tích Khách Hàng & Dự Báo Tồn Kho (Customer Analytics & Low-Stock Intelligence)
+
+Tầng phân tích thông minh dành cho Ban Quản trị (`DashboardService.java`):
+- **Thuật toán Phân Tích Mặt Hàng Bán Chạy (Top-Selling Product Projection)**:
+  - Sử dụng các truy vấn SQL Aggregation nhóm dữ liệu theo từng món hàng, tính toán tổng doanh số và số lượng bán thực tế để đề xuất danh sách "Best Sellers" thời gian thực.
+- **Thuật toán Cảnh Báo Tồn Kho Thấp (Low-Stock Threshold Alert)**:
+  - Ngưỡng cảnh báo tự động $Threshold = 10$. Hệ thống liên tục quét bảng `products` và đưa ra danh sách món sắp hết hàng để nhân viên quản lý chủ động nhập nguyên liệu.
+- **Thuật toán Xuất Báo Cáo Doanh Thu Chuẩn UTF-8 BOM**:
+  - Tự động mã hóa cấu trúc CSV / Excel UTF-8 BOM, tổng hợp doanh thu theo từng khung thời gian (Hằng ngày, Hằng tháng, Hằng năm), hỗ trợ ban quản trị tải file báo cáo tương thích 100% với Microsoft Excel.
 
 ---
 
