@@ -79,17 +79,19 @@ export default function Checkout() {
       });
 
       // Tạo payment sau khi đặt hàng thành công
-      if (order?.orderCode) {
+      if (order?.id) {
         try {
           if (paymentMethod === 'CASH_ON_DELIVERY') {
             await cashOnDelivery({
-              orderCode: order.orderCode,
-              paymentMethod: 'CASH_ON_DELIVERY',
+              orderId: order.id,
+              note: formData.note.trim() || undefined,
             });
           } else {
             await simulatePayment({
-              orderCode: order.orderCode,
+              orderId: order.id,
               paymentMethod: paymentMethod,
+              purpose: order.depositRequired ? 'DEPOSIT' : 'FULL',
+              note: formData.note.trim() || undefined,
             });
           }
         } catch (payErr) {
