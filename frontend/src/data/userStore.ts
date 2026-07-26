@@ -18,19 +18,23 @@ const initialOrders: Order[] = [
       {
         id: 1,
         itemType: 'PRODUCT',
-        name: 'Bánh Matcha Mousse Layered 2026',
+        itemName: 'Bánh Matcha Mousse Layered 2026', // field chính (khớp BE)
+        name: 'Bánh Matcha Mousse Layered 2026',     // alias tương thích ngược
         imageUrl: '/images/products/matcha_cake.png',
         quantity: 1,
         unitPrice: 75000,
-        totalPrice: 75000
+        lineTotal: 75000,    // field chính (khớp BE)
+        totalPrice: 75000    // alias tương thích ngược
       },
       {
         id: 2,
         itemType: 'PRODUCT',
+        itemName: 'Trà Sakura Lychee Rose Ủ Lạnh',
         name: 'Trà Sakura Lychee Rose Ủ Lạnh',
         imageUrl: '/images/products/sakura_tea.png',
         quantity: 1,
         unitPrice: 68000,
+        lineTotal: 68000,
         totalPrice: 68000
       }
     ],
