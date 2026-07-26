@@ -1,22 +1,29 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, Users, Clock, Mail, Phone, User, PartyPopper, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Calendar, Users, Clock, Mail, Phone, User, PartyPopper, ChevronRight, ChevronLeft, Sparkles, AlertCircle } from 'lucide-react';
 import { checkAvailability, createReservation } from '../api/reservations';
 import { addReservation } from '../data/userStore';
 
 export default function Reservation() {
+  const [searchParams] = useSearchParams();
+  // TC10: Nhận orderId từ Checkout RESERVATION_COMBO
+  const linkedOrderId = searchParams.get('orderId') ? Number(searchParams.get('orderId')) : null;
+  const linkedOrderCode = searchParams.get('orderCode') || '';
+  const linkedPhone = searchParams.get('phone') || '';
+  const depositRequired = searchParams.get('depositRequired') === 'true';
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [reservationCode, setReservationCode] = useState('');
   const [selectedZone, setSelectedZone] = useState<'chill' | 'balcony' | 'vip'>('chill');
-  
+
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     time: '15:00',
     partySize: '2',
     name: '',
     email: '',
-    phone: '',
+    phone: linkedPhone || '',
     note: ''
   });
 
@@ -51,7 +58,9 @@ export default function Reservation() {
         customerName: formData.name,
         customerEmail: formData.email,
         customerPhone: formData.phone,
-        note: `Khu vực: ${selectedZone.toUpperCase()} - ${formData.note}`
+        note: `Khu vực: ${selectedZone.toUpperCase()} - ${formData.note}`,
+        // TC10: Gửi orderId nếu đây là đặt bàn liên kết đơn RESERVATION_COMBO
+        ...(linkedOrderId ? { orderId: linkedOrderId } : {})
       });
 
       // Lưu vào local store với data thực từ BE
@@ -81,7 +90,7 @@ export default function Reservation() {
 
   return (
     <div className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      
+
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary font-bold text-xs uppercase tracking-widest mb-2">
           <Sparkles className="w-4 h-4 text-cyber-teal" />
@@ -95,6 +104,20 @@ export default function Reservation() {
         </p>
       </div>
 
+      {/* TC10: Banner thông báo đặt bàn liên kết đơn Combo */}
+      {linkedOrderId && (
+        <div className="glass-card p-4 mb-6 border border-amber-500/30 bg-amber-50/50 dark:bg-amber-900/20 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <p className="font-extrabold text-amber-700 dark:text-amber-400">Bước cuối: Hoàn tất đặt bàn cho đơn Combo</p>
+            <p className="text-amber-600 dark:text-amber-300 mt-0.5">
+              Đơn hàng <span className="font-mono font-bold">#{linkedOrderCode}</span> đã được tạo.
+              {depositRequired && ' Vui lòng hoàn tất đặt bàn — tiền cọc 50% sẽ được xác nhận khi bàn được giữ thành công.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stepper progress */}
       <div className="flex items-center justify-center mb-10 max-w-md mx-auto">
         <div className={`flex items-center justify-center w-10 h-10 rounded-2xl font-black text-sm transition-all ${step >= 1 ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'}`}>1</div>
@@ -106,7 +129,7 @@ export default function Reservation() {
 
       {step === 1 && (
         <div className="glass-card p-6 sm:p-10 space-y-8">
-          
+
           {/* Zone Selector */}
           <div>
             <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-3">
@@ -192,9 +215,9 @@ export default function Reservation() {
               <textarea name="note" rows={3} placeholder="VD: Bàn sinh nhật chuẩn bị nến thơm..." value={formData.note} onChange={handleChange} className="input-field text-xs"></textarea>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full btn-primary py-4 text-sm font-extrabold shadow-lg">
+            <button type="submit" disabled={loading} className="w-full btn-primary py-4 text-sm font-extrabold shadow-lg flex items-center justify-center gap-2">
               <span>Tiếp Tục Xác Nhận</span>
-              <ChevronRight className="w-4 h-4 ml-1" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </form>
         </div>
@@ -203,7 +226,7 @@ export default function Reservation() {
       {step === 2 && (
         <div className="glass-card p-6 sm:p-10 space-y-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-serif-title">Xác Nhận Chi Tiết Lịch Hẹn</h2>
-          
+
           <div className="bg-slate-100/80 dark:bg-slate-800/80 p-6 rounded-2xl space-y-3 border border-slate-200/60 dark:border-slate-700/60 text-sm">
             <div className="flex justify-between border-b pb-2.5 dark:border-slate-700">
               <span className="text-slate-400">Tên khách hàng:</span>
@@ -230,8 +253,8 @@ export default function Reservation() {
           </div>
 
           <div className="flex gap-4">
-            <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">
-              <ChevronLeft className="w-4 h-4 mr-1" /> Quay lại sửa
+            <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1 flex items-center justify-center gap-1">
+              <ChevronLeft className="w-4 h-4" /> Quay lại sửa
             </button>
             <button type="button" onClick={handleConfirm} disabled={loading} className="btn-primary flex-1">
               {loading ? 'Đang khởi tạo reservation...' : 'Hoàn Tất Đặt Bàn'}

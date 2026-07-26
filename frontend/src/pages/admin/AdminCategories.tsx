@@ -36,7 +36,7 @@ export default function AdminCategories() {
     if (cat) {
       setCurrentCategory(cat);
     } else {
-      setCurrentCategory({ name: '', description: '' });
+      setCurrentCategory({ name: '', description: '', active: true });
     }
     setIsModalOpen(true);
   };
@@ -112,6 +112,7 @@ export default function AdminCategories() {
                 <th className="px-6 py-4">Tên Danh Mục</th>
                 <th className="px-6 py-4">Mô Tả Danh Mục</th>
                 <th className="px-6 py-4">Số Lượng Món</th>
+                <th className="px-6 py-4">Trạng Thái</th>
                 <th className="px-6 py-4 text-center">Thao Tác</th>
               </tr>
             </thead>
@@ -137,7 +138,14 @@ export default function AdminCategories() {
                       <span>{cat.name}</span>
                     </td>
                     <td className="px-6 py-4 max-w-xs truncate">{cat.description || 'Chưa có mô tả'}</td>
-                    <td className="px-6 py-4 font-semibold">{cat.productCount ?? 3} sản phẩm</td>
+                    <td className="px-6 py-4 font-semibold">{cat.productCount ?? '—'} sản phẩm</td>
+                    <td className="px-6 py-4">
+                      {cat.active !== false ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">✅ Đang hiện</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-500/10 text-slate-500 border border-slate-500/20">🔒 Đã ẩn</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button

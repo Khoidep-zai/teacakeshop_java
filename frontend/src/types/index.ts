@@ -9,7 +9,7 @@ export interface UserProfile { id: number; fullName: string; email: string; phon
 // ============================================================
 // CATEGORY
 // ============================================================
-export interface Category { id: number; name: string; description: string; productCount?: number; }
+export interface Category { id: number; name: string; description: string; active?: boolean; productCount?: number; }
 
 // ============================================================
 // PRODUCT
@@ -35,6 +35,9 @@ export interface Combo {
   originalPrice: number; savingAmount: number; imageUrl: string;
   weatherType: WeatherType; active: boolean; hotScore: number;
   bestSellerScore: number; items: ComboItem[]; createdAt: string;
+  startDate?: string; endDate?: string;
+  /** BE response fields */
+  finalPrice?: number; campaignDiscountAmount?: number; discountCampaignName?: string;
 }
 
 // ============================================================
@@ -42,11 +45,36 @@ export interface Combo {
 // ============================================================
 export type CartItemType = 'PRODUCT' | 'COMBO';
 export interface CartItem {
-  id: number; itemType: CartItemType; productId?: number; comboId?: number;
-  productName?: string; comboName?: string; imageUrl?: string;
-  quantity: number; unitPrice: number; totalPrice: number;
+  id: number;
+  itemType: CartItemType;
+  productId?: number;
+  comboId?: number;
+  /** Tên sản phẩm hoặc combo — BE trả về field "name" chung */
+  productName?: string;
+  comboName?: string;
+  imageUrl?: string;
+  quantity: number;
+  /** Giá gốc trước khuyến mãi — BE: originalUnitPrice */
+  originalUnitPrice?: number;
+  /** Số tiền được giảm — BE: discountAmount */
+  discountAmount?: number;
+  /** Giá sau khuyến mãi (giá tính tiền) — BE: finalUnitPrice */
+  unitPrice: number;
+  /** Thành tiền = unitPrice × quantity — BE: lineTotal */
+  totalPrice: number;
+  /** Tên chương trình khuyến mãi đang áp dụng */
+  campaignName?: string;
+  /** Số lượng tối đa có thể mua (dựa trên tồn kho BE) */
+  availableQuantity?: number;
 }
-export interface Cart { token: string; items: CartItem[]; totalAmount: number; itemCount: number; }
+export interface Cart {
+  token: string;
+  items: CartItem[];
+  totalAmount: number;
+  itemCount: number;
+  /** Tổng số tiền được giảm trong giỏ */
+  totalDiscountAmount?: number;
+}
 
 // ============================================================
 // ORDER

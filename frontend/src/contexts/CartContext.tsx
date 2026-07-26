@@ -63,6 +63,40 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initCart();
   }, []);
 
+  /**
+   * Map CartItemResponse từ BE sang CartItem type của FE.
+   * BE trả: id, itemType, itemId (productId/comboId), name, imageUrl,
+   *         quantity, originalUnitPrice, discountAmount, finalUnitPrice, lineTotal,
+   *         availableQuantity, campaignId, campaignName
+   */
+  const mapCartItem = (raw: any): import('../types').CartItem => ({
+    id: raw.id,
+    itemType: raw.itemType,
+    productId: raw.itemType === 'PRODUCT' ? raw.itemId : undefined,
+    comboId: raw.itemType === 'COMBO' ? raw.itemId : undefined,
+    productName: raw.itemType === 'PRODUCT' ? raw.name : undefined,
+    comboName: raw.itemType === 'COMBO' ? raw.name : undefined,
+    imageUrl: raw.imageUrl,
+    quantity: raw.quantity,
+    originalUnitPrice: raw.originalUnitPrice,
+    discountAmount: raw.discountAmount,
+    unitPrice: raw.finalUnitPrice ?? raw.unitPrice,
+    totalPrice: raw.lineTotal ?? raw.totalPrice,
+    campaignName: raw.campaignName,
+    availableQuantity: raw.availableQuantity,
+  });
+
+  const mapCart = (raw: any): import('../types').Cart => ({
+    token: raw.token,
+    items: (raw.items || []).map(mapCartItem),
+    totalAmount: raw.totalAmount ?? 0,
+    itemCount: raw.items?.reduce((s: number, i: any) => s + (i.quantity || 0), 0) ?? 0,
+    totalDiscountAmount: (raw.items || []).reduce(
+      (s: number, i: any) => s + ((i.discountAmount ?? 0) * (i.quantity ?? 1)),
+      0
+    ),
+  });
+
   const addItem = async (itemType: CartItemType, targetId: number, quantity: number = 1) => {
     let currentToken = token;
     try {
@@ -72,48 +106,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('cartToken', currentToken);
         setToken(currentToken);
       }
-      const updated = await cartApi.addCartItem(currentToken, {
+      const rawUpdated = await cartApi.addCartItem(currentToken, {
         itemType,
         itemId: targetId,
         quantity
       });
-      setCart(updated);
+      setCart(mapCart(rawUpdated));
     } catch (e: any) {
       console.warn('Backend cart addItem error, activating seamless fallback mode:', e);
-      // Fallback local update if item ID is not seeded in local MySQL DB
+      // Fallback local update nếu BE không có dữ liệu seed
       setCart(prev => {
         const items = prev?.items || [];
-        const existingIndex = items.findIndex(i => (itemType === 'PRODUCT' ? i.productId === targetId : i.comboId === targetId));
+        const existingIndex = items.findIndex(i =>
+          itemType === 'PRODUCT' ? i.productId === targetId : i.comboId === targetId
+        );
         let updatedItems = [...items];
-        
         if (existingIndex >= 0) {
           const existing = updatedItems[existingIndex];
           const newQty = existing.quantity + quantity;
-          updatedItems[existingIndex] = {
-            ...existing,
-            quantity: newQty,
-            totalPrice: existing.unitPrice * newQty
-          };
+          updatedItems[existingIndex] = { ...existing, quantity: newQty, totalPrice: existing.unitPrice * newQty };
         } else {
           updatedItems.push({
-            id: Date.now(),
-            itemType,
+            id: Date.now(), itemType,
             productId: itemType === 'PRODUCT' ? targetId : undefined,
             comboId: itemType === 'COMBO' ? targetId : undefined,
-            productName: itemType === 'PRODUCT' ? 'Món ăn đã chọn' : 'Set Combo đã chọn',
-            unitPrice: 75000,
-            totalPrice: 75000 * quantity,
-            quantity
+            productName: itemType === 'PRODUCT' ? 'Món ăn đã chọn' : undefined,
+            comboName: itemType === 'COMBO' ? 'Set Combo đã chọn' : undefined,
+            unitPrice: 75000, totalPrice: 75000 * quantity, quantity,
           });
         }
-        
         const total = updatedItems.reduce((s, i) => s + i.totalPrice, 0);
-        return {
-          token: currentToken || 'demo-cart-token',
-          items: updatedItems,
-          totalAmount: total,
-          itemCount: updatedItems.length
-        };
+        return { token: currentToken || 'demo-cart-token', items: updatedItems, totalAmount: total, itemCount: updatedItems.length };
       });
     }
   };

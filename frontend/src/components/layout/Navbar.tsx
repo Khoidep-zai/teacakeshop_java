@@ -66,7 +66,7 @@ const Navbar: React.FC = () => {
                 </Link>
               );
             })}
-            {user?.role === 'ADMIN' && (
+            {(user?.role === 'ADMIN' || user?.role === 'STAFF') && (
               <Link
                 to="/admin"
                 className={`px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 ${
@@ -75,7 +75,7 @@ const Navbar: React.FC = () => {
                     : 'text-accent hover:bg-accent/10'
                 }`}
               >
-                {t('nav.admin', 'Quản trị')}
+                {user.role === 'ADMIN' ? t('nav.admin', 'Quản trị') : '⚙️ Quản lý'}
               </Link>
             )}
           </nav>
@@ -165,13 +165,13 @@ const Navbar: React.FC = () => {
                 {link.label}
               </Link>
             ))}
-            {user?.role === 'ADMIN' && (
+            {(user?.role === 'ADMIN' || user?.role === 'STAFF') && (
               <Link
                 to="/admin"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-4 py-2.5 rounded-xl font-bold text-sm bg-accent/10 text-accent"
               >
-                {t('nav.admin', 'Quản trị hệ thống')}
+                {user.role === 'ADMIN' ? t('nav.admin', 'Quản trị hệ thống') : '⚙️ Quản lý vận hành'}
               </Link>
             )}
           </div>
