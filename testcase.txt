@@ -167,3 +167,19 @@ Kiểm tra sản phẩm còn hoạt động.
 Kiểm tra combo còn bán.
 Kiểm tra tồn kho.
 Tính lại giá
+
+10 thanh toán đặt cọc 50% cho đặt bàn
+
+bổ sung:
+1. Khách chọn combo
+2. Thêm combo vào giỏ hàng
+3. Checkout với loại đơn RESERVATION_COMBO
+4. Backend trả tiền cọc cần thanh toán
+5. Frontend chuyển đến màn hình thanh toán
+6. Khách thanh toán tiền cọc
+7. Backend xác nhận payment có trạng thái PAID
+8. Frontend chuyển đến form đặt bàn
+9. Khách chọn thời gian và số người
+10. Frontend gửi yêu cầu đặt bàn kèm đơn combo
+11. Backend kiểm tra tiền cọc
+12. Tạo đặt bàn thành công

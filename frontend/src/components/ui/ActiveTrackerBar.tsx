@@ -71,7 +71,7 @@ export const ActiveTrackerBar: React.FC = () => {
 
             {activeOrder ? (
               <p className="text-xs font-bold text-white line-clamp-1">
-                {activeOrder.items[0]?.name || 'Đơn hàng trà bánh'} ({activeOrder.finalAmount.toLocaleString('vi-VN')}₫)
+                {(activeOrder.items[0]?.itemName || activeOrder.items[0]?.name || 'Đơn hàng trà bánh')} ({(activeOrder.finalAmount ?? activeOrder.totalAmount).toLocaleString('vi-VN')}₫)
               </p>
             ) : (
               <p className="text-xs font-bold text-white">
