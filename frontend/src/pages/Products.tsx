@@ -5,7 +5,8 @@ import { Search, Filter, X, Coffee, Sparkles } from 'lucide-react';
 import { getProducts } from '../api/products';
 import { getCategories } from '../api/categories';
 import ProductCard from '../components/products/ProductCard';
-import { Product, Category } from '../types';
+import type { Product, Category } from '../types';
+import { fallbackProducts } from '../data/mockCatalog';
 
 const Products: React.FC = () => {
   const { t } = useTranslation();
@@ -20,15 +21,6 @@ const Products: React.FC = () => {
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc' | 'hot'>('newest');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  const fallbackCatalog: Product[] = [
-    { id: 1, name: 'Bánh Matcha Mousse Layered', description: 'Matcha Uji Nhật Bản 3 lớp mềm mịn phủ lá vàng nghệ thuật.', price: 75000, productType: 'CAKE', categoryId: 1, categoryName: 'Bánh Pháp', stockQuantity: 20, taste: 'Ngọt nhẹ, đắng thanh', temperatureType: 'BOTH', season: 'ALL', imageUrl: '/images/products/matcha_cake.png', active: true, hotScore: 99, bestSellerScore: 95, createdAt: new Date().toISOString() },
-    { id: 2, name: 'Bánh Earl Grey Chiffon Lavender', description: 'Cốt bánh chiffon trà Earl Grey thơm nồng với lớp kem lavender dâu tây.', price: 82000, productType: 'CAKE', categoryId: 1, categoryName: 'Bánh Pháp', stockQuantity: 15, taste: 'Hương trà thơm ngát', temperatureType: 'BOTH', season: 'ALL', imageUrl: '/images/products/earl_grey.png', active: true, hotScore: 90, bestSellerScore: 88, createdAt: new Date().toISOString() },
-    { id: 3, name: 'Trà Sakura Lychee Rose Ủ Lạnh', description: 'Chiết xuất hoa anh đào Nhật Bản, vải tươi ngâm nụ hồng hữu cơ.', price: 68000, productType: 'TEA', categoryId: 2, categoryName: 'Trà Ủ Lạnh', stockQuantity: 30, taste: 'Thanh mát, thơm ngọt', temperatureType: 'COLD', season: 'SUMMER', imageUrl: '/images/products/sakura_tea.png', active: true, hotScore: 96, bestSellerScore: 92, createdAt: new Date().toISOString() },
-    { id: 4, name: 'Trà Oolong Kim Tuyên Hoàng Gia', description: 'Trà Oolong núi cao hương sữa tự nhiên ủ lạnh trong suốt 12 tiếng.', price: 65000, productType: 'TEA', categoryId: 2, categoryName: 'Trà Ủ Lạnh', stockQuantity: 25, taste: 'Đượm hậu vị', temperatureType: 'COLD', season: 'ALL', imageUrl: '/images/products/sakura_tea.png', active: true, hotScore: 92, bestSellerScore: 90, createdAt: new Date().toISOString() },
-    { id: 5, name: 'Tart Chocolate Truffle Đắng 70%', description: 'Lớp nhân chocolate Bỉ đắng hòa quyện vỏ tart giòn bơ Pháp.', price: 88000, productType: 'CAKE', categoryId: 1, categoryName: 'Bánh Pháp', stockQuantity: 12, taste: 'Đậm đà nồng nàn', temperatureType: 'BOTH', season: 'ALL', imageUrl: '/images/products/earl_grey.png', active: true, hotScore: 88, bestSellerScore: 86, createdAt: new Date().toISOString() },
-    { id: 6, name: 'Trà Jasmine Blossom Ủ Thạch Hữu Cơ', description: 'Trà nhài đồi cao ngâm hoa nhài tươi kết hợp thạch giòn giải nhiệt.', price: 62000, productType: 'TEA', categoryId: 2, categoryName: 'Trà Ủ Lạnh', stockQuantity: 40, taste: 'Thanh nhẹ dịu mát', temperatureType: 'COLD', season: 'SUMMER', imageUrl: '/images/products/sakura_tea.png', active: true, hotScore: 85, bestSellerScore: 84, createdAt: new Date().toISOString() },
-  ];
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -41,13 +33,13 @@ const Products: React.FC = () => {
         if (Array.isArray(list) && list.length > 0) {
           setProducts(list);
         } else {
-          setProducts(fallbackCatalog);
+          setProducts(fallbackProducts);
         }
         if (Array.isArray(categoriesData) && categoriesData.length > 0) {
           setCategories(categoriesData);
         }
       } catch (error) {
-        setProducts(fallbackCatalog);
+        setProducts(fallbackProducts);
       } finally {
         setLoading(false);
       }

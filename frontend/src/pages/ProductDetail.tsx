@@ -5,6 +5,7 @@ import { getProduct, getProductSuggestions } from '../api/products';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/products/ProductCard';
 import type { Product, ProductSuggestion } from '../types';
+import { fallbackProducts } from '../data/mockCatalog';
 import toast from 'react-hot-toast';
 
 const ProductDetail: React.FC = () => {
@@ -18,44 +19,46 @@ const ProductDetail: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
 
-  // Fallback Product mock if API is empty/offline
-  const fallbackProduct: Product = {
-    id: Number(id) || 1,
-    name: 'Bánh Matcha Mousse Layered 2026',
-    description: 'Bánh mousse trà xanh Matcha Uji nhập khẩu 100% từ Nhật Bản, kết hợp cốt bánh gato nướng bơ Pháp thơm lừng. Bề mặt trang trí hoa quả tươi và lá vàng 24k kiệt tác.',
-    price: 75000,
-    productType: 'CAKE',
-    categoryId: 1,
-    categoryName: 'Bánh ngọt Pháp',
-    stockQuantity: 25,
-    taste: 'Đắng nhẹ thanh dịu',
-    temperatureType: 'BOTH',
-    season: 'ALL',
-    imageUrl: '/images/products/matcha_cake.png',
-    active: true,
-    hotScore: 99,
-    bestSellerScore: 95,
-    createdAt: new Date().toISOString()
-  };
-
   useEffect(() => {
     const fetchProductDetails = async () => {
       if (!id) return;
       const numId = Number(id);
       setLoading(true);
       window.scrollTo(0, 0);
+
+      // Find local catalog product by URL parameter id
+      const localMatched = fallbackProducts.find(p => p.id === numId) || fallbackProducts[0];
+
       try {
         const productData = await getProduct(numId);
-        if (productData && productData.id) {
+        if (productData && productData.id && productData.name) {
           setProduct(productData);
         } else {
-          setProduct(fallbackProduct);
+          setProduct(localMatched);
         }
 
         const suggestionsData = await getProductSuggestions(numId);
-        if (Array.isArray(suggestionsData)) setSuggestions(suggestionsData);
+        if (Array.isArray(suggestionsData) && suggestionsData.length > 0) {
+          setSuggestions(suggestionsData);
+        } else {
+          // Fallback suggestions
+          const otherProducts = fallbackProducts.filter(p => p.id !== numId).slice(0, 3);
+          setSuggestions(otherProducts.map((p, idx) => ({
+            id: idx + 1,
+            suggestedProduct: p,
+            reason: 'Phối vị hoàn hảo',
+            priority: idx + 1
+          })));
+        }
       } catch (error) {
-        setProduct(fallbackProduct);
+        setProduct(localMatched);
+        const otherProducts = fallbackProducts.filter(p => p.id !== numId).slice(0, 3);
+        setSuggestions(otherProducts.map((p, idx) => ({
+          id: idx + 1,
+          suggestedProduct: p,
+          reason: 'Phối vị hoàn hảo',
+          priority: idx + 1
+        })));
       } finally {
         setLoading(false);
       }
@@ -63,16 +66,6 @@ const ProductDetail: React.FC = () => {
 
     fetchProductDetails();
   }, [id]);
-
-  const getProductImage = () => {
-    if (!product) return '/images/products/matcha_cake.png';
-    if (product.imageUrl && product.imageUrl !== '/favicon.svg') return product.imageUrl;
-    const lower = product.name.toLowerCase();
-    if (lower.includes('matcha')) return '/images/products/matcha_cake.png';
-    if (lower.includes('earl')) return '/images/products/earl_grey.png';
-    if (lower.includes('sakura')) return '/images/products/sakura_tea.png';
-    return product.productType === 'TEA' ? '/images/products/sakura_tea.png' : '/images/products/matcha_cake.png';
-  };
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -136,7 +129,7 @@ const ProductDetail: React.FC = () => {
           {/* Left Column: Image & Badges */}
           <div className="relative aspect-square rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-xl border border-white/60 dark:border-slate-800">
             <img 
-              src={getProductImage()} 
+              src={product.imageUrl || '/images/products/matcha_cake.png'} 
               alt={product.name}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
             />

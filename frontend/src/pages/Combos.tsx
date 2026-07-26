@@ -4,6 +4,7 @@ import ComboCard from '../components/combos/ComboCard';
 import type { Combo, WeatherType } from '../types';
 import { Cloud, Sun, CloudRain, Snowflake, Flame, Activity, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { fallbackCombos } from '../data/mockCatalog';
 
 const WEATHERS: { value: WeatherType; label: string; icon: any }[] = [
   { value: 'SUNNY', label: 'Nắng ấm', icon: Sun },
@@ -19,12 +20,6 @@ export default function Combos() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'hot' | 'best-sellers' | 'weather'>('all');
   const [selectedWeather, setSelectedWeather] = useState<WeatherType>('SUNNY');
-
-  const fallbackCombos: Combo[] = [
-    { id: 1, name: 'Set Trà Chiều Royal Afternoon Tea Pass', description: 'Bộ đôi Trà Oolong Kim Tuyên & Bánh Matcha Mousse layered hoàng gia 2026.', originalPrice: 165000, comboPrice: 135000, savingAmount: 30000, imageUrl: '/images/combos/royal_tea_set.png', active: true, weatherType: 'SUNNY', hotScore: 99, bestSellerScore: 95, items: [], createdAt: new Date().toISOString() },
-    { id: 2, name: 'Set Thư Thái Đêm Mưa Cyber Chill', description: 'Trà Sakura Lychee ủ lạnh ấm áp kèm Bánh Earl Grey Chiffon kem lavender.', originalPrice: 170000, comboPrice: 139000, savingAmount: 31000, imageUrl: '/images/combos/royal_tea_set.png', active: true, weatherType: 'RAINY', hotScore: 92, bestSellerScore: 90, items: [], createdAt: new Date().toISOString() },
-    { id: 3, name: 'Set Năng Lượng Đột Phá Interstellar', description: 'Trà Cold Brew Jasmine kết hợp Tart Chocolate Truffle đắng 70%.', originalPrice: 180000, comboPrice: 145000, savingAmount: 35000, imageUrl: '/images/combos/royal_tea_set.png', active: true, weatherType: 'COLD', hotScore: 88, bestSellerScore: 85, items: [], createdAt: new Date().toISOString() },
-  ];
 
   useEffect(() => {
     fetchCombos();

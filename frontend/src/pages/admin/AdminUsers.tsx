@@ -1,103 +1,144 @@
-import { useState } from 'react';
-import { Search, UserCheck, UserX } from 'lucide-react';
-
-const mockUsers = [
-  { id: 1, name: 'Admin Boss', email: 'admin@teacake.com', phone: '0900000000', role: 'ADMIN', active: true, date: '2024-01-01' },
-  { id: 2, name: 'Nguyen Van A', email: 'vana@gmail.com', phone: '0901234567', role: 'MEMBER', active: true, date: '2025-01-15' },
-  { id: 3, name: 'Tran Thi B', email: 'thib@gmail.com', phone: '0987654321', role: 'MEMBER', active: false, date: '2025-02-20' },
-  { id: 4, name: 'Staff Member', email: 'staff1@teacake.com', phone: '0911223344', role: 'STAFF', active: true, date: '2025-05-10' },
-];
+import { useState, useEffect } from 'react';
+import { Users, Search, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { getUsers } from '../../api/admin';
+import type { UserProfile } from '../../types';
+import { getUserAccounts } from '../../data/userStore';
 
 export default function AdminUsers() {
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [users, setUsers] = useState(mockUsers);
 
-  const toggleActive = (id: number) => {
-    setUsers(users.map(u => u.id === id ? { ...u, active: !u.active } : u));
+  const fetchUsers = async () => {
+    setLoading(true);
+    const storeUsers = getUserAccounts();
+    try {
+      const data = await getUsers();
+      const list = (data as any).content || data;
+      if (Array.isArray(list) && list.length > 0) {
+        const combined = [...storeUsers];
+        list.forEach(u => {
+          if (!combined.some(x => x.email.toLowerCase() === u.email.toLowerCase())) combined.push(u);
+        });
+        setUsers(combined);
+      } else {
+        setUsers(storeUsers);
+      }
+    } catch {
+      setUsers(storeUsers);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    fetchUsers();
+    const handleUpdate = () => setUsers(getUserAccounts());
+    window.addEventListener('user_store_updated', handleUpdate);
+    return () => window.removeEventListener('user_store_updated', handleUpdate);
+  }, []);
+
+  const filtered = users.filter(u =>
+    u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.phone?.includes(searchTerm)
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Users Management</h1>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Search users..." 
+    <div className="space-y-6 max-w-7xl mx-auto">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-6 border border-slate-200 dark:border-slate-800">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-1">
+            <Sparkles className="w-4 h-4 text-cyber-teal" />
+            <span>Quản Lý Danh Sách Thành Viên Lounge 2026</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-serif-title">
+            Tài Khoản Khách Hàng & Quản Trị ({users.length})
+          </h1>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="glass-card p-4 flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm tài khoản theo tên, email, số điện thoại..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none text-sm"
+            className="input-field pl-10 text-xs"
           />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+      {/* Users Table */}
+      <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-200">
+          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 font-extrabold uppercase text-slate-500 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="px-6 py-4 font-medium">Name</th>
-                <th className="px-6 py-4 font-medium">Contact Info</th>
-                <th className="px-6 py-4 font-medium">Role</th>
-                <th className="px-6 py-4 font-medium">Joined Date</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4">ID</th>
+                <th className="px-6 py-4">Thành Viên</th>
+                <th className="px-6 py-4">Địa Chỉ Email</th>
+                <th className="px-6 py-4">Số Điện Thoại</th>
+                <th className="px-6 py-4">Vai Trò (Role)</th>
+                <th className="px-6 py-4">Trạng Thái</th>
+                <th className="px-6 py-4">Ngày Tham Gia</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{user.name}</td>
-                  <td className="px-6 py-4">
-                    <div>{user.email}</div>
-                    <div className="text-xs text-gray-500 mt-1">{user.phone}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold
-                      ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
-                        user.role === 'STAFF' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }
-                    `}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">{new Date(user.date).toLocaleDateString()}</td>
-                  <td className="px-6 py-4">
-                    {user.active ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                        <UserCheck className="w-3 h-3" /> Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                        <UserX className="w-3 h-3" /> Inactive
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => toggleActive(user.id)}
-                      className={`px-3 py-1 text-xs font-medium rounded-lg border transition-colors ${
-                        user.active 
-                          ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20' 
-                          : 'border-green-200 text-green-600 hover:bg-green-50 dark:border-green-900 dark:text-green-400 dark:hover:bg-green-900/20'
-                      }`}
-                    >
-                      {user.active ? 'Deactivate' : 'Activate'}
-                    </button>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                    Đang tải tài khoản thành viên...
                   </td>
                 </tr>
-              ))}
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                    Chưa có tài khoản nào.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((usr) => (
+                  <tr key={usr.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="px-6 py-4 font-mono font-bold text-primary">#{usr.id}</td>
+                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary font-black flex items-center justify-center">
+                        {usr.fullName?.charAt(0) || 'U'}
+                      </div>
+                      <span>{usr.fullName}</span>
+                    </td>
+                    <td className="px-6 py-4 font-mono">{usr.email}</td>
+                    <td className="px-6 py-4 font-semibold">{usr.phone || 'Chưa cập nhật'}</td>
+                    <td className="px-6 py-4">
+                      {usr.role === 'ADMIN' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                          <ShieldCheck size={12} /> Quản Trị Viên (ADMIN)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-600 border border-sky-500/20">
+                          <Users size={12} /> Thành Viên Khách Hàng
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        <CheckCircle2 size={12} /> Hoạt động
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">{new Date(usr.createdAt).toLocaleDateString('vi-VN')}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
     </div>
   );
 }

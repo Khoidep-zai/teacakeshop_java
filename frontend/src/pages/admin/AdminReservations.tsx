@@ -1,103 +1,150 @@
-import { useState } from 'react';
-import { Search, Calendar as CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
-
-const mockReservations = [
-  { id: 1, code: 'RES-001', customer: 'Nguyen Van A', date: '2026-07-26', time: '14:00', partySize: 2, status: 'PENDING' },
-  { id: 2, code: 'RES-002', customer: 'Tran Thi B', date: '2026-07-26', time: '15:30', partySize: 4, status: 'CONFIRMED' },
-  { id: 3, code: 'RES-003', customer: 'Le Van C', date: '2026-07-27', time: '10:00', partySize: 2, status: 'COMPLETED' },
-  { id: 4, code: 'RES-004', customer: 'Pham Thi D', date: '2026-07-28', time: '18:00', partySize: 6, status: 'CANCELLED' },
-];
+import { useState, useEffect } from 'react';
+import { CalendarCheck, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { getAdminReservations, updateReservationStatus as updateApiResStatus } from '../../api/reservations';
+import type { Reservation } from '../../types';
+import { getUserReservations, updateReservationStatus } from '../../data/userStore';
+import toast from 'react-hot-toast';
 
 export default function AdminReservations() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [reservations, setReservations] = useState(mockReservations);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const updateStatus = (id: number, status: string) => {
-    setReservations(reservations.map(r => r.id === id ? { ...r, status } : r));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'COMPLETED': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'CANCELLED': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      default: return 'bg-gray-100 text-gray-800';
+  const fetchReservations = async () => {
+    setLoading(true);
+    const storeRes = getUserReservations();
+    try {
+      const data = await getAdminReservations();
+      const list = (data as any).content || data;
+      if (Array.isArray(list) && list.length > 0) {
+        const combined = [...storeRes];
+        list.forEach(r => {
+          if (!combined.some(x => x.reservationCode === r.reservationCode)) combined.push(r);
+        });
+        setReservations(combined);
+      } else {
+        setReservations(storeRes);
+      }
+    } catch {
+      setReservations(storeRes);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filtered = reservations.filter(r => 
-    r.code.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    r.customer.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    fetchReservations();
+    const handleUpdate = () => setReservations(getUserReservations());
+    window.addEventListener('user_store_updated', handleUpdate);
+    return () => window.removeEventListener('user_store_updated', handleUpdate);
+  }, []);
+
+  const handleStatusChange = async (resId: number, status: Reservation['status']) => {
+    try {
+      await updateApiResStatus(resId, status);
+    } catch (err) {
+      console.warn('Backend reservation status update warning:', err);
+    }
+    updateReservationStatus(resId, status);
+    toast.success(`Đã cập nhật lịch đặt bàn sang "${status}"! ✨`, {
+      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
+    });
+    setReservations(getUserReservations());
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reservations</h1>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Search by code or name..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none text-sm"
-          />
+    <div className="space-y-6 max-w-7xl mx-auto">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-6 border border-slate-200 dark:border-slate-800">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-1">
+            <Sparkles className="w-4 h-4 text-cyber-teal" />
+            <span>Quản Lý Lịch Hẹn Đặt Bàn Lounge 2026</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-serif-title">
+            Danh Sách Lịch Đặt Bàn Khách Hàng ({reservations.length})
+          </h1>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+      {/* Reservations Table */}
+      <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-200">
+          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 font-extrabold uppercase text-slate-500 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="px-6 py-4 font-medium">Code</th>
-                <th className="px-6 py-4 font-medium">Customer</th>
-                <th className="px-6 py-4 font-medium">Date & Time</th>
-                <th className="px-6 py-4 font-medium">Party Size</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4">Mã Đặt Bàn</th>
+                <th className="px-6 py-4">Khách Hàng</th>
+                <th className="px-6 py-4">Thời Gian & Ngày</th>
+                <th className="px-6 py-4">Số Khách</th>
+                <th className="px-6 py-4">Ghi Chú Đặt Bàn</th>
+                <th className="px-6 py-4">Trạng Thái</th>
+                <th className="px-6 py-4 text-center">Cập Nhật</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {filtered.map((res) => (
-                <tr key={res.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{res.code}</td>
-                  <td className="px-6 py-4">{res.customer}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1"><CalendarIcon className="w-4 h-4 text-gray-400"/> {res.date}</div>
-                    <div className="text-xs text-gray-500 mt-1 ml-5">{res.time}</div>
-                  </td>
-                  <td className="px-6 py-4">{res.partySize} guests</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(res.status)}`}>
-                      {res.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {res.status === 'PENDING' && (
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => updateStatus(res.id, 'CONFIRMED')} className="p-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40" title="Confirm">
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => updateStatus(res.id, 'CANCELLED')} className="p-1.5 text-red-600 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/40" title="Cancel">
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                    {res.status === 'CONFIRMED' && (
-                      <button onClick={() => updateStatus(res.id, 'COMPLETED')} className="px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/20 rounded hover:bg-green-100 dark:hover:bg-green-900/40">
-                        Mark Completed
-                      </button>
-                    )}
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                    Đang tải lịch đặt bàn...
                   </td>
                 </tr>
-              ))}
+              ) : reservations.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                    Chưa có lịch đặt bàn nào.
+                  </td>
+                </tr>
+              ) : (
+                reservations.map((res) => (
+                  <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="px-6 py-4 font-mono font-bold text-primary flex items-center gap-1.5">
+                      <CalendarCheck size={14} />
+                      <span>#{res.reservationCode}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-slate-900 dark:text-white">{res.customerName || 'Khách hàng'}</p>
+                      <p className="text-[11px] text-slate-400">{res.customerPhone || '0901234567'} - {res.customerEmail || ''}</p>
+                    </td>
+                    <td className="px-6 py-4 font-bold">
+                      {res.reservationTime} Ngày {res.reservationDate}
+                    </td>
+                    <td className="px-6 py-4 font-semibold">{res.partySize} khách</td>
+                    <td className="px-6 py-4 font-bold text-cyber-teal">{res.note || 'Đặt bàn Lounge'}</td>
+                    <td className="px-6 py-4">
+                      {res.status === 'CONFIRMED' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <CheckCircle2 size={12} /> Đã giữ chỗ
+                        </span>
+                      ) : res.status === 'COMPLETED' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-500 border border-sky-500/20">
+                          <CheckCircle2 size={12} /> Đã đón khách
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/10 text-red-500 border border-red-500/20">
+                          <XCircle size={12} /> Đã hủy
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <select
+                        value={res.status}
+                        onChange={(e) => handleStatusChange(res.id, e.target.value as any)}
+                        className="input-field text-xs font-extrabold py-1 px-2 text-center"
+                      >
+                        <option value="CONFIRMED">Xác nhận giữ chỗ ✅</option>
+                        <option value="COMPLETED">Đã đón khách xong</option>
+                        <option value="CANCELLED">Hủy lịch đặt</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
     </div>
   );
 }

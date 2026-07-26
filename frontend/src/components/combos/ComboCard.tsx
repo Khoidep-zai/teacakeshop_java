@@ -1,144 +1,127 @@
-import { Combo } from '../../types';
-import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Tag, CloudRain, Sun, Snowflake, Flame, Cloud, Activity, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { ShoppingCart, Loader2, CloudRain, Sun, Snowflake, ArrowRight } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import type { Combo } from '../../types';
+import { fallbackCombos } from '../../data/mockCatalog';
 
 interface ComboCardProps {
   combo: Combo;
-  onAddToCart?: () => void;
 }
 
-const getWeatherIcon = (weatherType?: string) => {
-  switch (weatherType) {
-    case 'SUNNY': return <Sun size={14} className="text-amber-400" />;
-    case 'RAINY': return <CloudRain size={14} className="text-blue-400" />;
-    case 'COLD': return <Snowflake size={14} className="text-sky-300" />;
-    case 'HOT': return <Flame size={14} className="text-orange-500" />;
-    case 'CLOUDY': return <Cloud size={14} className="text-slate-400" />;
-    default: return <Activity size={14} className="text-emerald-400" />;
-  }
-};
-
-export default function ComboCard({ combo, onAddToCart }: ComboCardProps) {
-  const navigate = useNavigate();
+const ComboCard: React.FC<ComboCardProps> = ({ combo }) => {
   const { addItem } = useCart();
-  const savings = combo.savingAmount || (combo.originalPrice - combo.comboPrice);
+  const [adding, setAdding] = useState(false);
 
   const getComboImage = () => {
     if (combo.imageUrl && combo.imageUrl !== '/favicon.svg') return combo.imageUrl;
+    const found = fallbackCombos.find(c => c.id === combo.id);
+    if (found) return found.imageUrl;
+    if (combo.id === 2) return '/images/combos/combo_rainy.png';
+    if (combo.id === 3) return '/images/combos/combo_energy.png';
     return '/images/combos/royal_tea_set.png';
   };
 
-  const handleAdd = async (e: React.MouseEvent) => {
+  const getWeatherIcon = (weather?: string) => {
+    switch (weather) {
+      case 'RAINY':
+        return <span className="flex items-center gap-1 text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold"><CloudRain size={12} /> Se lạnh đêm mưa</span>;
+      case 'SUNNY':
+        return <span className="flex items-center gap-1 text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold"><Sun size={12} /> Nắng ấm thanh mát</span>;
+      case 'COLD':
+        return <span className="flex items-center gap-1 text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold"><Snowflake size={12} /> Năng lượng đột phá</span>;
+      default:
+        return null;
+    }
+  };
+
+  const handleAddCombo = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (onAddToCart) {
-      onAddToCart();
-    } else {
-      try {
-        await addItem('COMBO', combo.id, 1);
-        toast.success(`Đã thêm combo "${combo.name}" vào giỏ! ✨`, {
-          style: {
-            borderRadius: '20px',
-            background: '#0F172A',
-            color: '#fff',
-            border: '1px solid rgba(231, 111, 81, 0.3)',
-          },
-          iconTheme: {
-            primary: '#E76F51',
-            secondary: '#FFFFFF',
-          },
-        });
-      } catch {
-        toast.error('Không thể thêm combo vào giỏ hàng');
-      }
+    setAdding(true);
+    try {
+      await addItem('COMBO', combo.id, 1);
+      toast.success(`Đã thêm "${combo.name}" vào giỏ hàng! ✨`, {
+        style: {
+          borderRadius: '20px',
+          background: '#0F172A',
+          color: '#fff',
+          border: '1px solid rgba(231, 111, 81, 0.3)',
+        },
+      });
+    } catch {
+      toast.error('Không thể thêm Combo vào giỏ hàng');
+    } finally {
+      setAdding(false);
     }
   };
 
   return (
-    <motion.div 
-      whileHover={{ y: -6 }}
-      className="glass-card p-4 flex flex-col cursor-pointer group relative overflow-hidden h-full"
-      onClick={() => navigate(`/combos/${combo.id}`)}
-    >
-      {/* Background Subtle Gradient Glow */}
-      <div className="absolute -top-10 -left-10 w-32 h-32 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-all pointer-events-none" />
+    <Link to={`/combos/${combo.id}`} className="group glass-card p-5 flex flex-col justify-between h-full relative overflow-hidden border border-white/60 dark:border-slate-800">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors pointer-events-none" />
 
-      {/* Image Banner */}
-      <div className="relative h-52 w-full overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 mb-4 shadow-sm">
-        <img 
-          src={getComboImage()} 
-          alt={combo.name} 
-          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-        />
-        
-        {/* Weather Tag */}
-        {combo.weatherType && (
-          <div className="absolute top-3 left-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-800 dark:text-slate-200 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm border border-white/40 dark:border-slate-700/40">
-            {getWeatherIcon(combo.weatherType)}
-            <span className="capitalize">{combo.weatherType.toLowerCase()}</span>
-          </div>
-        )}
-
-        {/* Discount Badge */}
-        {savings > 0 && combo.originalPrice > 0 && (
-          <div className="absolute top-3 right-3 bg-gradient-to-r from-accent to-accent-light text-white text-xs font-black px-3 py-1 rounded-full flex items-center gap-1 shadow-md animate-pulse">
-            <Tag size={12} />
-            -{(savings / combo.originalPrice * 100).toFixed(0)}%
-          </div>
-        )}
-
-        <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-          <Sparkles size={12} className="text-amber-400" />
-          <span>Royal Tier Pass</span>
-        </div>
-      </div>
-
-      {/* Details */}
-      <div className="flex-1 flex flex-col justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-1 font-serif-title group-hover:text-accent transition-colors">
-            {combo.name}
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 mb-3 leading-relaxed">
-            {combo.description || 'Set trà chiều phong cách hoàng gia phối hợp bánh tươi chuẩn khẩu vị.'}
-          </p>
-        </div>
-        
-        {/* Savings Tag */}
-        <div className="flex items-center gap-2 mb-4 text-xs">
-          <span className="bg-primary/10 text-primary dark:bg-primary-glow/20 dark:text-primary-glow px-2.5 py-1 rounded-xl font-bold">
-            {combo.items?.length || 2} món đặc sắc
-          </span>
-          {savings > 0 && (
-            <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-xl font-bold border border-emerald-500/20">
-              Tiết kiệm {savings.toLocaleString('vi-VN')}₫
+      <div>
+        {/* Image Box */}
+        <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4 shadow-sm">
+          <img 
+            src={getComboImage()} 
+            alt={combo.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+          />
+          
+          <div className="absolute top-3 left-3 flex items-center gap-2">
+            <span className="bg-accent text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-md">
+              Combo Pass
             </span>
-          )}
+          </div>
+
+          <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-[10px] font-extrabold shadow-md">
+            Tiết kiệm {combo.savingAmount ? `${combo.savingAmount.toLocaleString('vi-VN')}₫` : '30.000₫'}
+          </div>
         </div>
 
-        {/* Price & Action */}
-        <div className="flex items-end justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80">
-          <div>
-            {savings > 0 && (
-              <p className="text-xs text-slate-400 line-through">
-                {combo.originalPrice?.toLocaleString('vi-VN')}₫
-              </p>
-            )}
-            <p className="text-xl font-extrabold text-accent">
-              {combo.comboPrice?.toLocaleString('vi-VN')}₫
-            </p>
-          </div>
-          <button 
-            onClick={handleAdd}
-            className="w-10 h-10 rounded-xl bg-accent text-white hover:bg-accent-dark flex items-center justify-center transition-all duration-300 shadow-md shadow-accent/30 active:scale-95"
-            title="Thêm Combo vào giỏ"
+        {/* Content */}
+        <div className="mb-2">
+          {getWeatherIcon(combo.weatherType)}
+        </div>
+
+        <h3 className="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-white font-serif-title group-hover:text-accent transition-colors line-clamp-1">
+          {combo.name}
+        </h3>
+
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">
+          {combo.description || 'Bộ kết hợp hoàn hảo giữa món trà ủ lạnh độc quyền và bánh ngọt Pháp cao cấp.'}
+        </p>
+      </div>
+
+      {/* Footer / Price & Add */}
+      <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div>
+          <span className="text-[10px] text-slate-400 line-through block">
+            {combo.originalPrice.toLocaleString('vi-VN')}₫
+          </span>
+          <span className="text-xl font-extrabold text-accent">
+            {combo.comboPrice.toLocaleString('vi-VN')}₫
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleAddCombo}
+            disabled={adding}
+            className="btn-accent px-4 py-2.5 text-xs font-extrabold flex items-center gap-1.5 shadow-md"
           >
-            <ShoppingCart size={18} />
+            {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
+            <span>Thêm Combo</span>
           </button>
+          <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-accent transition-colors">
+            <ArrowRight className="w-4 h-4" />
+          </div>
         </div>
       </div>
-    </motion.div>
+    </Link>
   );
-}
+};
+
+export default ComboCard;

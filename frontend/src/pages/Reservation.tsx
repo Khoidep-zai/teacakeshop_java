@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Users, Clock, Mail, Phone, User, PartyPopper, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import { checkAvailability, createReservation } from '../api/reservations';
+import { addReservation } from '../data/userStore';
 
 export default function Reservation() {
   const [step, setStep] = useState(1);
@@ -48,10 +49,32 @@ export default function Reservation() {
         customerPhone: formData.phone,
         note: `Khu vực: ${selectedZone.toUpperCase()} - ${formData.note}`
       });
-      setReservationCode(res.reservationCode || 'RES-2026-8899');
+      const createdRes = addReservation({
+        reservationCode: res?.reservationCode || `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerName: formData.name || 'Khách Hàng',
+        customerPhone: formData.phone || '0901234567',
+        customerEmail: formData.email || 'nguyenkhoidk2005@gmail.com',
+        reservationDate: formData.date,
+        reservationTime: formData.time,
+        partySize: Number(formData.partySize),
+        note: `Khu vực ${selectedZone.toUpperCase()} - ${formData.note || 'Đặt bàn Lounge'}`,
+        status: 'CONFIRMED'
+      });
+      setReservationCode(createdRes.reservationCode);
       setStep(3);
     } catch (err: any) {
-      setReservationCode('RES-2026-8899');
+      const createdRes = addReservation({
+        reservationCode: `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerName: formData.name || 'Khách Hàng',
+        customerPhone: formData.phone || '0901234567',
+        customerEmail: formData.email || 'nguyenkhoidk2005@gmail.com',
+        reservationDate: formData.date,
+        reservationTime: formData.time,
+        partySize: Number(formData.partySize),
+        note: `Khu vực ${selectedZone.toUpperCase()} - ${formData.note || 'Đặt bàn Lounge'}`,
+        status: 'CONFIRMED'
+      });
+      setReservationCode(createdRes.reservationCode);
       setStep(3);
     } finally {
       setLoading(false);

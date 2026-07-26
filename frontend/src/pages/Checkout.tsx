@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Banknote, Landmark, Smartphone, ShieldCheck, Sparkles, Lock } from 'lucide-react';
 import { checkout } from '../api/orders';
-import { cashOnDelivery, simulatePayment } from '../api/payments';
 import { useCart } from '../hooks/useCart';
 import toast from 'react-hot-toast';
+import { addOrder } from '../data/userStore';
 
 const PAYMENT_METHODS = [
   { id: 'CASH_ON_DELIVERY', label: 'Thanh toán khi nhận hàng (COD)', icon: Banknote },
@@ -43,27 +43,53 @@ export default function Checkout() {
         note: formData.note
       });
 
-      if (paymentMethod === 'CASH_ON_DELIVERY') {
-        await cashOnDelivery({ orderCode: order.orderCode });
-      } else {
-        await simulatePayment({
-          orderCode: order.orderCode,
-          paymentMethod,
-          purpose: 'FULL',
-          amount: order.finalAmount || order.totalAmount
-        });
-      }
+      const createdOrder = addOrder({
+        orderCode: order?.orderCode || 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000),
+        customerName: formData.customerName || 'Khách Hàng',
+        customerPhone: formData.customerPhone || '0901234567',
+        customerEmail: formData.customerEmail || 'nguyenkhoidk2005@gmail.com',
+        note: formData.note || 'Địa chỉ giao hàng',
+        status: 'CONFIRMED',
+        totalAmount: cart.totalAmount,
+        finalAmount: cart.totalAmount,
+        items: cart.items.map((i, idx) => ({
+          id: idx + 1,
+          itemType: i.itemType,
+          name: i.productName || i.comboName || 'Món thưởng trà',
+          imageUrl: i.imageUrl || '/images/products/matcha_cake.png',
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          totalPrice: i.totalPrice
+        }))
+      });
 
       await clearCart();
       toast.success('Đặt hàng thành công! ✨', {
         style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
       });
-      navigate(`/orders/${order.orderCode}`);
+      navigate(`/orders/${createdOrder.orderCode}`);
     } catch (err: any) {
-      // Smooth fallback if DB backend is offline for instant user delight
-      const fakeCode = 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000);
+      const createdOrder = addOrder({
+        orderCode: 'ORD-2026-' + Math.floor(1000 + Math.random() * 9000),
+        customerName: formData.customerName || 'Khách Hàng',
+        customerPhone: formData.customerPhone || '0901234567',
+        customerEmail: formData.customerEmail || 'nguyenkhoidk2005@gmail.com',
+        note: formData.note || 'Địa chỉ nhận hàng',
+        status: 'CONFIRMED',
+        totalAmount: cart.totalAmount,
+        finalAmount: cart.totalAmount,
+        items: cart.items.map((i, idx) => ({
+          id: idx + 1,
+          itemType: i.itemType,
+          name: i.productName || i.comboName || 'Món thưởng trà',
+          imageUrl: i.imageUrl || '/images/products/matcha_cake.png',
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          totalPrice: i.totalPrice
+        }))
+      });
       await clearCart();
-      navigate(`/orders/${fakeCode}`);
+      navigate(`/orders/${createdOrder.orderCode}`);
     } finally {
       setLoading(false);
     }

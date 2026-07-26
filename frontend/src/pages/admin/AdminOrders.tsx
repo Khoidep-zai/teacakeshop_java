@@ -1,139 +1,195 @@
-import { useState } from 'react';
-import { Search, Filter, Eye, Edit } from 'lucide-react';
-
-const mockOrders = [
-  { id: 1, orderCode: 'ORD-001', customer: 'Nguyen Van A', items: 3, total: 450000, status: 'PENDING', date: '2026-07-25T10:30:00Z' },
-  { id: 2, orderCode: 'ORD-002', customer: 'Tran Thi B', items: 1, total: 120000, status: 'CONFIRMED', date: '2026-07-25T09:15:00Z' },
-  { id: 3, orderCode: 'ORD-003', customer: 'Le Van C', items: 5, total: 850000, status: 'PREPARING', date: '2026-07-24T18:45:00Z' },
-  { id: 4, orderCode: 'ORD-004', customer: 'Pham Thi D', items: 2, total: 240000, status: 'COMPLETED', date: '2026-07-24T14:20:00Z' },
-  { id: 5, orderCode: 'ORD-005', customer: 'Hoang Van E', items: 1, total: 65000, status: 'CANCELLED', date: '2026-07-23T11:10:00Z' },
-];
-
-const statusOptions = ['ALL', 'PENDING', 'CONFIRMED', 'PREPARING', 'COMPLETED', 'CANCELLED'];
+import { useState, useEffect } from 'react';
+import { ShoppingCart, Search, CheckCircle2, Truck, XCircle, Clock, Sparkles } from 'lucide-react';
+import { getAdminOrders, updateOrderStatus as updateApiOrderStatus } from '../../api/orders';
+import type { Order } from '../../types';
+import { getUserOrders, updateOrderStatus } from '../../data/userStore';
+import toast from 'react-hot-toast';
 
 export default function AdminOrders() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'CONFIRMED': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'PREPARING': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400';
-      case 'COMPLETED': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'CANCELLED': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      default: return 'bg-gray-100 text-gray-800';
+  const fetchOrders = async () => {
+    setLoading(true);
+    const storeOrders = getUserOrders();
+    try {
+      const data = await getAdminOrders();
+      const list = (data as any).content || data;
+      if (Array.isArray(list) && list.length > 0) {
+        const combined = [...storeOrders];
+        list.forEach(o => {
+          if (!combined.some(x => x.orderCode === o.orderCode)) combined.push(o);
+        });
+        setOrders(combined);
+      } else {
+        setOrders(storeOrders);
+      }
+    } catch {
+      setOrders(storeOrders);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredOrders = mockOrders.filter(o => 
-    (statusFilter === 'ALL' || o.status === statusFilter) &&
-    (o.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) || o.customer.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  useEffect(() => {
+    fetchOrders();
+    const handleUpdate = () => setOrders(getUserOrders());
+    window.addEventListener('user_store_updated', handleUpdate);
+    return () => window.removeEventListener('user_store_updated', handleUpdate);
+  }, []);
+
+  const handleStatusChange = async (orderId: number, newStatus: Order['status']) => {
+    try {
+      await updateApiOrderStatus(orderId, newStatus);
+    } catch (err) {
+      console.warn('Backend order status update warning:', err);
+    }
+    updateOrderStatus(orderId, newStatus);
+    toast.success(`Đã cập nhật trạng thái đơn hàng sang "${newStatus}" và đồng bộ tới Khách hàng! ✨`, {
+      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
+    });
+    setOrders(getUserOrders());
+  };
+
+  const filtered = orders
+    .filter(o => statusFilter === 'ALL' || o.status === statusFilter)
+    .filter(o =>
+      o.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (o.customerName && o.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (o.customerPhone && o.customerPhone.includes(searchTerm))
+    );
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-500 border border-amber-500/20"><Clock size={12} /> Chờ xử lý</span>;
+      case 'CONFIRMED':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-cyber-teal/10 text-cyber-teal border border-cyber-teal/20"><CheckCircle2 size={12} /> Đã xác nhận</span>;
+      case 'SHIPPING':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-500 border border-sky-500/20"><Truck size={12} /> Đang giao hàng</span>;
+      case 'COMPLETED':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"><CheckCircle2 size={12} /> Hoàn tất</span>;
+      default:
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/10 text-red-500 border border-red-500/20"><XCircle size={12} /> Đã hủy</span>;
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Orders Management</h1>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search orders..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none text-sm"
-            />
+    <div className="space-y-6 max-w-7xl mx-auto">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-6 border border-slate-200 dark:border-slate-800">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-1">
+            <Sparkles className="w-4 h-4 text-cyber-teal" />
+            <span>Quản Lý Đơn Hàng Thưởng Trà Đồng Bộ 2026</span>
           </div>
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none text-sm appearance-none cursor-pointer"
-            >
-              {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-serif-title">
+            Danh Sách Đơn Hàng Khách Đặt ({orders.length})
+          </h1>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto min-h-[400px]">
-          <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-200 sticky top-0 z-10">
+      {/* Filter Bar */}
+      <div className="glass-card p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm mã đơn, tên khách hàng, số điện thoại..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input-field pl-10 text-xs"
+          />
+        </div>
+
+        <div className="flex gap-2 w-full sm:w-auto">
+          {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPING', 'COMPLETED'].map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                statusFilter === st
+                  ? 'bg-slate-900 text-white dark:bg-primary dark:text-white shadow-md'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              {st === 'ALL' ? 'Tất cả' : st}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Orders Table */}
+      <div className="glass-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 font-extrabold uppercase text-slate-500 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="px-6 py-4 font-medium">Order Code</th>
-                <th className="px-6 py-4 font-medium">Customer</th>
-                <th className="px-6 py-4 font-medium">Items</th>
-                <th className="px-6 py-4 font-medium">Total</th>
-                <th className="px-6 py-4 font-medium">Date</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4">Mã Đơn</th>
+                <th className="px-6 py-4">Khách Hàng</th>
+                <th className="px-6 py-4">Sản Phẩm Đặt</th>
+                <th className="px-6 py-4">Tổng Tiền</th>
+                <th className="px-6 py-4">Ngày Đặt</th>
+                <th className="px-6 py-4">Trạng Thái</th>
+                <th className="px-6 py-4 text-center">Cập Nhật Trạng Thái</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{order.orderCode}</td>
-                  <td className="px-6 py-4">{order.customer}</td>
-                  <td className="px-6 py-4">{order.items} items</td>
-                  <td className="px-6 py-4 font-medium">{order.total.toLocaleString('vi-VN')} ₫</td>
-                  <td className="px-6 py-4">{new Date(order.date).toLocaleDateString()}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 relative">
-                      <button className="p-2 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20" title="View Details">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      
-                      <div className="relative">
-                        <button 
-                          onClick={() => setOpenDropdown(openDropdown === order.id ? null : order.id)}
-                          className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" 
-                          title="Update Status"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        
-                        {openDropdown === order.id && (
-                          <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-20">
-                            {['PENDING', 'CONFIRMED', 'PREPARING', 'COMPLETED', 'CANCELLED'].map(s => (
-                              <button
-                                key={s}
-                                onClick={() => {
-                                  // Update logic here
-                                  setOpenDropdown(null);
-                                }}
-                                className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 ${order.status === s ? 'text-amber-600 font-medium bg-amber-50 dark:bg-amber-900/10' : 'text-gray-700 dark:text-gray-300'}`}
-                              >
-                                {s}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredOrders.length === 0 && (
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    No orders found matching your criteria.
+                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                    Đang tải danh sách đơn hàng...
                   </td>
                 </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                    Chưa có đơn hàng nào.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((ord) => (
+                  <tr key={ord.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <td className="px-6 py-4 font-mono font-bold text-primary flex items-center gap-1.5">
+                      <ShoppingCart size={14} />
+                      <span>#{ord.orderCode}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-slate-900 dark:text-white">{ord.customerName || 'Khách Hàng'}</p>
+                      <p className="text-[11px] text-slate-400">{ord.customerPhone || '0901234567'}</p>
+                    </td>
+                    <td className="px-6 py-4 max-w-xs font-semibold">
+                      {ord.items && ord.items.length > 0 ? ord.items.map(i => `${i.name} (x${i.quantity})`).join(', ') : 'Đơn hàng trà bánh'}
+                    </td>
+                    <td className="px-6 py-4 font-extrabold text-primary dark:text-primary-glow">
+                      {(ord.finalAmount || ord.totalAmount).toLocaleString('vi-VN')}₫
+                    </td>
+                    <td className="px-6 py-4">{new Date(ord.createdAt).toLocaleString('vi-VN')}</td>
+                    <td className="px-6 py-4">{getStatusBadge(ord.status)}</td>
+                    <td className="px-6 py-4">
+                      <select
+                        value={ord.status}
+                        onChange={(e) => handleStatusChange(ord.id, e.target.value as any)}
+                        className="input-field text-xs font-extrabold py-1 px-2.5"
+                      >
+                        <option value="PENDING">Chờ xử lý</option>
+                        <option value="CONFIRMED">Xác nhận & Chế biến</option>
+                        <option value="SHIPPING">Đang giao hàng 🚚</option>
+                        <option value="COMPLETED">Hoàn tất đơn ✅</option>
+                        <option value="CANCELLED">Hủy đơn</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
       </div>
+
     </div>
   );
 }

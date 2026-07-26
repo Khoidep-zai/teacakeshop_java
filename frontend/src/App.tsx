@@ -29,6 +29,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminReservations from './pages/admin/AdminReservations';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
+import { ActiveTrackerBar } from './components/ui/ActiveTrackerBar';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
@@ -43,6 +44,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">{children}</main>
+      <ActiveTrackerBar />
       <Footer />
     </div>
   );

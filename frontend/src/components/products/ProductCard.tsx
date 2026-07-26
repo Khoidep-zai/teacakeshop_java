@@ -4,6 +4,7 @@ import { useCart } from '../../hooks/useCart';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { Product } from '../../types';
+import { fallbackProducts } from '../../data/mockCatalog';
 
 interface ProductCardProps {
   product: Product;
@@ -13,14 +14,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
   const [adding, setAdding] = useState(false);
 
-  // Fallback high-res generated images depending on product type/name
+  // Match unique high-res image for each product ID
   const getProductImage = () => {
     if (product.imageUrl && product.imageUrl !== '/favicon.svg') return product.imageUrl;
+    const found = fallbackProducts.find(p => p.id === product.id);
+    if (found) return found.imageUrl;
     const lower = product.name.toLowerCase();
-    if (lower.includes('matcha') || lower.includes('trà xanh')) return '/images/products/matcha_cake.png';
-    if (lower.includes('earl') || lower.includes('chiffon')) return '/images/products/earl_grey.png';
-    if (lower.includes('sakura') || lower.includes('anh đào') || lower.includes('vải')) return '/images/products/sakura_tea.png';
-    return product.productType === 'TEA' ? '/images/products/sakura_tea.png' : '/images/products/matcha_cake.png';
+    if (lower.includes('matcha')) return '/images/products/matcha_cake.png';
+    if (lower.includes('earl')) return '/images/products/earl_grey.png';
+    if (lower.includes('sakura')) return '/images/products/sakura_tea.png';
+    if (lower.includes('oolong')) return '/images/products/oolong_tea.png';
+    if (lower.includes('truffle') || lower.includes('tart')) return '/images/products/truffle_tart.png';
+    if (lower.includes('jasmine') || lower.includes('nhài')) return '/images/products/jasmine_tea.png';
+    return '/images/products/matcha_cake.png';
   };
 
   const handleAdd = async (e: React.MouseEvent) => {
