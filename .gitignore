@@ -45,6 +45,11 @@ node_modules/
 frontend/node_modules/
 frontend/dist/
 
+# Frontend production bundle copied by Maven.
+# Keep catalog images/favicon in static, but rebuild hashed assets from frontend/src.
+src/main/resources/static/assets/
+src/main/resources/static/index.html
+
 # Logs
 *.log
 npm-debug.log*

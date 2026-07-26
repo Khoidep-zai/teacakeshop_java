@@ -1,309 +1,699 @@
-# 🍵🍰 TEA & CAKE SHOP - FULLSTACK APPLICATION (CYBER-ORGANIC 2026 EDITION)
-**Hệ Thống Quản Lý & Cửa Hàng Trà & Bánh Ngọt Cao Cấp Đồng Bộ Fullstack (Spring Boot 4 + React 18 Vite + MySQL + TailwindCSS)**
+# Tea & Cake Shop
 
-[![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat&logo=openjdk)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen.svg?style=flat&logo=springboot)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-18-blue.svg?style=flat&logo=react)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.0-purple.svg?style=flat&logo=vite)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?style=flat&logo=tailwindcss)](https://tailwindcss.com/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.4-blue.svg?style=flat&logo=mysql)](https://www.mysql.com/)
-[![Swagger](https://img.shields.io/badge/OpenAPI%203-Swagger%20UI-85EA2D.svg?style=flat&logo=swagger)](http://localhost:8080/swagger-ui.html)
+Hệ thống bán trà, bánh và combo kết hợp quản lý đơn hàng, thanh toán, tồn kho
+và đặt bàn Lounge. Dự án sử dụng Spring Boot làm backend, React làm frontend
+và MySQL làm cơ sở dữ liệu.
 
----
+Ở chế độ production/Docker, frontend được build và đóng gói vào Spring Boot.
+Người dùng chỉ cần truy cập một địa chỉ duy nhất:
 
-## 📖 Mục lục
-1. [Giới thiệu tổng quan](#1--giới-thiệu-tổng-quan)
-2. [Cập nhật Kiến trúc & Tính năng mới 2026](#2--cập-nhật-kiến-trúc--tính-năng-mới-2026)
-3. [Kiến trúc Hệ thống](#3--kiến-trúc-hệ-thống)
-4. [Các tính năng nổi bật (Core Features)](#4--các-tính-năng-nổi-bật-core-features)
-5. [Công nghệ & Thư viện (Tech Stack)](#5--công-nghệ--thư-viện-tech-stack)
-6. [Cấu trúc Cơ sở Dữ liệu & Storage](#6--cấu-trúc-cơ-sở-dữ-liệu--storage)
-7. [Danh sách RESTful API Specifications](#7--danh-sách-restful-api-specifications)
-8. [Hướng dẫn Cài đặt & Khởi chạy (Installation & Setup)](#8--hướng-dẫn-cài-đặt--khởi-chạy-installation--setup)
-9. [Cấu trúc Thư mục Dự án (Folder Structure)](#9--cấu-trúc-thư-mục-dự-án-folder-structure)
-10. [Biến Môi Trường & Tài khoản Mặc định](#10--biến-môi-trường--tài-khoản-mặc-định)
+```text
+http://localhost:8080
+```
 
----
+[![Java](https://img.shields.io/badge/Java-21-orange.svg?logo=openjdk)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen.svg?logo=springboot)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18.2-blue.svg?logo=react)](https://react.dev/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.4-blue.svg?logo=mysql)](https://www.mysql.com/)
 
-## 1. 🌟 Giới thiệu tổng quan
+## Mục lục
 
-**Tea & Cake Shop (Cyber-Organic Edition 2026)** là ứng dụng Web Fullstack hiện đại, giải pháp toàn diện cho mô hình kinh doanh **Cửa hàng Trà & Bánh ngọt cao cấp kết hợp Lounge thưởng trà sang trọng**.
+1. [Tổng quan hệ thống](#1-tổng-quan-hệ-thống)
+2. [Kiến trúc và công nghệ](#2-kiến-trúc-và-công-nghệ)
+3. [Nghiệp vụ và quyền hạn của ba vai trò](#3-nghiệp-vụ-và-quyền-hạn-của-ba-vai-trò)
+4. [Cách hệ thống hoạt động](#4-cách-hệ-thống-hoạt-động)
+5. [Cấu trúc dự án](#5-cấu-trúc-dự-án)
+6. [Biến môi trường](#6-biến-môi-trường)
+7. [Cách sử dụng hệ thống](#7-cách-sử-dụng-hệ-thống)
+8. [Chạy bằng Docker](#8-chạy-bằng-docker)
+9. [Chạy trực tiếp bằng IntelliJ IDEA](#9-chạy-trực-tiếp-bằng-intellij-idea)
+10. [Đưa hệ thống lên GitHub Codespaces](#10-đưa-hệ-thống-lên-github-codespaces)
+11. [API và Swagger](#11-api-và-swagger)
+12. [Kiểm thử](#12-kiểm-thử)
+13. [Kiểm tra trước khi đưa lên Git](#13-kiểm-tra-trước-khi-đưa-lên-git)
+14. [Lưu ý bảo mật và triển khai](#14-lưu-ý-bảo-mật-và-triển-khai)
 
-Ứng dụng kết hợp giữa nền tảng **Spring Boot RESTful Backend API** bảo mật cao với giao diện **React 18 Vite Frontend** phản hồi tức thì, được thiết kế định hình theo phong cách **Cyber-Organic 2026** hòa quyện giữa nét nhân văn cổ điển và dấu ấn AI hiện đại.
+## 1. Tổng quan hệ thống
 
----
+Các nhóm chức năng chính:
 
-## 2. ⚡ Cập nhật Kiến trúc & Tính năng mới 2026
+- Đăng ký, đăng nhập, làm mới token và đăng xuất.
+- Xem danh mục, sản phẩm, combo, sản phẩm nổi bật và gợi ý phối món.
+- Giỏ hàng hỗ trợ cả khách vãng lai và người dùng đăng nhập.
+- Ba loại đơn: giao hàng thông thường, đặt trước tự lấy và combo kết hợp đặt bàn.
+- Voucher theo phần trăm, điều kiện giá trị đơn và loại đơn.
+- Thanh toán mô phỏng chuyển khoản, MoMo, VNPay và COD theo điều kiện.
+- Đặt bàn, kiểm tra sức chứa, theo dõi và hủy lịch hợp lệ.
+- Quản lý sản phẩm, danh mục, combo, đơn, lịch đặt bàn, người dùng và voucher.
+- Theo dõi thanh toán và lịch sử điều chỉnh tồn kho.
+- Dashboard thống kê dành cho quản trị viên.
+- Giao diện sáng/tối, responsive và hỗ trợ tiếng Việt/tiếng Anh.
 
-### 🐛 [2026-07-26] Hotfix: Sửa 8 Lỗi Nghiêm Trọng (Critical Bug Fix)
+Hệ thống có dữ liệu mẫu cho catalog và năm voucher:
 
-> **Bản vá quan trọng** - Đã sửa toàn bộ lỗi trong luồng đặt hàng, thanh toán và quản lý đơn hàng.
+| Mã | Mức giảm | Điều kiện chính |
+|---|---:|---|
+| `WELCOME10` | 10% | Mọi loại đơn từ 100.000₫ |
+| `SAVE15` | 15% | Mọi loại đơn từ 200.000₫ |
+| `PICKUP20` | 20% | Đơn tự lấy từ 350.000₫ |
+| `TABLE25` | 25% | Combo đặt bàn từ 500.000₫ |
+| `VIP30` | 30% | Combo đặt bàn từ 800.000₫ |
 
-| # | Lỗi | File | Trạng thái |
-|---|-----|------|-----------|
-| 1 | **Checkout thiếu `orderType` + `shippingAddress`** → Backend từ chối 400 | `Checkout.tsx` | ✅ Đã sửa |
-| 2 | **OrderTracking không gửi `phone` param** → Luôn show fallback data | `OrderTracking.tsx` | ✅ Đã sửa |
-| 3 | **`getMyOrders()` không unwrap `Page<>`** → Đơn hàng user không hiển thị | `api/orders.ts`, `Profile.tsx` | ✅ Đã sửa |
-| 4 | **`getMyReservations()` cùng lỗi `Page<>`** → Lịch đặt bàn không hiển thị | `api/reservations.ts` | ✅ Đã sửa |
-| 5 | **`OrderItem` field names sai** → `name`/`totalPrice` vs backend `itemName`/`lineTotal` | `types/index.ts` | ✅ Đã sửa |
-| 6 | **`AdminOrders` dùng status `SHIPPING` không tồn tại** → Backend 400 khi update | `AdminOrders.tsx` | ✅ Đã sửa → `PREPARING` |
-| 7 | **Cart token không reset sau checkout** → Cart cũ invalid lần sau | `CartContext.tsx` | ✅ Đã sửa |
-| 8 | **`/orders/{code}` require `phone` param** → User đăng nhập không xem được đơn | `OrderService.java`, `PublicOrderController.java` | ✅ Đã sửa |
-| 9 | **Kiểm thử giao diện Admin/Staff khó khăn** → Thêm nút điền nhanh tài khoản | `Login.tsx` | ✅ Đã thêm tính năng Quick Login |
+Catalog và voucher được seed theo mã/tên chưa tồn tại, vì vậy việc khởi động lại
+không tạo thêm bản ghi trùng.
 
-**Backend fixes & Logic Đồng Bộ:**
-- **Đồng bộ Token & Lịch sử Đơn hàng (Khắc phục "Đơn hàng biến mất"):**
-  - Sửa lỗi Token lưu lơ lửng ở `sessionStorage` gây mất phiên đăng nhập khi refresh. Giờ đây `accessToken` được lưu và tự động gia hạn ở cả `localStorage` (trung tâm đồng bộ), đảm bảo JWT luôn được đính kèm ở `Axios Interceptor`.
-  - Backend Controller `PublicOrderController` luôn nhận diện đúng tài khoản qua JWT để liên kết đơn hàng với `user_account_id` trong MySQL.
-  - Sửa `userStore.ts` để lưu cục bộ thông minh, tự động deduplicate `orderCode` và giữ nguyên `id` từ server, ngăn chặn việc override dữ liệu.
-- Thêm method `getOrderByCodeForUser()` trong `OrderService` để user đăng nhập xem đơn bằng orderCode.
-- `PublicOrderController.getOrder()`: `phone` param giờ là **optional** – nếu có phone dùng lookup thông thường, nếu không có phone nhưng có auth token thì validate ownership và trả về.
-
-**Frontend fixes & Cải tiến UI:**
-- `Login.tsx`: Trang bị bộ 3 nút **Đăng Nhập Nhanh (Quick Login)** cho Admin, Staff và Customer, tiện lợi cho quá trình kiểm thử hệ thống.
-- `Checkout.tsx`: Thêm selector **Loại đơn hàng** (NORMAL/TAKEAWAY_PREORDER/RESERVATION_COMBO), field **Địa chỉ giao hàng** riêng (bắt buộc cho đơn NORMAL), gọi payment API sau checkout thành công.
-- `OrderTracking.tsx`: Lấy `phone` từ URL query param (`?phone=...`) sau redirect checkout; hiển thị form nhập phone nếu không có.
-- `Profile.tsx`: Link đến OrderTracking kèm `?phone=customerPhone`.
-- `types/index.ts`: `OrderItem` dùng `itemName`/`lineTotal` (đúng backend), giữ `name`/`totalPrice` là alias để tương thích ngược.
-
----
-
-- 🎨 **Tái thiết kế UX/UI Executive High-Contrast**:
-  - Khắc phục hoàn toàn lỗi mờ chữ/tương phản kém trên các trang Admin và Storefront. Tiêu đề hiển thị chuẩn font nét, rõ ràng, phối màu chuẩn cho mắt người đọc.
-  - Tích hợp bộ điều khiển Header đồng bộ: **Nút đổi Ngôn ngữ (Việt / Anh)** và **Nút chuyển đổi Chế độ Sáng / Tối (Light & Dark Theme)**.
-- 📊 **Dashboard Thống kê AI & Xuất Báo Cáo Excel (XLSX / CSV)**:
-  - Trang Admin Dashboard được trang bị 3 loại biểu đồ thống kê (**Recharts**): Line Chart (Doanh thu tuần), Bar Chart (Doanh số theo danh mục), Pie Chart (Cơ cấu doanh thu).
-  - Tích hợp nút **"Xuất Báo Cáo Excel (XLSX / CSV)"** dạng dữ liệu mã hóa UTF-8 BOM, giúp nhân viên và ban quản lý có thể tải về và đọc hiểu ngay trên Microsoft Excel.
-- 🚚 **Thanh Theo Dõi Trạng Thái Nổi Liên Tục (Floating Live Active Tracker)**:
-  - Khi khách hàng hoàn tất đơn hàng hoặc lịch hẹn đặt bàn, một thanh Live Tracker sẽ bám nổi ở góc màn hình trên mọi trang web (`ActiveTrackerBar.tsx`), cập nhật thời gian thực từng giai đoạn (`Đang tiếp nhận ⏳`, `Đang pha chế 🍵`, `Đang giao 🚚`, `Hoàn tất ✅`).
-- 🔄 **Hệ Thống Lưu Trữ Trung Tâm & Đồng Bộ Hai Chiều (`userStore.ts` & `mockCatalog.ts`)**:
-  - Sửa triệt để lỗi "Bạn chưa có đơn hàng nào" tại trang Profile (`/profile`).
-  - Mọi thao tác Thêm / Sửa / Xóa sản phẩm, danh mục, combo pass, mã voucher ở Admin lập tức đồng bộ hiển thị trên Trang Chủ / Thực đơn. Mọi đơn hàng, lịch đặt bàn, tài khoản mới tạo từ Khách hàng lập tức xuất hiện trong Admin Portal.
-- 🖼️ **Bộ Ảnh Sản Phẩm & Combo Độc Bản 8K AI Generated**:
-  - Mỗi sản phẩm lẻ và set combo đều sở hữu một hình ảnh photorealistic riêng biệt (`matcha_cake.png`, `earl_grey.png`, `sakura_tea.png`, `oolong_tea.png`, `truffle_tart.png`, `jasmine_tea.png`, `combo_rainy.png`, `combo_energy.png`...).
-
-- ☕ **Đồng Bộ Chạy 1 Lệnh Duy Nhất Trực Tiếp Trên IntelliJ IDE**:
-  - Tích hợp `SpaWebController.java` điều hướng SPA routes (`/products`, `/combos`, `/admin`...) và `maven-resources-plugin` tự động đóng gói `frontend/dist` vào `src/main/resources/static`. Chỉ cần chạy file `TeacakeshopApplication.java` trong IntelliJ IDE là khởi chạy đồng bộ cả Backend, Frontend và Database tại `http://localhost:8080`.
-
----
-
-## 3. 🏗️ Kiến trúc Hệ thống
+## 2. Kiến trúc và công nghệ
 
 ```mermaid
-graph TD
-    User([Người dùng / Web Browser]) -->|HTTP Client / Axios| ReactFrontend[React 18 + Vite Frontend<br/>High-Contrast Cyber-Organic]
-    ReactFrontend -->|REST APIs + OAuth2 JWT| SpringBackend[Spring Boot 4.1 Backend<br/>Single-Jar Static Serving + SPA Forwarder]
-    SpringBackend -->|Spring Data JPA / Hibernate 7| MySQL[(MySQL 8.4 Database<br/>Port 3306/3307)]
-    SpringBackend -->|Cloudinary SDK| Cloudinary[Cloudinary Media Server<br/>Image Hosting]
+flowchart LR
+    Browser["Trình duyệt"] -->|"HTTP/HTTPS"| App["Spring Boot :8080"]
+    App -->|"Phục vụ React đã build"| Browser
+    Browser -->|"/api/** + JWT"| App
+    App -->|"JPA / Hibernate"| DB[("MySQL 8.4")]
+    App -.->|"Upload ảnh nếu đã cấu hình"| Cloudinary["Cloudinary"]
 ```
 
-### 🔒 Luồng Bảo mật OAuth2 Resource Server & Token Healing:
-1. Người dùng đăng nhập ➔ Backend phát hành cặp **Access Token (15 phút)** & **Refresh Token (30 ngày)**.
-2. Với mỗi request ➔ Frontend tự động đính kèm `Authorization: Bearer <AccessToken>`.
-3. **Silent Token Auto-Healing**: Nếu token hết hạn hoặc thất bại, hệ thống tự động làm mới token hoặc fallback mượt mà giúp người dùng không bao giờ bị gián đoạn trải nghiệm mua sắm hay đặt bàn.
+### Backend
 
----
+- Java 21.
+- Spring Boot 4.1.
+- Spring Security OAuth2 Resource Server và JWT.
+- Spring Data JPA/Hibernate.
+- Bean Validation.
+- MySQL 8.4.
+- Springdoc OpenAPI/Swagger UI.
+- Cloudinary SDK cho chức năng upload ảnh.
 
-## 4. 🚀 Các tính năng nổi bật (Core Features)
+### Frontend
 
-### 🎨 1. Trải nghiệm Khách hàng (Client Portal)
-- 🌓 **Chuyển đổi Sáng / Tối (Light/Dark Mode)**: Lưu trạng thái cài đặt vào `LocalStorage`, phản hồi tức thì với giao diện Cyber-Organic.
-- 🌐 **Đa ngôn ngữ (i18n)**: Chuyển đổi linh hoạt Tiếng Việt & English qua `react-i18next`.
-- 🍵 **Thực đơn Trà & Bánh 8K**: Lọc sản phẩm theo Danh mục, loại (`TEA`, `CAKE`), nhiệt độ (`HOT`, `COLD`), độ hot, giá cả và từ khóa.
-- 💡 **Gợi ý món đi kèm (Tea & Cake Pairing)**: Tự động đề xuất các món ăn kèm hoàn hảo dựa trên hương vị.
-- 🌤️ **Gói Combo Phối Vị Thời Tiết**: Đề xuất các gói Combo tiết kiệm phù hợp với thời tiết (Nắng, Mưa, Se lạnh, Nóng...).
-- 🛒 **Giỏ hàng Thông minh (Guest & User Cart)**: Hỗ trợ lưu trữ giỏ hàng độc lập với Token UUID.
-- 🎟️ **Mã giảm giá (Discount System)**: Áp dụng voucher ưu đãi giảm % hoặc tiền mặt cố định.
-- 📅 **Đặt bàn trực tuyến Lounge**: Đặt giữ chỗ với khu vực yêu thích (Góc Trà Chill, Ban Công AI Horizon, Phòng VIP Đèn Ấm).
-- 🚚 **Thanh Theo Dõi Trạng Thái Live Tracker**: Theo dõi đơn hàng & lịch đặt bàn liên tục ở góc màn hình.
-- 👤 **Trang cá nhân (Customer Profile)**: Xem thông tin tài khoản, xem 100% lịch sử đơn hàng và lịch đặt bàn.
+- React 18 và TypeScript.
+- Vite 5.
+- Tailwind CSS.
+- Axios.
+- React Router.
+- Recharts.
+- react-i18next.
+- react-hot-toast.
 
-### 🛠️ 2. Trang Quản trị (Admin Portal)
-- 📊 **Executive Dashboard Thống kê & Xuất Excel**:
-  - Thống kê 4 thẻ chỉ số tổng quan.
-  - 3 Biểu đồ thống kê Recharts (Line, Bar, Pie Chart).
-  - Nút **Xuất Báo Cáo Excel (XLSX / CSV)** UTF-8 BOM chuẩn văn phòng.
-- 🛍️ **Quản lý Sản phẩm (`/admin/products`)**: Thêm, sửa, xóa, tắt/mở kinh doanh sản phẩm, đồng bộ thời gian thực sang cửa hàng.
-- 📁 **Quản lý Danh mục (`/admin/categories`)**: CRUD danh mục bánh trà.
-- 🍱 **Quản lý Set Combo (`/admin/combos`)**: CRUD gói combo phối vị.
-- 🎟️ **Quản lý Mã Khuyến Mãi (`/admin/discounts`)**: Tạo voucher giảm giá, thiết hạn sử dụng, sửa lỗi trắng trang.
-- 📋 **Quản lý Đơn hàng (`/admin/orders`)**: Cập nhật trạng thái đơn (`PENDING` ➔ `CONFIRMED` ➔ `PREPARING` ➔ `COMPLETED`), tự động đồng bộ về phía Khách hàng.
-- 📅 **Quản lý Đặt bàn (`/admin/reservations`)**: Duyệt và cập nhật lịch đặt bàn.
-- 👥 **Quản lý Thành viên (`/admin/users`)**: Xem danh sách người dùng đăng ký mới, phân quyền `ADMIN` / `CUSTOMER`.
+### Mô hình chạy
 
----
+- Phát triển frontend riêng: Vite chạy port `5173`, proxy `/api` tới backend
+  port `8080`.
+- Production, Docker và Codespaces: Vite được build thành static files, Spring
+  Boot phục vụ cả frontend và API trên port `8080`.
+- MySQL dùng port `3306` trong máy local. Trong Docker, MySQL chỉ nằm trong
+  Docker network và không được công khai ra ngoài.
 
-## 🧠 5. 🧠 THUẬT TOÁN HỆ THỐNG & ĐỒNG BỘ NGHỆ AN VẬN HÀNH
+## 3. Nghiệp vụ và quyền hạn của ba vai trò
 
-Hệ thống **Tea & Cake Shop 2026** được xây dựng trên nền tảng các thuật toán kinh doanh thông minh và sự đồng bộ chặt chẽ 3 lớp **Frontend (React) ↔ Backend (Spring Boot) ↔ Database (MySQL)**.
+Phân quyền được kiểm tra ở cả giao diện và backend. Việc ẩn nút ở frontend không
+thay thế kiểm tra quyền của Spring Security.
 
-### 🎭 1. Ma Trận Phân Quyền & Đồng Bộ Vai Trò (User, Staff, Admin)
+| Chức năng | CUSTOMER | STAFF | ADMIN |
+|---|:---:|:---:|:---:|
+| Xem sản phẩm, combo và voucher | Có | Có | Có |
+| Tạo giỏ hàng, đặt hàng, thanh toán | Có | Có thể dùng giao diện khách | Có thể dùng giao diện khách |
+| Đặt bàn và xem lịch sử cá nhân | Có | Có thể dùng giao diện khách | Có thể dùng giao diện khách |
+| Xem danh sách sản phẩm, combo trong portal | Không | Chỉ đọc | Toàn quyền |
+| CRUD danh mục, sản phẩm, combo và ảnh | Không | Không | Có |
+| Vận hành trạng thái đơn hàng | Không | Có | Có |
+| Vận hành trạng thái đặt bàn | Không | Có | Có |
+| Điều chỉnh tồn kho, xem lịch sử điều chỉnh | Không | Có | Có |
+| Xem danh sách thanh toán | Không | Có | Có |
+| Xác nhận giao dịch tiền mặt đã thanh toán | Không | Không | Có |
+| Quản lý voucher | Không | Không | Có |
+| Quản lý người dùng và vai trò | Không | Không | Có |
+| Dashboard quản trị | Không | Không | Có |
+| Dừng/mở nhận đặt bàn toàn hệ thống | Không | Không | Có |
 
-| Vai trò | Phân quyền Frontend (UI) | Kiểm soát Backend (Security) | Đồng bộ CSDL (MySQL) |
-| :--- | :--- | :--- | :--- |
-| **CUSTOMER** *(Khách hàng)* | Xem thực đơn, giỏ hàng, tạo đơn hàng, thanh toán cọc 50%, đặt bàn Lounge, xem trang cá nhân `/profile` | REST Controller chặn truy vấn chéo (`@AuthenticationPrincipal Jwt jwt`), kiểm tra đơn hàng thuộc chính chủ `userId` | Bảng `orders` & `reservations` ghi nhận `user_account_id` khớp với Token ID |
-| **STAFF** *(Nhân viên)* | Quản lý quy trình chế biến đơn hàng (`PENDING` ➔ `PREPARING` ➔ `COMPLETED`), xác nhận/xếp bàn cho khách | `@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")` cho phép thao tác nghiệp vụ vận hành đơn & đặt bàn | Cập nhật trực tiếp cột `status` trong `orders` & `reservations` |
-| **ADMIN** *(Quản trị viên)* | Toàn quyền Dashboard `/admin`, thống kê doanh thu, quản lý danh mục, sản phẩm, combo, mã giảm giá, thành viên | `@PreAuthorize("hasRole('ADMIN')")` bảo mật 100% tất cả các endpoints quản trị `/api/admin/**` | CRUD trực tiếp lên các bảng `products`, `combos`, `categories`, `discount_campaigns`, `user_accounts` |
+### 3.1 CUSTOMER — Khách hàng
 
----
+Quyền và quyền lợi:
 
-### 💡 2. Thuật Toán Gợi Ý Nhu Cầu Người Dùng (Tea & Cake Cross-Suggestion Algorithm)
+- Đăng ký tài khoản hoặc mua hàng bằng giỏ hàng khách.
+- Xem chi tiết sản phẩm/combo và các gợi ý phối món.
+- Áp dụng voucher trước khi checkout.
+- Chọn giao hàng thông thường, đặt trước tự lấy hoặc combo kết hợp đặt bàn.
+- Theo dõi đơn bằng mã đơn và thông tin xác thực tương ứng.
+- Kiểm tra lịch trống, gửi yêu cầu đặt bàn và theo dõi mã đặt bàn.
+- Người dùng đăng nhập có trang cá nhân để xem lịch sử đơn và lịch đặt bàn.
+- Có thể tự hủy lịch đặt bàn khi lịch vẫn ở trạng thái `PENDING` và không vướng
+  quy trình hoàn tiền cọc.
 
-Thuật toán ghép đôi vị giác thông minh (`ProductSuggestionService.java`) giúp tối ưu trải nghiệm khách hàng và tăng tỷ lệ chuyển đổi:
-- **Quy luật Ghép đôi Vị giác (Pair-Matching Rules)**:
-  - Bắt buộc ghép đôi đối ứng giữa Trà và Bánh: $\text{TEA} \rightarrow \text{CAKE}$ hoặc $\text{CAKE} \rightarrow \text{TEA}$ (Ví dụ: Khách chọn trà đắng thanh như *Earl Grey* ➔ Hệ thống gợi ý bánh ngọt đậm đà như *Matcha Mousse Layered* hoặc *Truffle Tart*).
-  - Tự động lọc các sản phẩm đang ngừng kinh doanh (`active = false`) hoặc hết hàng (`stockQuantity = 0`).
-- **Xếp hạng Ưu tiên (Priority Matrix)**:
-  - Gợi ý được sắp xếp theo cấp độ ưu tiên `priority` tăng dần và thời gian khởi tạo mới nhất `createdAt DESC`.
-- **Gợi ý Theo Thời Tiết (Weather-Based Combo Recommendation)**:
-  - Phân loại gói Combo theo đặc trưng thời tiết (`CLOUDY`, `COLD`, `HOT`, `RAINY`, `SUNNY`) để tự động gợi ý bộ thưởng trà phù hợp nhất với trải nghiệm thực tế của khách hàng.
+### 3.2 STAFF — Nhân viên vận hành
 
----
+Quyền và trách nhiệm:
 
-### 💰 3. Thuật Toán Buôn Bán & Tối Ưu Hóa Doanh Thu (Sales & Pricing Matrix Algorithm)
+- Truy cập portal tại `/admin`.
+- Xem catalog để phục vụ vận hành nhưng không được thêm, sửa hoặc xóa.
+- Lọc, xem chi tiết và cập nhật trạng thái đơn theo luồng hợp lệ.
+- Lọc, xem chi tiết và cập nhật trạng thái lịch đặt bàn.
+- Điều chỉnh tồn kho; mọi thay đổi lưu số lượng trước/sau, lý do và người thực hiện.
+- Xem danh sách thanh toán nhưng không được tự xác nhận giao dịch đã thu tiền.
+- Không được quản lý tài khoản, voucher, dashboard quản trị hoặc đóng chức năng
+  đặt bàn.
 
-Hệ thống quản lý giá và tồn kho đa tầng (`CartService.java` & `DiscountService.java`):
-- **Thuật toán Kiểm tra Tồn kho Combo Linh hoạt (Dynamic Component Stock Allocation)**:
-  - Khả năng bán của 1 Combo được tính bằng giới hạn tồn kho nhỏ nhất của các sản phẩm đơn cấu thành:
-    $$Stock_{\text{combo}} = \min_{i \in \text{Items}} \left( \left\lfloor \frac{Stock_i}{Qty_i} \right\rfloor \right)$$
-  - Khi khách thêm Combo vào giỏ hàng hoặc Checkout, Backend tự động quy đổi và re-validate tồn kho thực tế từng sản phẩm thành phần.
-- **Thuật toán Tính Giá Sau Khuyến Mãi (Multi-Tier Discount Calculator)**:
-  - Áp dụng mã giảm giá theo 4 phạm vi: Toàn cửa hàng (`STORE`), Theo danh mục (`CATEGORY`), Theo sản phẩm (`PRODUCT`), Theo Combo (`COMBO`).
-  - Hỗ trợ 2 kiểu giảm giá: Theo phần trăm (`PERCENTAGE`) hoặc Tiền mặt cố định (`FIXED_AMOUNT`), tự động áp dụng mức trần giảm tối đa `maxDiscountAmount` và điều kiện giá trị đơn tối thiểu `minOrderAmount`.
-- **Thuật toán Đặt Cọc 50% & Chống Hủy Đơn Ảo (Deposit Risk Mitigation Algorithm)**:
-  - Áp dụng tỷ lệ cọc $\text{DEPOSIT\_RATE} = 50\%$ cho các đơn hàng `TAKEAWAY_PREORDER` (Đặt lấy sau) và `RESERVATION_COMBO` (Đặt bàn kết hợp combo).
-  - Hệ thống tự động tính $\text{depositAmount} = \text{totalAmount} \times 0.50$, yêu cầu xác nhận giao dịch `PAID` trước khi liên kết với lịch đặt bàn Lounge, loại bỏ 100% tình trạng giữ chỗ ảo gây thất thoát doanh thu.
+### 3.3 ADMIN — Quản trị viên
 
----
+Quyền và trách nhiệm:
 
-### 📊 4. Thuật Toán Phân Tích Khách Hàng & Dự Báo Tồn Kho (Customer Analytics & Low-Stock Intelligence)
+- Có toàn bộ quyền vận hành của STAFF.
+- Xem dashboard doanh thu, đơn hàng, lịch đặt bàn, sản phẩm bán chạy và tồn kho thấp.
+- CRUD danh mục, sản phẩm, combo và upload ảnh.
+- CRUD voucher/chiến dịch giảm giá.
+- Xem người dùng, đổi vai trò và khóa/mở tài khoản.
+- Xác nhận giao dịch tiền mặt đã thanh toán.
+- Dừng nhận đặt bàn khi hết bàn trong giờ cao điểm và mở lại khi sẵn sàng.
 
-Tầng phân tích thông minh dành cho Ban Quản trị (`DashboardService.java`):
-- **Thuật toán Phân Tích Mặt Hàng Bán Chạy (Top-Selling Product Projection)**:
-  - Sử dụng các truy vấn SQL Aggregation nhóm dữ liệu theo từng món hàng, tính toán tổng doanh số và số lượng bán thực tế để đề xuất danh sách "Best Sellers" thời gian thực.
-- **Thuật toán Cảnh Báo Tồn Kho Thấp (Low-Stock Threshold Alert)**:
-  - Ngưỡng cảnh báo tự động $Threshold = 10$. Hệ thống liên tục quét bảng `products` và đưa ra danh sách món sắp hết hàng để nhân viên quản lý chủ động nhập nguyên liệu.
-- **Thuật toán Xuất Báo Cáo Doanh Thu Chuẩn UTF-8 BOM**:
-  - Tự động mã hóa cấu trúc CSV / Excel UTF-8 BOM, tổng hợp doanh thu theo từng khung thời gian (Hằng ngày, Hằng tháng, Hằng năm), hỗ trợ ban quản trị tải file báo cáo tương thích 100% với Microsoft Excel.
+Khi ADMIN chọn **Dừng đặt bàn**, trạng thái được lưu trong MySQL. Backend từ chối
+mọi yêu cầu đặt bàn mới, kể cả khi khách gọi API trực tiếp. Khách nhận được lời
+xin lỗi và đề nghị đặt lại vào ngày hôm sau. Nút điều khiển này không xuất hiện
+với STAFF, đồng thời API cũng trả `403 Forbidden` nếu STAFF cố gọi trực tiếp.
 
----
+## 4. Cách hệ thống hoạt động
 
-## 5. 🛠️ Công nghệ & Thư viện (Tech Stack)
+### 4.1 Xác thực
 
-### 🔹 Backend Stack
-| Công nghệ | Phiên bản | Mục đích |
-| :--- | :--- | :--- |
-| **Java** | 21 (LTS) | Ngôn ngữ lập trình chính |
-| **Spring Boot** | 4.1.0 / 3.4.x | Framework Backend REST API & SPA Static Server |
-| **Spring Security** | Built-in | Xử lý xác thực, phân quyền & bảo mật JWT |
-| **Spring Data JPA** | 7.x | ORM tương tác với Cơ sở dữ liệu |
-| **MySQL** | 8.4 (LTS) | Hệ quản trị cơ sở dữ liệu quan hệ |
-| **Maven Plugin** | 3.9+ | Đóng gói Frontend Dist vào Spring Static Resources |
+1. Người dùng đăng nhập tại `/login`.
+2. Backend cấp access token và refresh token.
+3. Access token có thời hạn mặc định 15 phút và được lưu trong `sessionStorage`.
+4. Refresh token có thời hạn mặc định 30 ngày và được lưu trong `localStorage`.
+5. Axios tự gửi `Authorization: Bearer <token>`.
+6. Khi access token hết hạn, frontend gọi `/api/auth/refresh` rồi gửi lại request.
+7. Backend kiểm tra vai trò ở từng nhóm API.
 
-### 🔹 Frontend Stack
-| Thư viện | Phiên bản | Mục đích |
-| :--- | :--- | :--- |
-| **React** | 18.2 | Thư viện UI chính |
-| **TypeScript** | 5.2 | Định kiểu dữ liệu tĩnh an toàn |
-| **Vite** | 5.0 | Build tool siêu nhanh |
-| **TailwindCSS** | 3.4 | Styling giao diện Cyber-Organic High-Contrast |
-| **Lucide React** | 0.323 | Bộ icon chuẩn hiện đại |
-| **Recharts** | 2.11 | Biểu đồ thống kê Doanh thu Dashboard |
-| **react-hot-toast** | 2.4 | Thông báo Toast mượt mà |
+ADMIN và STAFF được tạo/cập nhật từ biến môi trường mỗi khi backend khởi động.
+CUSTOMER tự đăng ký trên giao diện.
 
----
+### 4.2 Giỏ hàng và đặt hàng
 
-## 6. 🗄️ Cấu trúc Cơ sở Dữ liệu & Storage
+1. Backend tạo giỏ hàng và trả một cart token.
+2. Mỗi lần thêm/cập nhật món, backend kiểm tra sản phẩm đang hoạt động và đủ tồn kho.
+3. Với combo, tồn kho khả dụng phụ thuộc vào tồn kho của từng sản phẩm thành phần.
+4. Checkout kiểm tra lại giá, giảm giá và tồn kho để tránh dữ liệu cũ từ frontend.
+5. Đơn được tạo ở trạng thái `PENDING`.
+
+Ba loại đơn:
+
+- `NORMAL`: đơn giao hàng thông thường, yêu cầu địa chỉ giao hàng; có thể dùng COD.
+- `TAKEAWAY_PREORDER`: đặt trước và tự lấy, yêu cầu thời gian nhận; cọc 50%.
+- `RESERVATION_COMBO`: combo dùng cùng lịch đặt bàn, yêu cầu thời gian; cọc 50%,
+  sau thanh toán chuyển tới bước hoàn tất đặt bàn.
+
+Luồng trạng thái đơn:
 
 ```text
-+-----------------------+-------------------------------------------------------------+
-| Bảng / Module Storage | Mô tả chức năng                                             |
-+-----------------------+-------------------------------------------------------------+
-| user_accounts         | Tài khoản (ADMIN, CUSTOMER), thông tin cá nhân              |
-| categories            | Danh mục sản phẩm (Trà Matcha, Bánh Mousse, Combo Pass...)   |
-| products              | Danh sách sản phẩm, giá, tồn kho, vị, độ hot, ảnh 8K        |
-| combos                | Gói Combo ưu đãi theo thời tiết (WeatherType)               |
-| carts & cart_items    | Giỏ hàng định danh bằng Token UUID                          |
-| orders & order_items  | Đơn hàng, danh sách món đặt, trạng thái giao hàng           |
-| reservations          | Đơn đặt bàn Lounge (ngày, giờ, số khách, ghi chú)           |
-| discount_campaigns    | Mã giảm giá voucher (WELCOME2026, CYBERCHILL...)            |
-| mockCatalog.ts        | Storage đồng bộ Catalog sản phẩm, danh mục, combo thời gian thực|
-| userStore.ts          | Storage đồng bộ Đơn hàng, Đặt bàn, Tài khoản hai chiều      |
-+-----------------------+-------------------------------------------------------------+
+PENDING → CONFIRMED → PREPARING → COMPLETED
 ```
 
----
+`PENDING`, `CONFIRMED` và `PREPARING` có thể chuyển sang `CANCELLED` nếu thỏa
+điều kiện nghiệp vụ. `COMPLETED` và `CANCELLED` là trạng thái kết thúc.
 
-## 7. 🌐 Danh sách RESTful API Specifications
+### 4.3 Thanh toán
 
-- `POST /api/v1/public/auth/login` - Đăng nhập hệ thống (Trả về JWT Access & Refresh Token)
-- `POST /api/v1/public/auth/register` - Đăng ký tài khoản mới
-- `GET /api/v1/public/products` - Lấy danh sách thực đơn sản phẩm
-- `GET /api/v1/public/combos` - Lấy danh sách gói Combo
-- `POST /api/v1/public/orders` - Tạo đơn hàng mới từ giỏ hàng
-- `POST /api/v1/public/reservations` - Đặt bàn trực tuyến Lounge
-- `GET /api/v1/admin/dashboard/overview` - Lấy thông tin thống kê Dashboard
-- `PUT /api/v1/admin/orders/{id}/status` - Cập nhật trạng thái đơn hàng phía Admin
+- `BANK_TRANSFER`, `MOMO_SIMULATION`, `VNPAY_SIMULATION`: thanh toán mô phỏng.
+- `CASH_ON_DELIVERY`: chỉ dùng cho đơn `NORMAL`.
+- Đơn đặt trước và combo đặt bàn yêu cầu cọc 50% theo giá trị sau voucher.
+- Chỉ ADMIN được đánh dấu một giao dịch COD là đã thu tiền.
 
----
+Đây là mô phỏng phục vụ học tập/demo, chưa phải tích hợp cổng thanh toán thật.
 
-## 8. 💻 Hướng dẫn Cài đặt & Khởi chạy (Installation & Setup)
+### 4.4 Đặt bàn
 
-### 🚀 CÁCH KHỞI CHẠY ĐỒNG BỘ TRONG INTELLIJ IDE (Nhanh nhất & Đơn giản nhất):
+Quy tắc hiện tại:
 
-1. **Khởi động MySQL**:
-   Tạo cơ sở dữ liệu `tea_cake_shop` trong MySQL (Port 3306):
-   ```sql
-   CREATE DATABASE IF NOT EXISTS tea_cake_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   ```
-2. **Build Frontend & Đóng gói static resources**:
-   ```bash
-   cd frontend
-   npm run build
-   cd ..
-   powershell -Command "Copy-Item -Recurse -Force 'frontend\dist\*' 'src\main\resources\static\'"
-   ```
-3. **Chạy ứng dụng trong IntelliJ IDE**:
-   - Mở dự án `teacakeshop` trong IntelliJ.
-   - Nhấn **Run `TeacakeshopApplication.java`**.
-   - Mở trình duyệt truy cập ngay: **`http://localhost:8080`** (Bao gồm cả Trang chủ & Trang Admin `/admin`).
+- Sức chứa cửa hàng: 40 khách trong cùng khung thời gian.
+- Thời lượng giữ bàn dùng để tính chồng lịch: 90 phút.
+- Phải đặt trước ít nhất 2 giờ và tối đa 60 ngày.
+- Giờ nhận đặt bàn: từ `08:00` đến `20:30`.
+- Mỗi lần đặt tối đa 20 khách.
+- Với đơn `RESERVATION_COMBO`, tiền cọc phải được thanh toán trước khi xác nhận
+  giữ chỗ.
 
----
-
-## 9. 📂 Cấu trúc Thư mục Dự án (Folder Structure)
+Luồng trạng thái lịch:
 
 ```text
-teacakeshop/
-├── frontend/                       # React 18 + TypeScript Frontend App
+PENDING → CONFIRMED → SEATED → COMPLETED
+                  └→ NO_SHOW
+```
+
+`PENDING` và `CONFIRMED` có thể chuyển sang `CANCELLED` theo điều kiện nghiệp vụ.
+Các trạng thái `COMPLETED`, `CANCELLED`, `NO_SHOW` là trạng thái kết thúc.
+
+### 4.5 Dữ liệu và đồng bộ
+
+- MySQL là nguồn dữ liệu chính cho tài khoản, catalog, giỏ hàng, đơn hàng,
+  thanh toán, tồn kho, voucher và lịch đặt bàn.
+- Frontend gọi REST API và cập nhật lại giao diện từ response backend.
+- Hibernate dùng `JPA_DDL_AUTO=update` mặc định để tạo/cập nhật schema trong môi
+  trường demo.
+- Volume Docker giữ dữ liệu MySQL sau khi container dừng.
+
+## 5. Cấu trúc dự án
+
+```text
+teacakeshop_java/
+├── .devcontainer/
+│   └── devcontainer.json          # Cấu hình GitHub Codespaces
+├── frontend/
 │   ├── src/
-│   │   ├── api/                    # Modules Axios gọi API (auth, products, combos, cart...)
-│   │   ├── components/             # Reusable UI components (Navbar, Footer, ActiveTrackerBar...)
-│   │   ├── contexts/               # React Contexts (AuthContext, CartContext, ThemeContext)
-│   │   ├── data/                   # mockCatalog.ts & userStore.ts (Real-time Sync Modules)
-│   │   ├── pages/                  # Các trang Khách hàng (Home, Products, Cart, Profile...)
-│   │   │   └── admin/              # Các trang Quản trị (Dashboard, AdminProducts, AdminOrders...)
-│   │   ├── types/                  # TypeScript Data Models & Interfaces
-│   │   └── App.tsx                 # Main Routing & Layout wrapper
-│   └── vite.config.ts              # Vite configuration
-│
-└── src/main/                        # Spring Boot 4.1 Java Backend App
-    ├── java/com/example/teacakeshop/
-    │   ├── config/                 # SecurityConfig, SpaWebController (SPA Route Forwarder)...
-    │   ├── controller/             # REST Controllers
-    │   ├── entity/                 # JPA Entities
-    │   └── TeacakeshopApplication.java # Main Application Runner
-    └── resources/
-        ├── static/                 # Bundled Frontend Production Build Assets
-        └── application.properties  # Backend configurations
+│   │   ├── api/                   # Axios và các API modules
+│   │   ├── components/            # Component dùng chung
+│   │   ├── contexts/              # Auth, cart, theme
+│   │   ├── hooks/
+│   │   ├── pages/                 # Trang khách hàng
+│   │   │   └── admin/             # Portal ADMIN/STAFF
+│   │   ├── types/
+│   │   └── App.tsx                # Routes
+│   ├── package.json
+│   └── vite.config.ts
+├── src/
+│   ├── main/
+│   │   ├── java/com/example/teacakeshop/
+│   │   │   ├── config/            # Security, seeder, SPA forwarder
+│   │   │   ├── controller/
+│   │   │   ├── dto/
+│   │   │   ├── entity/
+│   │   │   ├── exception/
+│   │   │   ├── repository/
+│   │   │   ├── security/
+│   │   │   └── service/
+│   │   └── resources/
+│   │       ├── static/            # Ảnh và frontend production build
+│   │       └── application.properties
+│   └── test/
+├── .env.example
+├── docker-compose.yml
+├── Dockerfile
+├── pom.xml
+└── README.md
 ```
 
----
+## 6. Biến môi trường
 
-## 10. 🔑 Biến Môi Trường & Tài khoản Admin
+Sao chép file mẫu:
 
-Tài khoản Admin khởi tạo được cấu hình bằng `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
-`ADMIN_FULL_NAME` và `ADMIN_PHONE`. Không có mật khẩu mặc định trong mã nguồn.
+```powershell
+Copy-Item .env.example .env
+```
 
----
+Hoặc trên Linux/macOS/Codespaces:
 
-🎉 **Chúc bạn có trải nghiệm tuyệt vời với Hệ Thống Tea & Cake Shop Cyber-Organic 2026!** 🍵🍰
+```bash
+cp .env.example .env
+```
+
+Các biến quan trọng:
+
+| Biến | Bắt buộc | Mô tả |
+|---|:---:|---|
+| `MYSQL_ROOT_PASSWORD` | Docker | Mật khẩu root của container MySQL |
+| `DB_URL` | Chạy trực tiếp | JDBC URL; dùng host `localhost` khi không chạy trong Docker |
+| `DB_USERNAME` | Chạy trực tiếp | Tài khoản MySQL |
+| `DB_PASSWORD` | Chạy trực tiếp | Mật khẩu MySQL |
+| `JWT_SECRET` | Có | Chuỗi Base64 giải mã được ít nhất 32 bytes |
+| `ADMIN_PASSWORD` | Có | Mật khẩu tài khoản ADMIN được seed |
+| `STAFF_PASSWORD` | Có | Mật khẩu tài khoản STAFF được seed |
+| `ADMIN_EMAIL`, `STAFF_EMAIL` | Không | Email đăng nhập, có giá trị mặc định |
+| `CLOUDINARY_CLOUD_NAME` | Upload ảnh | Cloud name |
+| `CLOUDINARY_API_KEY` | Upload ảnh | API key |
+| `CLOUDINARY_API_SECRET` | Upload ảnh | API secret |
+| `JPA_DDL_AUTO` | Không | Mặc định `update` |
+| `JPA_SHOW_SQL` | Không | Mặc định `false` trong Docker |
+| `SERVER_PORT` | Không | Mặc định `8080` |
+
+Tạo JWT secret:
+
+```bash
+openssl rand -base64 48
+```
+
+PowerShell không có OpenSSL:
+
+```powershell
+$bytes = New-Object byte[] 48
+[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+[Convert]::ToBase64String($bytes)
+```
+
+Không commit `.env`. File này đã được chặn bởi `.gitignore`.
+
+## 7. Cách sử dụng hệ thống
+
+### Khách hàng
+
+1. Mở `/register` để tạo tài khoản hoặc sử dụng catalog/giỏ hàng khách.
+2. Chọn sản phẩm/combo rồi thêm vào giỏ.
+3. Mở `/checkout`, chọn loại đơn, phương thức thanh toán và voucher.
+4. Hoàn tất thanh toán theo hướng dẫn.
+5. Theo dõi đơn tại URL được chuyển tới sau checkout.
+6. Với combo đặt bàn, hoàn thành thêm form `/reservation`.
+7. Đăng nhập và mở `/profile` để xem lịch sử.
+
+### Nhân viên
+
+1. Đăng nhập bằng email/mật khẩu STAFF đã cấu hình.
+2. Chọn **Quản lý** hoặc mở `/admin`.
+3. Xử lý đơn trong **Đơn hàng**.
+4. Xử lý lịch trong **Đặt bàn Lounge**.
+5. Cập nhật tồn kho trong **Theo dõi tồn kho** và nhập lý do điều chỉnh.
+6. Xem giao dịch trong **Theo dõi thanh toán**.
+
+### Quản trị viên
+
+1. Đăng nhập bằng email/mật khẩu ADMIN đã cấu hình.
+2. Mở `/admin` để xem dashboard.
+3. Quản lý catalog, voucher và tài khoản từ menu bên trái.
+4. Xác nhận COD khi cửa hàng đã nhận tiền.
+5. Khi hết bàn, mở **Đặt bàn Lounge** và nhấn **Dừng đặt bàn**.
+6. Khi có thể nhận khách trở lại, nhấn **Mở đặt bàn**.
+
+## 8. Chạy bằng Docker
+
+### Yêu cầu
+
+- Docker Desktop hoặc Docker Engine.
+- Docker Compose v2 (`docker compose`).
+
+### Khởi động
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Mở `.env` và thay toàn bộ giá trị mẫu bằng mật khẩu/secret thật. Sau đó:
+
+```bash
+docker compose config --quiet
+docker compose up --build -d
+docker compose ps
+docker compose logs -f backend
+```
+
+Khi log xuất hiện thông báo Spring Boot đã started:
+
+- Website: <http://localhost:8080>
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+
+Nhấn `Ctrl+C` chỉ thoát chế độ xem log; container vẫn chạy.
+
+### Lệnh vận hành
+
+```bash
+# Xem log
+docker compose logs -f backend
+docker compose logs -f mysql
+
+# Khởi động lại
+docker compose restart
+
+# Build lại sau khi sửa code
+docker compose up --build -d
+
+# Dừng nhưng giữ database
+docker compose down
+
+# Dừng và xóa cả volume database — mất dữ liệu
+docker compose down -v
+```
+
+Không dùng `docker compose down -v` nếu cần giữ dữ liệu.
+
+Dockerfile gồm ba stage:
+
+1. Node build React.
+2. Maven build Spring Boot và đưa `frontend/dist` vào static resources.
+3. JRE 21 chạy JAR bằng user không phải root.
+
+## 9. Chạy trực tiếp bằng IntelliJ IDEA
+
+### Yêu cầu
+
+- JDK 21.
+- MySQL 8.x.
+- Node.js 20 trở lên; Docker image hiện dùng Node 22.
+- IntelliJ IDEA.
+
+### 9.1 Chạy backend và Vite riêng khi phát triển
+
+1. Tạo database:
+
+```sql
+CREATE DATABASE IF NOT EXISTS tea_cake_shop
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+```
+
+2. Trong IntelliJ, tạo Run Configuration cho
+   `com.example.teacakeshop.TeacakeshopApplication`.
+
+3. Khai báo tối thiểu các environment variables:
+
+```text
+DB_URL=jdbc:mysql://localhost:3306/tea_cake_shop?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+DB_USERNAME=root
+DB_PASSWORD=<mật-khẩu-mysql>
+JWT_SECRET=<base64-secret>
+ADMIN_PASSWORD=<mật-khẩu-admin>
+STAFF_PASSWORD=<mật-khẩu-staff>
+```
+
+4. Run backend trong IntelliJ.
+
+5. Mở terminal thứ hai:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+6. Truy cập <http://localhost:5173>. Vite tự proxy `/api` tới port `8080`.
+
+### 9.2 Chạy một port giống production
+
+```powershell
+Set-Location frontend
+npm ci
+npm run build
+Set-Location ..
+.\mvnw.cmd generate-resources
+```
+
+Sau đó Run `TeacakeshopApplication` trong IntelliJ và truy cập
+<http://localhost:8080>.
+
+## 10. Đưa hệ thống lên GitHub Codespaces
+
+Repository đã có:
+
+- `.devcontainer/devcontainer.json`.
+- Docker-in-Docker feature.
+- Tự động forward port `8080`.
+- `docker-compose.yml` chạy backend và MySQL.
+
+### 10.1 Đẩy code lên GitHub
+
+```bash
+git status
+git add .
+git commit -m "docs: update system documentation and deployment guide"
+git push origin main
+```
+
+Trước khi `git add .`, phải kiểm tra chắc chắn `.env` không xuất hiện trong
+`git status`.
+
+### 10.2 Tạo Codespaces secrets
+
+Trong repository GitHub:
+
+```text
+Settings
+→ Secrets and variables
+→ Codespaces
+→ New repository secret
+```
+
+Tạo bốn secret bắt buộc:
+
+- `MYSQL_ROOT_PASSWORD`
+- `JWT_SECRET`
+- `ADMIN_PASSWORD`
+- `STAFF_PASSWORD`
+
+Nếu sử dụng upload ảnh, tạo thêm:
+
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+Không đưa các giá trị này vào repository.
+
+### 10.3 Tạo Codespace
+
+```text
+Repository → Code → Codespaces → Create codespace on main
+```
+
+Nếu Codespace đã được tạo trước khi repository có `.devcontainer`, mở Command
+Palette và chạy:
+
+```text
+Codespaces: Rebuild Container
+```
+
+### 10.4 Khởi động ứng dụng
+
+Trong terminal Codespaces:
+
+```bash
+docker compose config --quiet
+docker compose up --build -d
+docker compose ps
+docker compose logs -f backend
+```
+
+Ứng dụng dùng duy nhất port `8080`. Không mở public port MySQL.
+
+### 10.5 Chia sẻ cho người khác
+
+1. Mở tab **PORTS**.
+2. Tìm port `8080` có nhãn **Tea & Cake Shop**.
+3. Đổi **Port Visibility** thành **Public**.
+4. Sao chép Forwarded Address.
+
+URL thường có dạng:
+
+```text
+https://<codespace-name>-8080.app.github.dev
+```
+
+Port Codespaces mặc định là private. Port public cho phép bất kỳ ai có URL truy
+cập mà không cần đăng nhập GitHub. Sau khi Codespace restart hoặc port được
+forward lại, cần kiểm tra visibility vì GitHub có thể chuyển port về private.
+Chính sách của organization cũng có thể không cho phép chọn Public.
+
+### 10.6 Giới hạn của Codespaces
+
+Codespaces phù hợp để phát triển, chấm bài và demo; không phải hosting production
+24/7. Website sẽ dừng khi Codespace dừng hoặc hết idle timeout. Dữ liệu nằm trong
+Docker volume của Codespace và không nên được xem là chiến lược backup production.
+
+Tài liệu GitHub tham khảo:
+
+- [Forwarding ports in your codespace](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace)
+- [Managing development environment secrets](https://docs.github.com/en/codespaces/managing-codespaces-for-your-organization/managing-development-environment-secrets-for-your-repository-or-organization)
+- [Security in GitHub Codespaces](https://docs.github.com/en/codespaces/reference/security-in-github-codespaces)
+
+## 11. API và Swagger
+
+Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+OpenAPI JSON:
+
+```text
+http://localhost:8080/api-docs
+```
+
+Các nhóm API chính:
+
+| Nhóm | Prefix |
+|---|---|
+| Xác thực | `/api/auth` |
+| Catalog công khai | `/api/categories`, `/api/products`, `/api/combos` |
+| Voucher công khai | `/api/discounts` |
+| Giỏ hàng | `/api/carts` |
+| Checkout/tra cứu đơn | `/api/orders` |
+| Đặt bàn | `/api/reservations` |
+| Thanh toán | `/api/payments` |
+| Lịch sử tài khoản | `/api/customer` |
+| Quản trị | `/api/admin` |
+| Nghiệp vụ tồn kho STAFF | `/api/staff/inventory` |
+
+Không có prefix `/api/v1/public` trong phiên bản hiện tại.
+
+## 12. Kiểm thử
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+### Backend
+
+Windows:
+
+```powershell
+.\mvnw.cmd test
+```
+
+Linux/macOS/Codespaces:
+
+```bash
+./mvnw test
+```
+
+Test backend dùng H2 ở chế độ tương thích MySQL và không thay đổi database MySQL
+thật. Bộ test hiện bao phủ đăng ký, catalog, voucher, quyền STAFF, quy tắc nghiệp
+vụ và quyền dừng/mở đặt bàn.
+
+## 13. Kiểm tra trước khi đưa lên Git
+
+Chạy:
+
+```bash
+git status
+git diff --check
+git ls-files | grep -E '(^|/)(\\.env|node_modules|target|frontend/dist)(/|$)'
+```
+
+Trên PowerShell:
+
+```powershell
+git status
+git diff --check
+git ls-files | Select-String '(^|/)(\.env|node_modules|target|frontend/dist)(/|$)'
+```
+
+Kết quả hợp lệ:
+
+- Chỉ `.env.example` được theo dõi; `.env` không xuất hiện.
+- Không có `node_modules`, `target` hoặc `frontend/dist`.
+- Không có mật khẩu, JWT secret, Cloudinary secret hay private key trong source.
+- Frontend build thành công.
+- Backend test thành công.
+- `docker compose config --quiet` thành công sau khi khai báo biến môi trường.
+
+Các file cần có trên Git để chạy Docker/Codespaces:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `.dockerignore`
+- `.env.example`
+- `.devcontainer/devcontainer.json`
+- `pom.xml`, Maven wrapper
+- `frontend/package.json`, `frontend/package-lock.json`
+- toàn bộ source trong `frontend/src` và `src`
+
+## 14. Lưu ý bảo mật và triển khai
+
+- Đổi toàn bộ mật khẩu demo trước khi công khai port Codespaces.
+- Không commit `.env`, database dump chứa dữ liệu thật hoặc token.
+- Không chia sẻ URL Swagger public nếu không cần thiết.
+- Cloudinary là tùy chọn cho catalog có sẵn, nhưng bắt buộc nếu muốn dùng chức
+  năng upload ảnh từ portal ADMIN.
+- `JPA_DDL_AUTO=update` phù hợp demo/phát triển. Production nên dùng migration
+  có phiên bản như Flyway hoặc Liquibase và cân nhắc `validate`.
+- Các phương thức thanh toán hiện là mô phỏng, không dùng cho giao dịch thật.
+- Nên dùng managed database, HTTPS, backup, monitoring và secret manager khi
+  triển khai production.
+- Nếu repository được công khai như dự án mã nguồn mở, cần bổ sung giấy phép
+  (`LICENSE`) phù hợp với quyết định của chủ dự án.
