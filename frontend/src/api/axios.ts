@@ -5,7 +5,7 @@ const api = axios.create({ baseURL: '/api', timeout: 15000 });
 
 // Attach access token
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('accessToken');
+  const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

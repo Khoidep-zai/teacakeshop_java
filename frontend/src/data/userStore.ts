@@ -103,8 +103,10 @@ export const getUserOrders = (): Order[] => loadStorage('store_orders', initialO
 
 export const addOrder = (orderData: Partial<Order>): Order => {
   const orders = getUserOrders();
+  const existingIdx = orderData.orderCode ? orders.findIndex(o => o.orderCode === orderData.orderCode) : -1;
+
   const newOrder: Order = {
-    id: Date.now(),
+    id: orderData.id || Date.now(),
     orderCode: orderData.orderCode || `ORD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
     orderType: orderData.orderType || 'NORMAL',
     status: orderData.status || 'PENDING',
@@ -124,10 +126,16 @@ export const addOrder = (orderData: Partial<Order>): Order => {
       lineTotal: (i as any).lineTotal ?? i.totalPrice ?? 0,
       totalPrice: i.totalPrice ?? (i as any).lineTotal ?? 0,
     })),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: orderData.createdAt || new Date().toISOString(),
+    updatedAt: orderData.updatedAt || new Date().toISOString(),
   };
-  orders.unshift(newOrder);
+
+  if (existingIdx >= 0) {
+    orders[existingIdx] = { ...orders[existingIdx], ...newOrder };
+  } else {
+    orders.unshift(newOrder);
+  }
+
   saveStorage('store_orders', orders);
   return newOrder;
 };
@@ -147,20 +155,28 @@ export const getUserReservations = (): Reservation[] => loadStorage('store_reser
 
 export const addReservation = (resData: Partial<Reservation>): Reservation => {
   const list = getUserReservations();
+  const existingIdx = resData.reservationCode ? list.findIndex(r => r.reservationCode === resData.reservationCode) : -1;
+
   const newRes: Reservation = {
-    id: Date.now(),
+    id: resData.id || Date.now(),
     reservationCode: resData.reservationCode || `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-    customerName: resData.customerName || 'Khoi Nguyen',
-    customerPhone: resData.customerPhone || '0902094421',
-    customerEmail: resData.customerEmail || 'nguyenkhoidk2005@gmail.com',
+    customerName: resData.customerName || '',
+    customerPhone: resData.customerPhone || '',
+    customerEmail: resData.customerEmail || '',
     reservationDate: resData.reservationDate || new Date().toISOString().slice(0, 10),
     reservationTime: resData.reservationTime || '18:00',
     partySize: resData.partySize || 2,
     note: resData.note || 'Đặt bàn Lounge 2026',
-    status: resData.status || 'CONFIRMED',
-    createdAt: new Date().toISOString()
+    status: resData.status || 'PENDING',
+    createdAt: resData.createdAt || new Date().toISOString()
   };
-  list.unshift(newRes);
+
+  if (existingIdx >= 0) {
+    list[existingIdx] = { ...list[existingIdx], ...newRes };
+  } else {
+    list.unshift(newRes);
+  }
+
   saveStorage('store_reservations', list);
   return newRes;
 };

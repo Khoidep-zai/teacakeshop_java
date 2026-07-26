@@ -43,12 +43,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (accessToken: string, refreshToken: string) => {
     sessionStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     await fetchCurrentUser();
   };
 
   const logout = () => {
     sessionStorage.removeItem('accessToken');
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
   };
