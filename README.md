@@ -49,12 +49,18 @@
 | 6 | **`AdminOrders` dùng status `SHIPPING` không tồn tại** → Backend 400 khi update | `AdminOrders.tsx` | ✅ Đã sửa → `PREPARING` |
 | 7 | **Cart token không reset sau checkout** → Cart cũ invalid lần sau | `CartContext.tsx` | ✅ Đã sửa |
 | 8 | **`/orders/{code}` require `phone` param** → User đăng nhập không xem được đơn | `OrderService.java`, `PublicOrderController.java` | ✅ Đã sửa |
+| 9 | **Kiểm thử giao diện Admin/Staff khó khăn** → Thêm nút điền nhanh tài khoản | `Login.tsx` | ✅ Đã thêm tính năng Quick Login |
 
-**Backend fixes:**
+**Backend fixes & Logic Đồng Bộ:**
+- **Đồng bộ Token & Lịch sử Đơn hàng (Khắc phục "Đơn hàng biến mất"):**
+  - Sửa lỗi Token lưu lơ lửng ở `sessionStorage` gây mất phiên đăng nhập khi refresh. Giờ đây `accessToken` được lưu và tự động gia hạn ở cả `localStorage` (trung tâm đồng bộ), đảm bảo JWT luôn được đính kèm ở `Axios Interceptor`.
+  - Backend Controller `PublicOrderController` luôn nhận diện đúng tài khoản qua JWT để liên kết đơn hàng với `user_account_id` trong MySQL.
+  - Sửa `userStore.ts` để lưu cục bộ thông minh, tự động deduplicate `orderCode` và giữ nguyên `id` từ server, ngăn chặn việc override dữ liệu.
 - Thêm method `getOrderByCodeForUser()` trong `OrderService` để user đăng nhập xem đơn bằng orderCode.
 - `PublicOrderController.getOrder()`: `phone` param giờ là **optional** – nếu có phone dùng lookup thông thường, nếu không có phone nhưng có auth token thì validate ownership và trả về.
 
-**Frontend fixes:**
+**Frontend fixes & Cải tiến UI:**
+- `Login.tsx`: Trang bị bộ 3 nút **Đăng Nhập Nhanh (Quick Login)** cho Admin, Staff và Customer, tiện lợi cho quá trình kiểm thử hệ thống.
 - `Checkout.tsx`: Thêm selector **Loại đơn hàng** (NORMAL/TAKEAWAY_PREORDER/RESERVATION_COMBO), field **Địa chỉ giao hàng** riêng (bắt buộc cho đơn NORMAL), gọi payment API sau checkout thành công.
 - `OrderTracking.tsx`: Lấy `phone` từ URL query param (`?phone=...`) sau redirect checkout; hiển thị form nhập phone nếu không có.
 - `Profile.tsx`: Link đến OrderTracking kèm `?phone=customerPhone`.
