@@ -205,7 +205,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponse> getBestSellers() {
         return productRepository
-                .findTop8ByActiveTrueAndCategory_ActiveTrueOrderBySoldQuantityDesc()
+                .findTop8ByActiveTrueAndCategory_ActiveTrueAndBestSellerTrueOrderBySoldQuantityDescCreatedAtDesc()
                 .stream()
                 .map(this::toResponse)
                 .toList();

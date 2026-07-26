@@ -8,10 +8,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProductRepository
         extends JpaRepository<Product, Long>,
         JpaSpecificationExecutor<Product> {
+
+    Optional<Product> findByNameIgnoreCase(String name);
 
     /*
      * Lấy danh sách sản phẩm đang hoạt động.
@@ -82,7 +85,7 @@ public interface ProductRepository
      * Sản phẩm bán chạy.
      */
     List<Product>
-    findTop8ByActiveTrueAndCategory_ActiveTrueOrderBySoldQuantityDesc();
+    findTop8ByActiveTrueAndCategory_ActiveTrueAndBestSellerTrueOrderBySoldQuantityDescCreatedAtDesc();
 
     /*
      * Sản phẩm mới nhất.
