@@ -5,10 +5,12 @@ import com.example.teacakeshop.entity.Combo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 
-public interface ComboRepository extends JpaRepository<Combo, Long> {
+public interface ComboRepository extends JpaRepository<Combo, Long>,
+        JpaSpecificationExecutor<Combo> {
 
     boolean existsByNameIgnoreCase(String name);
 

@@ -4,6 +4,7 @@ export const login = (data: LoginRequest) => api.post<AuthResponse>('/auth/login
 export const register = (data: RegisterRequest) => api.post<AuthResponse>('/auth/register', data).then(r => r.data);
 export const getMe = () => api.get<UserProfile>('/auth/me').then(r => r.data);
 export const logout = (data: { accessToken: string; refreshToken: string }) => api.post('/auth/logout', data);
+export const logoutAll = () => api.post('/auth/logout-all');
 export const getCustomerSummary = () => api.get('/customer/summary').then(r => r.data);
 export const getAdminUsers = () => api.get('/admin/users').then(r => r.data);
 export const updateUserRole = (id: number, role: string) => api.patch(`/admin/users/${id}/role`, { role });

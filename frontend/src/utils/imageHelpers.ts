@@ -1,8 +1,6 @@
-import { fallbackProducts, fallbackCombos } from '../data/mockCatalog';
-
 /**
  * Lấy đường dẫn ảnh cho sản phẩm.
- * Ưu tiên: imageUrl từ backend > fallback catalog > name matching.
+ * Ưu tiên ảnh backend, sau đó chỉ dùng ảnh minh họa tĩnh.
  */
 export const getProductImageUrl = (product: {
   id: number;
@@ -12,12 +10,6 @@ export const getProductImageUrl = (product: {
   // Nếu backend trả về imageUrl hợp lệ, dùng luôn
   if (product.imageUrl && product.imageUrl !== '/favicon.svg') {
     return product.imageUrl;
-  }
-
-  // Tìm trong fallback catalog
-  const found = fallbackProducts.find(p => p.id === product.id);
-  if (found && found.imageUrl) {
-    return found.imageUrl;
   }
 
   // Match theo tên sản phẩm
@@ -47,7 +39,7 @@ export const getProductImageUrl = (product: {
 
 /**
  * Lấy đường dẫn ảnh cho combo.
- * Ưu tiên: imageUrl từ backend > fallback catalog > id matching.
+ * Ưu tiên ảnh backend, sau đó chỉ dùng ảnh minh họa tĩnh.
  */
 export const getComboImageUrl = (combo: {
   id: number;
@@ -58,16 +50,6 @@ export const getComboImageUrl = (combo: {
   if (combo.imageUrl && combo.imageUrl !== '/favicon.svg') {
     return combo.imageUrl;
   }
-
-  // Tìm trong fallback catalog
-  const found = fallbackCombos.find(c => c.id === combo.id);
-  if (found && found.imageUrl) {
-    return found.imageUrl;
-  }
-
-  // Match theo ID (dùng cho data mock ban đầu)
-  if (combo.id === 2) return '/images/combos/combo_rainy.png';
-  if (combo.id === 3) return '/images/combos/combo_energy.png';
 
   // Match theo tên nếu có
   if (combo.name) {

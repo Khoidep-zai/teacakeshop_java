@@ -4,7 +4,7 @@ import ComboCard from '../components/combos/ComboCard';
 import type { Combo, WeatherType } from '../types';
 import { Cloud, Sun, CloudRain, Snowflake, Flame, Activity, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fallbackCombos } from '../data/mockCatalog';
+import toast from 'react-hot-toast';
 
 const WEATHERS: { value: WeatherType; label: string; icon: any }[] = [
   { value: 'SUNNY', label: 'Nắng ấm', icon: Sun },
@@ -39,13 +39,10 @@ export default function Combos() {
       } else if (activeTab === 'weather') {
         result = await getCombosByWeather(selectedWeather);
       }
-      if (Array.isArray(result) && result.length > 0) {
-        setCombos(result);
-      } else {
-        setCombos(fallbackCombos);
-      }
-    } catch (error) {
-      setCombos(fallbackCombos);
+      setCombos(Array.isArray(result) ? result : []);
+    } catch (error: any) {
+      setCombos([]);
+      toast.error(error?.response?.data?.message || 'Không thể tải danh sách combo.');
     } finally {
       setLoading(false);
     }
@@ -124,13 +121,17 @@ export default function Combos() {
             <div key={i} className="glass-card h-80 animate-pulse"></div>
           ))}
         </div>
-      ) : (
+      ) : combos.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {combos.map((combo) => (
             <motion.div key={combo.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <ComboCard combo={combo} />
             </motion.div>
           ))}
+        </div>
+      ) : (
+        <div className="glass-card p-12 text-center text-sm text-slate-500">
+          Không có combo đang bán phù hợp.
         </div>
       )}
 

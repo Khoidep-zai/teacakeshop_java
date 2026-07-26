@@ -11,6 +11,7 @@ public class SpaWebController {
         "/products/**",
         "/combos/**",
         "/reservation/**",
+        "/reservations/**",
         "/cart/**",
         "/checkout/**",
         "/orders/**",

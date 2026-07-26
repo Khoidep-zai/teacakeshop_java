@@ -2,53 +2,48 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Package, Calendar, LogOut, ChevronRight, Sparkles, Award, Clock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { getMyOrders } from '../api/orders';
-import { getMyReservations } from '../api/reservations';
+import { getMyOrdersPage } from '../api/orders';
+import { cancelReservation, getMyReservation, getMyReservationsPage } from '../api/reservations';
+import { getCustomerSummary } from '../api/auth';
 import type { Order, Reservation } from '../types';
-import { getUserOrders, getUserReservations } from '../data/userStore';
+import toast from 'react-hot-toast';
 
 // Helper: lấy itemName an toàn từ OrderItem
 const getItemName = (item: any): string => item.itemName || item.name || 'Sản phẩm';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, logoutAll } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'reservations'>('overview');
   const [orders, setOrders] = useState<Order[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [orderPage, setOrderPage] = useState(0);
+  const [orderPages, setOrderPages] = useState(0);
+  const [reservationPage, setReservationPage] = useState(0);
+  const [reservationPages, setReservationPages] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalReservations, setTotalReservations] = useState(0);
+  const [reservationDetail, setReservationDetail] = useState<Reservation | null>(null);
 
   const loadUserData = async () => {
     setLoading(true);
 
     try {
-      const [ordRes, resRes] = await Promise.allSettled([
-        getMyOrders(),
-        getMyReservations()
+      const [orderResult, reservationResult, summary] = await Promise.all([
+        getMyOrdersPage(orderPage, 10),
+        getMyReservationsPage(reservationPage, 10),
+        getCustomerSummary(),
       ]);
-
-      const apiOrders: Order[] = (ordRes.status === 'fulfilled' && Array.isArray(ordRes.value))
-        ? ordRes.value
-        : [];
-
-      const apiReservations: Reservation[] = (resRes.status === 'fulfilled' && Array.isArray(resRes.value))
-        ? resRes.value
-        : [];
-
-      if (apiOrders.length > 0 || apiReservations.length > 0) {
-        // Ưu tiên data từ API – không merge local store để tránh hiển thị data cũ/sai
-        setOrders(apiOrders);
-        setReservations(apiReservations);
-      } else {
-        // Fallback về local store (chỉ dùng khi API fail hoặc chưa đăng nhập)
-        const storeOrders = getUserOrders();
-        const storeReservations = getUserReservations();
-        setOrders(storeOrders);
-        setReservations(storeReservations);
-      }
-    } catch {
-      // Fallback hoàn toàn về local store nếu API lỗi
-      setOrders(getUserOrders());
-      setReservations(getUserReservations());
+      setOrders(orderResult.content || []);
+      setOrderPages(orderResult.totalPages || 0);
+      setReservations(reservationResult.content || []);
+      setReservationPages(reservationResult.totalPages || 0);
+      setTotalOrders(summary.totalOrders ?? orderResult.totalElements ?? 0);
+      setTotalReservations(summary.totalReservations ?? reservationResult.totalElements ?? 0);
+    } catch (error: any) {
+      setOrders([]);
+      setReservations([]);
+      toast.error(error?.response?.data?.message || 'Không thể tải dữ liệu tài khoản.');
     } finally {
       setLoading(false);
     }
@@ -56,9 +51,27 @@ export default function Profile() {
 
   useEffect(() => {
     loadUserData();
-    window.addEventListener('user_store_updated', loadUserData);
-    return () => window.removeEventListener('user_store_updated', loadUserData);
-  }, []);
+  }, [orderPage, reservationPage]);
+
+  const openReservation = async (id: number) => {
+    try {
+      setReservationDetail(await getMyReservation(id));
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể tải chi tiết lịch đặt bàn.');
+    }
+  };
+
+  const cancelMyReservation = async (reservation: Reservation) => {
+    if (!window.confirm(`Bạn chắc chắn muốn hủy lịch ${reservation.reservationCode}?`)) return;
+    try {
+      await cancelReservation(reservation.reservationCode, reservation.customerPhone);
+      toast.success('Đã hủy lịch đặt bàn.');
+      setReservationDetail(null);
+      await loadUserData();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Lịch đặt bàn không đủ điều kiện hủy.');
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -108,7 +121,7 @@ export default function Profile() {
               activeTab === 'orders' ? 'bg-slate-900 text-white dark:bg-primary dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <Package size={16} /> Đơn hàng của tôi ({orders.length})
+            <Package size={16} /> Đơn hàng của tôi ({totalOrders})
           </button>
           <button
             onClick={() => setActiveTab('reservations')}
@@ -116,7 +129,7 @@ export default function Profile() {
               activeTab === 'reservations' ? 'bg-slate-900 text-white dark:bg-primary dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <Calendar size={16} /> Lịch hẹn đặt bàn ({reservations.length})
+            <Calendar size={16} /> Lịch hẹn đặt bàn ({totalReservations})
           </button>
           
           <button
@@ -124,6 +137,19 @@ export default function Profile() {
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs text-red-500 hover:bg-red-500/10 transition-all pt-4 border-t border-slate-200 dark:border-slate-800"
           >
             <LogOut size={16} /> Đăng xuất tài khoản
+          </button>
+          <button
+            onClick={async () => {
+              if (!window.confirm('Đăng xuất tài khoản trên tất cả thiết bị?')) return;
+              try {
+                await logoutAll();
+              } catch (error: any) {
+                toast.error(error?.response?.data?.message || 'Không thể đăng xuất mọi thiết bị.');
+              }
+            }}
+            className="w-full px-4 py-2 text-left rounded-xl font-bold text-[11px] text-red-400 hover:bg-red-500/10"
+          >
+            Đăng xuất tất cả thiết bị
           </button>
         </div>
 
@@ -155,6 +181,10 @@ export default function Profile() {
                   <p className="text-slate-400">Quyền hệ thống</p>
                   <p className="font-extrabold text-primary dark:text-primary-glow text-sm">{user?.role || 'CUSTOMER'}</p>
                 </div>
+                <div className="p-4 bg-slate-100/70 dark:bg-slate-800/70 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 space-y-1">
+                  <p className="text-slate-400">Trạng thái tài khoản</p>
+                  <p className="font-extrabold text-emerald-600 text-sm">{user?.active ? 'Đang hoạt động' : 'Đã khóa'}</p>
+                </div>
               </div>
             </div>
           )}
@@ -162,7 +192,7 @@ export default function Profile() {
           {activeTab === 'orders' && (
             <div className="glass-card p-6 sm:p-8 space-y-4">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white font-serif-title pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <span>Lịch Sử Đơn Hàng Thưởng Trà ({orders.length})</span>
+                <span>Lịch Sử Đơn Hàng Thưởng Trà ({totalOrders})</span>
               </h2>
               {loading ? (
                 <div className="py-10 text-center text-slate-400 text-xs">Đang tải lịch sử đơn hàng...</div>
@@ -204,13 +234,20 @@ export default function Profile() {
                   ))}
                 </div>
               )}
+              {!loading && orderPages > 1 && (
+                <div className="flex justify-center items-center gap-3">
+                  <button className="btn-secondary text-xs" disabled={orderPage === 0} onClick={() => setOrderPage(value => value - 1)}>Trang trước</button>
+                  <span className="text-xs font-bold">{orderPage + 1}/{orderPages}</span>
+                  <button className="btn-secondary text-xs" disabled={orderPage + 1 >= orderPages} onClick={() => setOrderPage(value => value + 1)}>Trang sau</button>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'reservations' && (
             <div className="glass-card p-6 sm:p-8 space-y-4">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white font-serif-title pb-3 border-b border-slate-200 dark:border-slate-800">
-                Lịch Sử Đặt Bàn Lounge ({reservations.length})
+                Lịch Sử Đặt Bàn Lounge ({totalReservations})
               </h2>
               {loading ? (
                 <div className="py-10 text-center text-slate-400 text-xs">Đang tải lịch đặt bàn...</div>
@@ -244,9 +281,22 @@ export default function Profile() {
                           {res.note || 'Lịch hẹn thưởng trà'} — {timeStr} ngày {dateStr} ({guestCount} khách)
                         </p>
                       </div>
+                      <div className="flex gap-2">
+                        <button className="btn-secondary text-xs" onClick={() => void openReservation(res.id)}>Chi tiết</button>
+                        {res.status === 'PENDING' && (
+                          <button className="text-xs font-bold text-red-500 px-3" onClick={() => void cancelMyReservation(res)}>Hủy lịch</button>
+                        )}
+                      </div>
                     </div>
                     );
                   })}
+                </div>
+              )}
+              {!loading && reservationPages > 1 && (
+                <div className="flex justify-center items-center gap-3">
+                  <button className="btn-secondary text-xs" disabled={reservationPage === 0} onClick={() => setReservationPage(value => value - 1)}>Trang trước</button>
+                  <span className="text-xs font-bold">{reservationPage + 1}/{reservationPages}</span>
+                  <button className="btn-secondary text-xs" disabled={reservationPage + 1 >= reservationPages} onClick={() => setReservationPage(value => value + 1)}>Trang sau</button>
                 </div>
               )}
             </div>
@@ -255,6 +305,27 @@ export default function Profile() {
         </div>
 
       </div>
+      {reservationDetail && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
+          <div className="glass-card p-6 w-full max-w-lg space-y-4">
+            <h2 className="text-xl font-bold">Lịch #{reservationDetail.reservationCode}</h2>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <p><b>Khách:</b><br />{reservationDetail.customerName}<br />{reservationDetail.customerPhone}</p>
+              <p><b>Thời gian:</b><br />{new Date(reservationDetail.reservationTime).toLocaleString('vi-VN')}</p>
+              <p><b>Số khách:</b> {reservationDetail.numberOfPeople}</p>
+              <p><b>Trạng thái:</b> {reservationDetail.status}</p>
+              <p className="col-span-2"><b>Đơn combo:</b> {reservationDetail.orderCode || 'Không có'}</p>
+              <p className="col-span-2"><b>Ghi chú:</b> {reservationDetail.note || '—'}</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              {reservationDetail.status === 'PENDING' && (
+                <button className="px-4 py-2 text-red-500 font-bold text-xs" onClick={() => void cancelMyReservation(reservationDetail)}>Hủy lịch</button>
+              )}
+              <button className="btn-secondary text-xs" onClick={() => setReservationDetail(null)}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

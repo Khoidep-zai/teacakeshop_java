@@ -21,6 +21,9 @@ export const getOrder = (code: string, phone: string) =>
 export const getMyOrders = (page = 0, size = 50) =>
   api.get<Page<Order>>('/customer/orders', { params: { page, size } })
     .then(r => r.data.content ?? []);
+export const getMyOrdersPage = (page = 0, size = 10) =>
+  api.get<Page<Order>>('/customer/orders', { params: { page, size } })
+    .then(r => r.data);
 
 /**
  * Lấy chi tiết một đơn của user đăng nhập.

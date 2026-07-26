@@ -25,6 +25,7 @@ const Navbar: React.FC = () => {
     { path: '/products', label: t('nav.products', 'Sản phẩm') },
     { path: '/combos', label: t('nav.combos', 'Combo Chiều') },
     { path: '/reservation', label: t('nav.reservation', 'Đặt bàn Lounge') },
+    { path: '/reservations/track', label: 'Tra cứu lịch' },
   ];
 
   return (

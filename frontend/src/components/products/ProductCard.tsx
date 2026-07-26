@@ -32,8 +32,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           secondary: '#FFFFFF',
         },
       });
-    } catch {
-      toast.error('Không thể thêm sản phẩm vào giỏ hàng');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng');
     } finally {
       setAdding(false);
     }
@@ -90,10 +90,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Price & Action Button */}
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Giá niêm yết</span>
-            <span className="font-extrabold text-lg text-primary dark:text-primary-glow">
-              {product.price.toLocaleString('vi-VN')}₫
+            <span className="text-[10px] text-slate-400 uppercase font-semibold">
+              {product.discountAmount ? product.discountCampaignName || 'Đang khuyến mãi' : 'Giá niêm yết'}
             </span>
+            <span className="font-extrabold text-lg text-primary dark:text-primary-glow">
+              {(product.finalPrice ?? product.price).toLocaleString('vi-VN')}₫
+            </span>
+            {(product.finalPrice ?? product.price) < product.price && (
+              <span className="text-[10px] text-slate-400 line-through">{product.price.toLocaleString('vi-VN')}₫</span>
+            )}
           </div>
           
           <button 

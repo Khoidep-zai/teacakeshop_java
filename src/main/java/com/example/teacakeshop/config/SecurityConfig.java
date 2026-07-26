@@ -141,6 +141,7 @@ public class SecurityConfig {
                                         "/products/**",
                                         "/combos/**",
                                         "/reservation/**",
+                                        "/reservations/**",
                                         "/cart/**",
                                         "/checkout/**",
                                         "/orders/**",

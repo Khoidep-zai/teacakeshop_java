@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.time.LocalDate;
 
 @Service
 public class ProductSuggestionService {
@@ -58,6 +59,11 @@ public class ProductSuggestionService {
                         sourceProductId
                 )
                 .stream()
+                .filter(suggestion ->
+                        isSellableProduct(
+                                suggestion.getSuggestedProduct()
+                        )
+                )
                 .map(this::toResponse)
                 .toList();
     }
@@ -74,7 +80,12 @@ public class ProductSuggestionService {
     ) {
         Combo combo = comboService.findEntityById(comboId);
 
-        if (Boolean.FALSE.equals(combo.getActive())) {
+        LocalDate today = LocalDate.now();
+        if (Boolean.FALSE.equals(combo.getActive())
+                || (combo.getStartDate() != null
+                && today.isBefore(combo.getStartDate()))
+                || (combo.getEndDate() != null
+                && today.isAfter(combo.getEndDate()))) {
             throw new ResourceNotFoundException(
                     "Không tìm thấy combo có ID " + comboId
             );
@@ -93,6 +104,11 @@ public class ProductSuggestionService {
                             );
 
             for (ProductSuggestion suggestion : suggestions) {
+                if (!isSellableProduct(
+                        suggestion.getSuggestedProduct()
+                )) {
+                    continue;
+                }
                 Long suggestedId = suggestion.getSuggestedProduct().getId();
 
                 if (seenSuggestedProductIds.add(suggestedId) && results.size() < 6) {
@@ -106,6 +122,19 @@ public class ProductSuggestionService {
         }
 
         return results;
+    }
+
+    private boolean isSellableProduct(
+            Product product
+    ) {
+        return product != null
+                && Boolean.TRUE.equals(product.getActive())
+                && product.getCategory() != null
+                && Boolean.TRUE.equals(
+                        product.getCategory().getActive()
+                )
+                && product.getStockQuantity() != null
+                && product.getStockQuantity() > 0;
     }
 
     /*

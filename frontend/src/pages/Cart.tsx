@@ -3,10 +3,18 @@ import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Sparkles, ShieldCheck } f
 import { motion } from 'framer-motion';
 import { useCart } from '../hooks/useCart';
 import { getCartItemImageUrl } from '../utils/imageHelpers';
+import toast from 'react-hot-toast';
 
 export default function Cart() {
   const navigate = useNavigate();
   const { cart, updateItem, removeItem, clearCart, loading } = useCart();
+  const runCartAction = async (action: () => Promise<void>) => {
+    try {
+      await action();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể cập nhật giỏ hàng.');
+    }
+  };
 
   if (loading) {
     return (
@@ -88,14 +96,15 @@ export default function Cart() {
               <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
                 <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
                   <button 
-                    onClick={() => item.quantity > 1 ? updateItem(item.id, item.quantity - 1) : removeItem(item.id)}
+                    onClick={() => void runCartAction(() => item.quantity > 1 ? updateItem(item.id, item.quantity - 1) : removeItem(item.id))}
                     className="p-1.5 hover:text-primary transition-colors text-slate-600 dark:text-slate-300"
                   >
                     <Minus size={14} />
                   </button>
                   <span className="font-extrabold text-xs w-6 text-center text-slate-900 dark:text-white">{item.quantity}</span>
                   <button 
-                    onClick={() => updateItem(item.id, item.quantity + 1)}
+                    onClick={() => void runCartAction(() => updateItem(item.id, item.quantity + 1))}
+                    disabled={item.availableQuantity !== undefined && item.quantity >= item.availableQuantity}
                     className="p-1.5 hover:text-primary transition-colors text-slate-600 dark:text-slate-300"
                   >
                     <Plus size={14} />
@@ -107,7 +116,7 @@ export default function Cart() {
                 </p>
 
                 <button 
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => void runCartAction(() => removeItem(item.id))}
                   className="text-slate-400 hover:text-red-500 transition-colors p-2"
                   title="Xóa khỏi giỏ"
                 >
@@ -119,7 +128,7 @@ export default function Cart() {
 
           <div className="flex justify-between items-center pt-2">
             <button 
-              onClick={() => clearCart()}
+              onClick={() => void runCartAction(clearCart)}
               className="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1"
             >
               <Trash2 size={14} /> Xóa toàn bộ giỏ hàng

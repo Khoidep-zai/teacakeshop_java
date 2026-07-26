@@ -5,8 +5,8 @@ import { Search, Filter, X, Coffee, Sparkles } from 'lucide-react';
 import { getProducts } from '../api/products';
 import { getCategories } from '../api/categories';
 import ProductCard from '../components/products/ProductCard';
-import type { Product, Category } from '../types';
-import { fallbackProducts } from '../data/mockCatalog';
+import type { Product, Category, Page } from '../types';
+import toast from 'react-hot-toast';
 
 const Products: React.FC = () => {
   const { t } = useTranslation();
@@ -19,43 +19,43 @@ const Products: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ALL' | 'TEA' | 'CAKE'>('ALL');
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc' | 'hot'>('newest');
+  const [onlyInStock, setOnlyInStock] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
+    getCategories()
+      .then(data => setCategories(Array.isArray(data) ? data : []))
+      .catch((error: any) => toast.error(error?.response?.data?.message || 'Không thể tải danh mục.'));
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(async () => {
       setLoading(true);
       try {
-        const [productsData, categoriesData] = await Promise.all([
-          getProducts(),
-          getCategories()
-        ]);
-        const list = (productsData as any).content ?? productsData;
-        if (Array.isArray(list) && list.length > 0) {
-          setProducts(list);
-        } else {
-          setProducts(fallbackProducts);
-        }
-        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
-          setCategories(categoriesData);
-        }
-      } catch (error) {
-        setProducts(fallbackProducts);
+        const result = await getProducts({
+          keyword: searchTerm.trim() || undefined,
+          type: activeTab === 'ALL' ? undefined : activeTab,
+          categoryId: activeCategory || undefined,
+          inStock: onlyInStock || undefined,
+          hot: sortBy === 'hot' ? true : undefined,
+          sort: sortBy === 'hot' ? 'newest' : sortBy,
+          page,
+          size: 9,
+        }) as Page<Product>;
+        setProducts(result.content || []);
+        setTotalPages(result.totalPages || 0);
+      } catch (error: any) {
+        setProducts([]);
+        setTotalPages(0);
+        toast.error(error?.response?.data?.message || 'Không thể tải sản phẩm.');
       } finally {
         setLoading(false);
       }
-    };
-    fetchData();
-  }, []);
-
-  const filteredProducts = products
-    .filter(p => activeTab === 'ALL' || p.productType === activeTab)
-    .filter(p => !activeCategory || p.categoryId === activeCategory)
-    .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.description?.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === 'price-asc') return a.price - b.price;
-      if (sortBy === 'price-desc') return b.price - a.price;
-      return b.id - a.id;
-    });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchTerm, activeTab, activeCategory, sortBy, onlyInStock, page]);
 
   return (
     <div className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -78,7 +78,7 @@ const Products: React.FC = () => {
               type="text"
               placeholder={t('products.search', 'Tìm kiếm trà, bánh ngọt...')}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
               className="input-field pl-11 text-xs sm:text-sm"
             />
             <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
@@ -124,6 +124,7 @@ const Products: React.FC = () => {
                     onClick={() => {
                       setActiveTab(tab.key as any);
                       setActiveCategory(null);
+                      setPage(0);
                     }}
                     className={`text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
                       activeTab === tab.key
@@ -143,7 +144,7 @@ const Products: React.FC = () => {
                 <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-3">Danh Mục Món</h3>
                 <div className="flex flex-wrap gap-1.5">
                   <button
-                    onClick={() => setActiveCategory(null)}
+                    onClick={() => { setActiveCategory(null); setPage(0); }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                       activeCategory === null
                         ? 'border-primary bg-primary/10 text-primary'
@@ -155,7 +156,7 @@ const Products: React.FC = () => {
                   {categories.map(category => (
                     <button
                       key={category.id}
-                      onClick={() => setActiveCategory(category.id)}
+                      onClick={() => { setActiveCategory(category.id); setPage(0); }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                         activeCategory === category.id
                           ? 'border-primary bg-primary/10 text-primary'
@@ -174,14 +175,19 @@ const Products: React.FC = () => {
               <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-3">Sắp Xếp Giá</h3>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => { setSortBy(e.target.value as any); setPage(0); }}
                 className="input-field text-xs font-semibold"
               >
                 <option value="newest">Mới nhất 2026</option>
                 <option value="price-asc">Giá tăng dần</option>
                 <option value="price-desc">Giá giảm dần</option>
+                <option value="hot">Sản phẩm nổi bật</option>
               </select>
             </div>
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+              <input type="checkbox" checked={onlyInStock} onChange={e => { setOnlyInStock(e.target.checked); setPage(0); }} />
+              Chỉ hiển thị sản phẩm còn hàng
+            </label>
 
           </div>
         </div>
@@ -194,13 +200,13 @@ const Products: React.FC = () => {
                 <div key={i} className="glass-card h-80 animate-pulse"></div>
               ))}
             </div>
-          ) : filteredProducts.length > 0 ? (
+          ) : products.length > 0 ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <motion.div key={product.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
                   <ProductCard product={product} />
                 </motion.div>
@@ -220,11 +226,20 @@ const Products: React.FC = () => {
                   setSearchTerm('');
                   setActiveCategory(null);
                   setActiveTab('ALL');
+                  setOnlyInStock(false);
+                  setPage(0);
                 }}
                 className="btn-primary text-xs px-6 py-2.5"
               >
                 Xóa Bộ Lọc Tìm Kiếm
               </button>
+            </div>
+          )}
+          {!loading && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-8">
+              <button className="btn-secondary text-xs" disabled={page === 0} onClick={() => setPage(value => value - 1)}>Trang trước</button>
+              <span className="text-xs font-bold">Trang {page + 1}/{totalPages}</span>
+              <button className="btn-secondary text-xs" disabled={page + 1 >= totalPages} onClick={() => setPage(value => value + 1)}>Trang sau</button>
             </div>
           )}
         </div>

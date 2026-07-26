@@ -5,6 +5,15 @@ import { getAdminPaymentSummary } from '../../api/payments';
 import type { OrderPaymentSummary, Reservation } from '../../types';
 import toast from 'react-hot-toast';
 
+const RESERVATION_STATUS_LABELS: Record<Reservation['status'], string> = {
+  PENDING: 'Chờ xác nhận',
+  CONFIRMED: 'Đã giữ chỗ',
+  SEATED: 'Đã đón khách',
+  COMPLETED: 'Hoàn thành',
+  CANCELLED: 'Đã hủy',
+  NO_SHOW: 'Khách không đến',
+};
+
 export default function AdminReservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +24,7 @@ export default function AdminReservations() {
   const [toTime, setToTime] = useState('');
   const [detail, setDetail] = useState<Reservation | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<OrderPaymentSummary | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const fetchReservations = async () => {
     setLoading(true);
@@ -47,16 +57,19 @@ export default function AdminReservations() {
   }, []);
 
   const handleStatusChange = async (resId: number, status: Reservation['status']) => {
+    setUpdatingId(resId);
     try {
-      await updateApiResStatus(resId, status);
-      toast.success(`Đã cập nhật lịch đặt bàn sang "${status}"! ✨`, {
+      const updated = await updateApiResStatus(resId, status) as Reservation;
+      setReservations(current => current.map(item => item.id === resId ? updated : item));
+      toast.success(`Đã cập nhật lịch đặt bàn sang "${RESERVATION_STATUS_LABELS[status]}"! ✨`, {
         style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
       });
-      // Refresh từ API để đồng bộ
       await fetchReservations();
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Không thể cập nhật trạng thái.';
       toast.error(msg);
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -104,8 +117,9 @@ export default function AdminReservations() {
           <input className="input-field pl-10" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Mã đặt bàn, tên hoặc số điện thoại" /></div>
         <select className="input-field w-48" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="ALL">Mọi trạng thái</option>{['PENDING','CONFIRMED','SEATED','COMPLETED','CANCELLED','NO_SHOW']
-            .map(value => <option key={value} value={value}>{value}</option>)}
+          <option value="ALL">Mọi trạng thái</option>
+          {(Object.keys(RESERVATION_STATUS_LABELS) as Reservation['status'][])
+            .map(value => <option key={value} value={value}>{RESERVATION_STATUS_LABELS[value]}</option>)}
         </select>
         <input type="date" className="input-field w-44" value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
         <input type="time" className="input-field w-36" value={fromTime} onChange={e => setFromTime(e.target.value)} title="Từ giờ" />
@@ -191,15 +205,25 @@ export default function AdminReservations() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <select
-                        value=""
-                        onChange={(e) => handleStatusChange(res.id, e.target.value as any)}
-                        disabled={!nextStatuses(res.status).length}
-                        className="input-field text-xs font-extrabold py-1 px-2 text-center"
-                      >
-                        <option value="">Chọn bước tiếp theo</option>
-                        {nextStatuses(res.status).map(value => <option key={value} value={value}>{value}</option>)}
-                      </select>
+                      {nextStatuses(res.status).length ? (
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) void handleStatusChange(res.id, e.target.value as Reservation['status']);
+                          }}
+                          disabled={updatingId === res.id}
+                          className="input-field text-xs font-extrabold py-1 px-2 text-center"
+                        >
+                          <option value="">{updatingId === res.id ? 'Đang cập nhật...' : 'Chọn bước tiếp theo'}</option>
+                          {nextStatuses(res.status).map(value => (
+                            <option key={value} value={value}>{RESERVATION_STATUS_LABELS[value]}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="block text-center text-[11px] font-bold text-slate-400">
+                          Đã kết thúc
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

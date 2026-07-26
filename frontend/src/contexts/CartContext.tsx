@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import type { Cart, CartItemType } from '../types';
 import * as cartApi from '../api/cart';
+import toast from 'react-hot-toast';
 
 export interface CartContextType {
   cart: Cart | null;
@@ -10,6 +11,7 @@ export interface CartContextType {
   updateItem: (cartItemId: number, quantity: number) => Promise<void>;
   removeItem: (cartItemId: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  refreshCart: () => Promise<void>;
   itemCount: number;
 }
 
@@ -21,6 +23,7 @@ export const CartContext = createContext<CartContextType>({
   updateItem: async () => {},
   removeItem: async () => {},
   clearCart: async () => {},
+  refreshCart: async () => {},
   itemCount: 0,
 });
 
@@ -43,17 +46,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = await cartApi.getCart(activeToken);
         setCart(data);
       }
-    } catch (e) {
-      console.warn('Backend cart init fallback:', e);
-      const fallbackToken = activeToken || 'demo-cart-token-' + Date.now();
-      localStorage.setItem('cartToken', fallbackToken);
-      setToken(fallbackToken);
-      setCart({
-        token: fallbackToken,
-        items: [],
-        totalAmount: 0,
-        itemCount: 0
-      });
+    } catch (error: any) {
+      if (activeToken && error?.response?.status === 404) {
+        localStorage.removeItem('cartToken');
+        try {
+          const newCart = await cartApi.createCart();
+          localStorage.setItem('cartToken', newCart.token);
+          setToken(newCart.token);
+          setCart(newCart);
+        } catch (createError: any) {
+          setToken(null);
+          setCart(null);
+          toast.error(createError?.response?.data?.message || 'Không thể tạo giỏ hàng.');
+        }
+      } else {
+        setCart(null);
+        toast.error(error?.response?.data?.message || 'Không thể tải giỏ hàng.');
+      }
     } finally {
       setLoading(false);
     }
@@ -112,32 +121,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         quantity
       });
       setCart(mapCart(rawUpdated));
-    } catch (e: any) {
-      console.warn('Backend cart addItem error, activating seamless fallback mode:', e);
-      // Fallback local update nếu BE không có dữ liệu seed
-      setCart(prev => {
-        const items = prev?.items || [];
-        const existingIndex = items.findIndex(i =>
-          itemType === 'PRODUCT' ? i.productId === targetId : i.comboId === targetId
-        );
-        let updatedItems = [...items];
-        if (existingIndex >= 0) {
-          const existing = updatedItems[existingIndex];
-          const newQty = existing.quantity + quantity;
-          updatedItems[existingIndex] = { ...existing, quantity: newQty, totalPrice: existing.unitPrice * newQty };
-        } else {
-          updatedItems.push({
-            id: Date.now(), itemType,
-            productId: itemType === 'PRODUCT' ? targetId : undefined,
-            comboId: itemType === 'COMBO' ? targetId : undefined,
-            productName: itemType === 'PRODUCT' ? 'Món ăn đã chọn' : undefined,
-            comboName: itemType === 'COMBO' ? 'Set Combo đã chọn' : undefined,
-            unitPrice: 75000, totalPrice: 75000 * quantity, quantity,
-          });
-        }
-        const total = updatedItems.reduce((s, i) => s + i.totalPrice, 0);
-        return { token: currentToken || 'demo-cart-token', items: updatedItems, totalAmount: total, itemCount: updatedItems.length };
-      });
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -146,13 +131,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updated = await cartApi.updateCartItem(token, cartItemId, quantity);
       setCart(mapCart(updated));
-    } catch (e) {
-      setCart(prev => {
-        if (!prev) return null;
-        const items = prev.items.map(i => i.id === cartItemId ? { ...i, quantity, totalPrice: i.unitPrice * quantity } : i);
-        const total = items.reduce((s, i) => s + i.totalPrice, 0);
-        return { ...prev, items, totalAmount: total };
-      });
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -161,13 +141,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updated = await cartApi.removeCartItem(token, cartItemId);
       setCart(mapCart(updated));
-    } catch (e) {
-      setCart(prev => {
-        if (!prev) return null;
-        const items = prev.items.filter(i => i.id !== cartItemId);
-        const total = items.reduce((s, i) => s + i.totalPrice, 0);
-        return { ...prev, items, totalAmount: total };
-      });
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -175,8 +150,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!token) return;
     try {
       await cartApi.clearCart(token);
-    } catch (e) {
-      // ignore
+    } catch (error: any) {
+      if (error?.response?.status !== 404) {
+        throw error;
+      }
     }
     // Xóa token cũ (cart đã bị inactive sau checkout),
     // lần sau initCart sẽ tạo cart mới từ server.
@@ -188,7 +165,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const itemCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
   return (
-    <CartContext.Provider value={{ cart, loading, token, addItem, updateItem, removeItem, clearCart, itemCount }}>
+    <CartContext.Provider value={{ cart, loading, token, addItem, updateItem, removeItem, clearCart, refreshCart: initCart, itemCount }}>
       {children}
     </CartContext.Provider>
   );

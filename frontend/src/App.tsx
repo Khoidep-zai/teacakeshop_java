@@ -17,6 +17,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderTracking from './pages/OrderTracking';
 import Reservation from './pages/Reservation';
+import ReservationTracking from './pages/ReservationTracking';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -32,7 +33,6 @@ import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminInventory from './pages/admin/AdminInventory';
 import StaffDashboard from './pages/admin/StaffDashboard';
-import { ActiveTrackerBar } from './components/ui/ActiveTrackerBar';
 
 type AppRole = 'ADMIN' | 'CUSTOMER' | 'STAFF';
 
@@ -64,7 +64,6 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow">{children}</main>
-      <ActiveTrackerBar />
       <Footer />
     </div>
   );
@@ -82,6 +81,7 @@ function AppRoutes() {
       <Route path="/checkout" element={<PublicLayout><Checkout /></PublicLayout>} />
       <Route path="/orders/:orderCode" element={<PublicLayout><OrderTracking /></PublicLayout>} />
       <Route path="/reservation" element={<PublicLayout><Reservation /></PublicLayout>} />
+      <Route path="/reservations/track" element={<PublicLayout><ReservationTracking /></PublicLayout>} />
       <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
       <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
       <Route path="/profile" element={<ProtectedRoute><PublicLayout><Profile /></PublicLayout></ProtectedRoute>} />

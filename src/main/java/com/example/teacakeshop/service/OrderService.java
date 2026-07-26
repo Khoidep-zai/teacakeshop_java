@@ -109,6 +109,18 @@ public class OrderService {
 
         validateCheckoutRequest(request);
 
+        if (request.orderType()
+                == OrderType.RESERVATION_COMBO
+                && cart.getItems()
+                .stream()
+                .noneMatch(item ->
+                        item.getCombo() != null
+                )) {
+            throw new BadRequestException(
+                    "Đơn combo đặt bàn phải có ít nhất một combo"
+            );
+        }
+
         /*
          * Tổng số lượng từng sản phẩm cần trừ kho.
          *
@@ -705,6 +717,16 @@ public class OrderService {
                             + " đang ngừng bán"
             );
         }
+        if (product.getCategory() == null
+                || Boolean.FALSE.equals(
+                product.getCategory().getActive()
+        )) {
+            throw new BadRequestException(
+                    "Danh mục của sản phẩm "
+                            + product.getName()
+                            + " đang ngừng bán"
+            );
+        }
 
         if (quantity == null
                 || quantity <= 0) {
@@ -809,6 +831,16 @@ public class OrderService {
             )) {
                 throw new BadRequestException(
                         "Sản phẩm "
+                                + product.getName()
+                                + " đang ngừng bán"
+                );
+            }
+            if (product.getCategory() == null
+                    || Boolean.FALSE.equals(
+                    product.getCategory().getActive()
+            )) {
+                throw new BadRequestException(
+                        "Danh mục của sản phẩm "
                                 + product.getName()
                                 + " đang ngừng bán"
                 );

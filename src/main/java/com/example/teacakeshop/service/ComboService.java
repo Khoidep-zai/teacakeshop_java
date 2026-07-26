@@ -16,10 +16,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,27 +64,41 @@ public class ComboService {
                 )
         );
 
-        boolean hasKeyword =
-                keyword != null
-                        && !keyword.trim().isEmpty();
+        LocalDate today = LocalDate.now();
+        Specification<Combo> specification =
+                (root, query, builder) -> builder.and(
+                        builder.isTrue(root.get("active")),
+                        builder.or(
+                                builder.isNull(root.get("startDate")),
+                                builder.lessThanOrEqualTo(
+                                        root.get("startDate"),
+                                        today
+                                )
+                        ),
+                        builder.or(
+                                builder.isNull(root.get("endDate")),
+                                builder.greaterThanOrEqualTo(
+                                        root.get("endDate"),
+                                        today
+                                )
+                        )
+                );
 
-        Page<Combo> comboPage;
-
-        if (hasKeyword) {
-            comboPage =
-                    comboRepository
-                            .findByActiveTrueAndNameContainingIgnoreCase(
-                                    keyword.trim(),
-                                    pageable
-                            );
-        } else {
-            comboPage =
-                    comboRepository.findByActiveTrue(
-                            pageable
-                    );
+        if (keyword != null && !keyword.isBlank()) {
+            String pattern =
+                    "%" + keyword.trim().toLowerCase() + "%";
+            specification = specification.and(
+                    (root, query, builder) ->
+                            builder.like(
+                                    builder.lower(root.get("name")),
+                                    pattern
+                            )
+            );
         }
 
-        return comboPage.map(this::toResponse);
+        return comboRepository
+                .findAll(specification, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -129,6 +145,7 @@ public class ComboService {
         return comboRepository
                 .findTop6ByActiveTrueAndHotTrueOrderByCreatedAtDesc()
                 .stream()
+                .filter(this::isCurrentlySellable)
                 .map(this::toResponse)
                 .toList();
     }
@@ -142,6 +159,7 @@ public class ComboService {
         if (!manualBestSellers.isEmpty()) {
             return manualBestSellers
                     .stream()
+                    .filter(this::isCurrentlySellable)
                     .map(this::toResponse)
                     .toList();
         }
@@ -149,6 +167,7 @@ public class ComboService {
         return comboRepository
                 .findTop6ByActiveTrueOrderBySoldQuantityDesc()
                 .stream()
+                .filter(this::isCurrentlySellable)
                 .map(this::toResponse)
                 .toList();
     }
@@ -158,6 +177,7 @@ public class ComboService {
         return comboRepository
                 .findTop6ByActiveTrueOrderByCreatedAtDesc()
                 .stream()
+                .filter(this::isCurrentlySellable)
                 .map(this::toResponse)
                 .toList();
     }
@@ -171,8 +191,20 @@ public class ComboService {
                         weatherType
                 )
                 .stream()
+                .filter(this::isCurrentlySellable)
                 .map(this::toResponse)
                 .toList();
+    }
+
+    private boolean isCurrentlySellable(
+            Combo combo
+    ) {
+        LocalDate today = LocalDate.now();
+        return Boolean.TRUE.equals(combo.getActive())
+                && (combo.getStartDate() == null
+                || !today.isBefore(combo.getStartDate()))
+                && (combo.getEndDate() == null
+                || !today.isAfter(combo.getEndDate()));
     }
 
     @Transactional

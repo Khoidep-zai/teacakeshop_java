@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,10 @@ public class ProductService {
     public Page<ProductResponse> search(
             String keyword,
             ProductType productType,
+            Long categoryId,
+            Boolean inStock,
+            Boolean hot,
+            String sort,
             int page,
             int size
     ) {
@@ -47,50 +52,109 @@ public class ProductService {
                 100
         );
 
+        Sort requestedSort = switch (
+                sort == null ? "newest" : sort
+        ) {
+            case "price-asc" -> Sort.by(
+                    Sort.Direction.ASC,
+                    "price"
+            );
+            case "price-desc" -> Sort.by(
+                    Sort.Direction.DESC,
+                    "price"
+            );
+            case "best-sellers" -> Sort.by(
+                    Sort.Direction.DESC,
+                    "soldQuantity"
+            );
+            default -> Sort.by(
+                    Sort.Direction.DESC,
+                    "createdAt"
+            );
+        };
+
         Pageable pageable = PageRequest.of(
                 safePage,
                 safeSize,
-                Sort.by(
-                        Sort.Direction.DESC,
-                        "createdAt"
-                )
+                requestedSort
         );
 
-        boolean hasKeyword =
-                keyword != null
-                        && !keyword.trim().isEmpty();
+        Specification<Product> specification =
+                (root, query, builder) -> builder.and(
+                        builder.isTrue(root.get("active")),
+                        builder.isTrue(root.get("category").get("active"))
+                );
 
-        Page<Product> productPage;
-
-        if (hasKeyword && productType != null) {
-            productPage =
-                    productRepository
-                            .findByActiveTrueAndCategory_ActiveTrueAndNameContainingIgnoreCaseAndProductType(
-                                    keyword.trim(),
-                                    productType,
-                                    pageable
-                            );
-        } else if (hasKeyword) {
-            productPage =
-                    productRepository
-                            .findByActiveTrueAndCategory_ActiveTrueAndNameContainingIgnoreCase(
-                                    keyword.trim(),
-                                    pageable
-                            );
-        } else if (productType != null) {
-            productPage =
-                    productRepository
-                            .findByActiveTrueAndCategory_ActiveTrueAndProductType(
-                                    productType,
-                                    pageable
-                            );
-        } else {
-            productPage =
-                    productRepository
-                            .findByActiveTrueAndCategory_ActiveTrue(pageable);
+        if (keyword != null && !keyword.isBlank()) {
+            String pattern =
+                    "%" + keyword.trim().toLowerCase() + "%";
+            specification = specification.and(
+                    (root, query, builder) ->
+                            builder.like(
+                                    builder.lower(root.get("name")),
+                                    pattern
+                            )
+            );
+        }
+        if (productType != null) {
+            specification = specification.and(
+                    (root, query, builder) ->
+                            builder.equal(
+                                    root.get("productType"),
+                                    productType
+                            )
+            );
+        }
+        if (categoryId != null) {
+            specification = specification.and(
+                    (root, query, builder) ->
+                            builder.equal(
+                                    root.get("category").get("id"),
+                                    categoryId
+                            )
+            );
+        }
+        if (Boolean.TRUE.equals(inStock)) {
+            specification = specification.and(
+                    (root, query, builder) ->
+                            builder.greaterThan(
+                                    root.get("stockQuantity"),
+                                    0
+                            )
+            );
+        }
+        if (hot != null) {
+            specification = specification.and(
+                    (root, query, builder) ->
+                            builder.equal(
+                                    root.get("hot"),
+                                    hot
+                            )
+            );
         }
 
-        return productPage.map(this::toResponse);
+        return productRepository
+                .findAll(specification, pageable)
+                .map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> search(
+            String keyword,
+            ProductType productType,
+            int page,
+            int size
+    ) {
+        return search(
+                keyword,
+                productType,
+                null,
+                null,
+                null,
+                "newest",
+                page,
+                size
+        );
     }
 
     @Transactional(readOnly = true)

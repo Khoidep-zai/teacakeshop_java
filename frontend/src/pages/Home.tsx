@@ -1,53 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Coffee, Heart, Sparkles, Star, ShieldCheck, Award, Flame, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getHotProducts } from '../api/products';
+import { getBestSellerProducts, getHotProducts } from '../api/products';
 import { getHotCombos } from '../api/combos';
+import { getActiveDiscounts } from '../api/discounts';
 import ProductCard from '../components/products/ProductCard';
 import ComboCard from '../components/combos/ComboCard';
 import { AISommelierWidget } from '../components/ui/AISommelierWidget';
-import type { Product, Combo } from '../types';
+import type { Product, Combo, Discount } from '../types';
+import toast from 'react-hot-toast';
 
 const Home: React.FC = () => {
   const [hotProducts, setHotProducts] = useState<Product[]>([]);
+  const [bestSellerProducts, setBestSellerProducts] = useState<Product[]>([]);
   const [hotCombos, setHotCombos] = useState<Combo[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Default fallback items if backend has empty list
-  const fallbackProducts: Product[] = [
-    { id: 1, name: 'Bánh Matcha Mousse layered', description: 'Matcha Uji Nhật Bản 3 lớp mềm mịn phủ lá vàng nghệ thuật.', price: 75000, productType: 'CAKE', categoryId: 1, categoryName: 'Bánh Pháp', stockQuantity: 20, taste: 'Ngọt nhẹ, đắng thanh', temperatureType: 'BOTH', season: 'ALL', imageUrl: '/images/products/matcha_cake.png', active: true, hotScore: 99, bestSellerScore: 95, createdAt: new Date().toISOString() },
-    { id: 2, name: 'Bánh Earl Grey Chiffon Lavender', description: 'Cốt bánh chiffon trà Earl Grey thơm nồng với lớp kem lavender dâu tây.', price: 82000, productType: 'CAKE', categoryId: 1, categoryName: 'Bánh Pháp', stockQuantity: 15, taste: 'Hương trà thơm ngát', temperatureType: 'BOTH', season: 'ALL', imageUrl: '/images/products/earl_grey.png', active: true, hotScore: 90, bestSellerScore: 88, createdAt: new Date().toISOString() },
-    { id: 3, name: 'Trà Sakura Lychee Rose Ủ Lạnh', description: 'Chiết xuất hoa anh đào Nhật Bản, vải tươi ngâm nụ hồng hữu cơ.', price: 68000, productType: 'TEA', categoryId: 2, categoryName: 'Trà Ủ Lạnh', stockQuantity: 30, taste: 'Thanh mát, thơm ngọt', temperatureType: 'COLD', season: 'SUMMER', imageUrl: '/images/products/sakura_tea.png', active: true, hotScore: 96, bestSellerScore: 92, createdAt: new Date().toISOString() },
-    { id: 4, name: 'Trà Oolong Kim Tuyên Hoàng Gia', description: 'Trà Oolong núi cao hương sữa tự nhiên ủ lạnh trong suốt 12 tiếng.', price: 65000, productType: 'TEA', categoryId: 2, categoryName: 'Trà Ủ Lạnh', stockQuantity: 25, taste: 'Đượm hậu vị', temperatureType: 'COLD', season: 'ALL', imageUrl: '/images/products/sakura_tea.png', active: true, hotScore: 92, bestSellerScore: 90, createdAt: new Date().toISOString() },
-  ];
-
-  const fallbackCombos: Combo[] = [
-    { id: 1, name: 'Set Trà Chiều Royal Afternoon Tea Pass', description: 'Bộ đôi Trà Oolong Kim Tuyên & Bánh Matcha Mousse hoàng gia.', originalPrice: 165000, comboPrice: 135000, savingAmount: 30000, imageUrl: '/images/combos/royal_tea_set.png', active: true, weatherType: 'SUNNY', hotScore: 99, bestSellerScore: 98, items: [], createdAt: new Date().toISOString() },
-    { id: 2, name: 'Set Thư Thái Đêm Mưa Cyber Chill', description: 'Trà Sakura Lychee ấm áp kèm Bánh Earl Grey Chiffon kem tươi.', originalPrice: 170000, comboPrice: 139000, savingAmount: 31000, imageUrl: '/images/combos/royal_tea_set.png', active: true, weatherType: 'RAINY', hotScore: 95, bestSellerScore: 93, items: [], createdAt: new Date().toISOString() },
-  ];
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [prods, cmbs] = await Promise.allSettled([
+        const [prods, bestSellers, cmbs, discountResult] = await Promise.allSettled([
           getHotProducts(),
-          getHotCombos()
+          getBestSellerProducts(),
+          getHotCombos(),
+          getActiveDiscounts(),
         ]);
-        if (prods.status === 'fulfilled' && prods.value && prods.value.length > 0) {
-          setHotProducts(prods.value);
-        } else {
-          setHotProducts(fallbackProducts);
-        }
-
-        if (cmbs.status === 'fulfilled' && cmbs.value && cmbs.value.length > 0) {
-          setHotCombos(cmbs.value);
-        } else {
-          setHotCombos(fallbackCombos);
+        setHotProducts(prods.status === 'fulfilled' ? prods.value : []);
+        setBestSellerProducts(bestSellers.status === 'fulfilled' ? bestSellers.value : []);
+        setHotCombos(cmbs.status === 'fulfilled' ? cmbs.value : []);
+        setDiscounts(discountResult.status === 'fulfilled' ? discountResult.value : []);
+        if (prods.status === 'rejected' || cmbs.status === 'rejected') {
+          toast.error('Một số nội dung trang chủ chưa thể tải. Vui lòng thử lại.');
         }
       } catch (e) {
-        setHotProducts(fallbackProducts);
-        setHotCombos(fallbackCombos);
+        setHotProducts([]);
+        setBestSellerProducts([]);
+        setHotCombos([]);
+        setDiscounts([]);
+        toast.error('Không thể tải dữ liệu trang chủ.');
       } finally {
         setLoading(false);
       }
@@ -150,13 +142,35 @@ const Home: React.FC = () => {
         <AISommelierWidget />
       </section>
 
+      {discounts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <h2 className="section-title mb-5">Khuyến Mãi Đang Áp Dụng</h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {discounts.slice(0, 3).map(discount => (
+              <div key={discount.id} className="glass-card p-5">
+                <p className="font-mono text-xs font-bold text-accent">{discount.code}</p>
+                <h3 className="font-bold text-lg mt-1">{discount.name}</h3>
+                <p className="text-sm text-primary font-extrabold mt-2">
+                  {discount.discountType === 'PERCENTAGE'
+                    ? `Giảm ${discount.discountValue}%`
+                    : `Giảm ${discount.discountValue.toLocaleString('vi-VN')}₫`}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-2">
+                  Đến {new Date(discount.endAt).toLocaleString('vi-VN')}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Hot Products Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
           <div>
             <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest mb-1">
               <Flame className="w-4 h-4 text-accent" />
-              <span>Sản phẩm Bán Chạy Nhất</span>
+              <span>Sản phẩm nổi bật</span>
             </div>
             <h2 className="section-title">Danh Mục Bánh & Trà Đặc Sắc</h2>
           </div>
@@ -180,6 +194,21 @@ const Home: React.FC = () => {
           </div>
         )}
       </section>
+
+      {!loading && bestSellerProducts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <p className="text-xs uppercase tracking-widest font-bold text-accent">Được khách hàng yêu thích</p>
+              <h2 className="section-title">Sản Phẩm Bán Chạy</h2>
+            </div>
+            <Link to="/products?sort=best-sellers" className="btn-secondary text-xs">Xem thêm</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {bestSellerProducts.slice(0, 4).map(product => <ProductCard key={product.id} product={product} />)}
+          </div>
+        </section>
+      )}
 
       {/* Featured Combos Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">

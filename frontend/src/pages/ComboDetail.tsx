@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ChevronLeft, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
-import { getCombo } from '../api/combos';
+import { ShoppingCart, ChevronLeft, Loader2, Sparkles, CheckCircle2, Minus, Plus } from 'lucide-react';
+import { getCombo, getComboSuggestions } from '../api/combos';
 import { useCart } from '../hooks/useCart';
-import type { Combo } from '../types';
-import { fallbackCombos } from '../data/mockCatalog';
+import type { Combo, ProductSuggestion } from '../types';
 import { getComboImageUrl } from '../utils/imageHelpers';
 import toast from 'react-hot-toast';
+import ProductCard from '../components/products/ProductCard';
 
 const ComboDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +16,8 @@ const ComboDetail: React.FC = () => {
   const [combo, setCombo] = useState<Combo | null>(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
 
   useEffect(() => {
     const fetchCombo = async () => {
@@ -24,17 +26,19 @@ const ComboDetail: React.FC = () => {
       setLoading(true);
       window.scrollTo(0, 0);
 
-      const localMatched = fallbackCombos.find(c => c.id === numId) || fallbackCombos[0];
-
       try {
         const data = await getCombo(numId);
-        if (data && data.id && data.name) {
-          setCombo(data);
-        } else {
-          setCombo(localMatched);
+        setCombo(data);
+        try {
+          const suggestionData = await getComboSuggestions(numId);
+          setSuggestions(Array.isArray(suggestionData) ? suggestionData : []);
+        } catch {
+          setSuggestions([]);
         }
-      } catch (error) {
-        setCombo(localMatched);
+      } catch (error: any) {
+        setCombo(null);
+        setSuggestions([]);
+        toast.error(error?.response?.data?.message || 'Không tìm thấy combo đang bán.');
       } finally {
         setLoading(false);
       }
@@ -47,7 +51,7 @@ const ComboDetail: React.FC = () => {
     if (!combo) return;
     setAdding(true);
     try {
-      await addItem('COMBO', combo.id, 1);
+      await addItem('COMBO', combo.id, quantity);
       toast.success(`Đã thêm "${combo.name}" vào giỏ hàng! ✨`, {
         style: {
           borderRadius: '20px',
@@ -71,7 +75,12 @@ const ComboDetail: React.FC = () => {
     );
   }
 
-  if (!combo) return null;
+  if (!combo) return (
+    <div className="min-h-screen pt-32 text-center">
+      <h2 className="text-2xl font-bold">Combo không tồn tại hoặc đã hết thời gian bán</h2>
+      <button className="btn-secondary mt-4" onClick={() => navigate('/combos')}>Về danh sách combo</button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -117,7 +126,7 @@ const ComboDetail: React.FC = () => {
 
               <div className="flex items-baseline gap-3 mb-4">
                 <span className="text-3xl font-extrabold text-accent">
-                  {combo.comboPrice.toLocaleString('vi-VN')}₫
+                  {(combo.finalPrice ?? combo.comboPrice).toLocaleString('vi-VN')}₫
                 </span>
                 <span className="text-sm text-slate-400 line-through">
                   {combo.originalPrice.toLocaleString('vi-VN')}₫
@@ -158,18 +167,31 @@ const ComboDetail: React.FC = () => {
               </div>
             </div>
 
+            <div className="flex items-center justify-center gap-3">
+              <button className="btn-secondary p-2" disabled={quantity <= 1} onClick={() => setQuantity(value => Math.max(1, value - 1))}><Minus size={16} /></button>
+              <span className="font-bold">Số lượng: {quantity}</span>
+              <button className="btn-secondary p-2" onClick={() => setQuantity(value => value + 1)}><Plus size={16} /></button>
+            </div>
             <button
               onClick={handleAddCombo}
               disabled={adding}
               className="w-full btn-accent py-4 text-sm font-extrabold shadow-lg flex items-center justify-center gap-2"
             >
               {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
-              <span>Thêm Combo Vào Giỏ — {combo.comboPrice.toLocaleString('vi-VN')}₫</span>
+              <span>Thêm Combo Vào Giỏ — {((combo.finalPrice ?? combo.comboPrice) * quantity).toLocaleString('vi-VN')}₫</span>
             </button>
           </div>
 
         </div>
       </div>
+      {suggestions.length > 0 && (
+        <section className="mt-12">
+          <h2 className="section-title mb-6">Có Thể Bạn Sẽ Thích</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {suggestions.map(item => <ProductCard key={item.id} product={item.suggestedProduct} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 };

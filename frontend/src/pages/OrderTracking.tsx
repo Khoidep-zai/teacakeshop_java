@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Package, CheckCircle, Clock, XCircle, ChevronLeft, User, FileText, ShoppingBag, Sparkles, Phone } from 'lucide-react';
 import { getOrder } from '../api/orders';
+import { getPaymentByOrder, simulatePayment } from '../api/payments';
 import { useAuth } from '../hooks/useAuth';
-import type { Order } from '../types';
+import type { Order, OrderPaymentSummary } from '../types';
+import toast from 'react-hot-toast';
 
 const statuses = [
   { id: 'PENDING', label: 'Tiếp nhận đơn', icon: FileText, description: 'Đơn hàng đã được ghi nhận trên hệ thống' },
@@ -26,6 +28,10 @@ export default function OrderTracking() {
   const [phoneInput, setPhoneInput] = useState('');
   const [needPhone, setNeedPhone] = useState(false);
   const [error, setError] = useState('');
+  const [paymentSummary, setPaymentSummary] = useState<OrderPaymentSummary | null>(null);
+  const [verifiedPhone, setVerifiedPhone] = useState('');
+  const [retryingPayment, setRetryingPayment] = useState(false);
+  const [retryMethod, setRetryMethod] = useState('MOMO_SIMULATION');
 
   // Phone từ URL query param (?phone=...) - được set sau khi checkout
   const phoneFromUrl = searchParams.get('phone') || '';
@@ -38,6 +44,12 @@ export default function OrderTracking() {
       const data = await getOrder(orderCode, phone);
       if (data && data.orderCode) {
         setOrder(data);
+        setVerifiedPhone(phone);
+        try {
+          setPaymentSummary(await getPaymentByOrder(orderCode, phone));
+        } catch {
+          setPaymentSummary(null);
+        }
       } else {
         setError('Không tìm thấy đơn hàng với thông tin này.');
       }
@@ -74,6 +86,28 @@ export default function OrderTracking() {
     if (!phoneInput.trim()) return;
     setNeedPhone(false);
     fetchOrder(phoneInput.trim());
+  };
+
+  const retryPayment = async () => {
+    if (!order || !paymentSummary || !verifiedPhone) return;
+    setRetryingPayment(true);
+    try {
+      const purpose = paymentSummary.depositRequired
+        ? paymentSummary.paidAmount < paymentSummary.requiredDepositAmount ? 'DEPOSIT' : 'REMAINING'
+        : 'FULL';
+      await simulatePayment({
+        orderId: order.id,
+        customerPhone: verifiedPhone,
+        paymentMethod: retryMethod,
+        purpose,
+      });
+      setPaymentSummary(await getPaymentByOrder(order.orderCode, verifiedPhone));
+      toast.success('Thanh toán thành công.');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Thanh toán thất bại.');
+    } finally {
+      setRetryingPayment(false);
+    }
   };
 
   if (loading) {
@@ -223,6 +257,50 @@ export default function OrderTracking() {
       )}
 
       {/* Details Grid */}
+      {searchParams.get('payment') === 'failed' && (
+        <div className="glass-card p-4 border border-red-500/30 bg-red-500/10 text-red-600 text-sm font-bold">
+          Đơn hàng đã được tạo nhưng giao dịch thanh toán chưa hoàn tất. Vui lòng kiểm tra trạng thái bên dưới hoặc thử lại sau.
+        </div>
+      )}
+
+      {paymentSummary && (
+        <div className="glass-card p-6 space-y-3">
+          <h2 className="text-lg font-bold font-serif-title">Thanh Toán</h2>
+          <div className="grid sm:grid-cols-3 gap-3 text-sm">
+            <p>Tổng tiền<br /><b>{paymentSummary.totalAmount.toLocaleString('vi-VN')}₫</b></p>
+            <p>Đã thanh toán<br /><b className="text-emerald-600">{paymentSummary.paidAmount.toLocaleString('vi-VN')}₫</b></p>
+            <p>Còn lại<br /><b>{paymentSummary.outstandingAmount.toLocaleString('vi-VN')}₫</b></p>
+          </div>
+          {paymentSummary.payments.length > 0 ? (
+            <div className="space-y-2">
+              {paymentSummary.payments.map(payment => (
+                <div key={payment.id} className="flex flex-wrap justify-between gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 p-3 text-xs">
+                  <span className="font-mono font-bold">{payment.transactionCode}</span>
+                  <span>{payment.paymentMethod} · {payment.purpose}</span>
+                  <span className={payment.status === 'PAID' ? 'text-emerald-600 font-bold' : payment.status === 'FAILED' ? 'text-red-500 font-bold' : 'text-amber-500 font-bold'}>
+                    {payment.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500">Chưa có giao dịch thanh toán.</p>
+          )}
+          {paymentSummary.outstandingAmount > 0 && order.status !== 'CANCELLED' && (
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <select className="input-field sm:w-64" value={retryMethod} onChange={event => setRetryMethod(event.target.value)}>
+                <option value="MOMO_SIMULATION">Mô phỏng MoMo</option>
+                <option value="VNPAY_SIMULATION">Mô phỏng VNPay</option>
+                <option value="BANK_TRANSFER">Mô phỏng chuyển khoản</option>
+              </select>
+              <button className="btn-primary text-xs" disabled={retryingPayment} onClick={() => void retryPayment()}>
+                {retryingPayment ? 'Đang xử lý...' : 'Thanh toán khoản còn thiếu'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-card p-6 md:col-span-2 space-y-4">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white font-serif-title">Chi Tiết Món Đã Đặt</h2>

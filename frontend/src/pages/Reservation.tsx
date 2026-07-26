@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Calendar, Users, Clock, Mail, Phone, User, PartyPopper, ChevronRight, ChevronLeft, Sparkles, AlertCircle } from 'lucide-react';
 import { checkAvailability, createReservation } from '../api/reservations';
-import { addReservation } from '../data/userStore';
+import { useAuth } from '../hooks/useAuth';
+import toast from 'react-hot-toast';
 
 export default function Reservation() {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   // TC10: Nhận orderId từ Checkout RESERVATION_COMBO
   const linkedOrderId = searchParams.get('orderId') ? Number(searchParams.get('orderId')) : null;
   const linkedOrderCode = searchParams.get('orderCode') || '';
   const linkedPhone = searchParams.get('phone') || '';
+  const linkedPickupTime = searchParams.get('pickupTime') || '';
   const depositRequired = searchParams.get('depositRequired') === 'true';
 
   const [step, setStep] = useState(1);
@@ -18,12 +21,12 @@ export default function Reservation() {
   const [selectedZone, setSelectedZone] = useState<'chill' | 'balcony' | 'vip'>('chill');
 
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    time: '15:00',
+    date: linkedPickupTime ? linkedPickupTime.slice(0, 10) : new Date().toISOString().split('T')[0],
+    time: linkedPickupTime ? linkedPickupTime.slice(11, 16) : '15:00',
     partySize: '2',
-    name: '',
-    email: '',
-    phone: linkedPhone || '',
+    name: user?.fullName || '',
+    email: user?.email || '',
+    phone: linkedPhone || user?.phone || '',
     note: ''
   });
 
@@ -37,11 +40,14 @@ export default function Reservation() {
     try {
       // BE expect: reservationTime (ISO LocalDateTime) + numberOfPeople
       const reservationTime = `${formData.date}T${formData.time}:00`;
-      await checkAvailability(reservationTime, Number(formData.partySize));
+      const availability = await checkAvailability(reservationTime, Number(formData.partySize));
+      if (!availability?.available) {
+        toast.error(`Khung giờ này chỉ còn ${availability?.remainingSeats ?? 0} chỗ.`);
+        return;
+      }
       setStep(2);
-    } catch {
-      // Nếu availability check fail (backend chưa implement đầy đủ), vẫn cho tiếp tục
-      setStep(2);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể kiểm tra chỗ trống.');
     } finally {
       setLoading(false);
     }
@@ -63,26 +69,11 @@ export default function Reservation() {
         ...(linkedOrderId ? { orderId: linkedOrderId } : {})
       });
 
-      // Lưu vào local store với data thực từ BE
-      const createdRes = addReservation({
-        id: res?.id,
-        reservationCode: res?.reservationCode,
-        customerName: res?.customerName || formData.name,
-        customerPhone: res?.customerPhone || formData.phone,
-        customerEmail: res?.customerEmail || formData.email,
-        reservationTime: res?.reservationTime || reservationTime,
-        reservationDate: formData.date,
-        numberOfPeople: res?.numberOfPeople || Number(formData.partySize),
-        partySize: res?.numberOfPeople || Number(formData.partySize),
-        note: res?.note || `Khu vực ${selectedZone.toUpperCase()} - ${formData.note || 'Đặt bàn Lounge'}`,
-        status: res?.status || 'PENDING',
-        createdAt: res?.createdAt || new Date().toISOString()
-      });
-      setReservationCode(createdRes.reservationCode);
+      setReservationCode(res.reservationCode);
       setStep(3);
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Không thể kết nối server. Vui lòng thử lại.';
-      alert(`Đặt bàn thất bại: ${message}`);
+      toast.error(`Đặt bàn thất bại: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -112,7 +103,7 @@ export default function Reservation() {
             <p className="font-extrabold text-amber-700 dark:text-amber-400">Bước cuối: Hoàn tất đặt bàn cho đơn Combo</p>
             <p className="text-amber-600 dark:text-amber-300 mt-0.5">
               Đơn hàng <span className="font-mono font-bold">#{linkedOrderCode}</span> đã được tạo.
-              {depositRequired && ' Vui lòng hoàn tất đặt bàn — tiền cọc 50% sẽ được xác nhận khi bàn được giữ thành công.'}
+              {depositRequired && ' Vui lòng hoàn tất thanh toán mức cọc hệ thống yêu cầu trước khi đặt bàn.'}
             </p>
           </div>
         </div>
@@ -165,14 +156,23 @@ export default function Reservation() {
                 <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">Ngày Đặt</label>
                 <div className="relative">
                   <Calendar className="w-4 h-4 absolute left-3.5 top-4 text-slate-400" />
-                  <input type="date" name="date" required value={formData.date} onChange={handleChange} className="input-field pl-10 text-xs font-semibold" />
+                  <input
+                    type="date"
+                    name="date"
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    max={new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0]}
+                    value={formData.date}
+                    onChange={handleChange}
+                    className="input-field pl-10 text-xs font-semibold"
+                  />
                 </div>
               </div>
               <div>
                 <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">Giờ Đặt</label>
                 <div className="relative">
                   <Clock className="w-4 h-4 absolute left-3.5 top-4 text-slate-400" />
-                  <input type="time" name="time" required value={formData.time} onChange={handleChange} className="input-field pl-10 text-xs font-semibold" />
+                  <input type="time" name="time" required min="08:00" max="20:30" value={formData.time} onChange={handleChange} className="input-field pl-10 text-xs font-semibold" />
                 </div>
               </div>
               <div>
@@ -180,7 +180,7 @@ export default function Reservation() {
                 <div className="relative">
                   <Users className="w-4 h-4 absolute left-3.5 top-4 text-slate-400" />
                   <select name="partySize" value={formData.partySize} onChange={handleChange} className="input-field pl-10 text-xs font-semibold">
-                    {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n} khách</option>)}
+                    {Array.from({ length: 20 }, (_, index) => index + 1).map(n => <option key={n} value={n}>{n} khách</option>)}
                   </select>
                 </div>
               </div>

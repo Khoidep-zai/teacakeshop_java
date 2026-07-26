@@ -236,6 +236,14 @@ public class CartService {
                     "Sản phẩm đang bị ẩn hoặc ngừng bán"
             );
         }
+        if (product.getCategory() == null
+                || Boolean.FALSE.equals(
+                product.getCategory().getActive()
+        )) {
+            throw new BadRequestException(
+                    "Danh mục của sản phẩm đang ngừng bán"
+            );
+        }
 
         CartItem existingItem = cartItemRepository
                 .findByCart_IdAndProduct_Id(
@@ -425,7 +433,11 @@ public class CartService {
                     comboItem.getProduct();
 
             if (product == null
-                    || Boolean.FALSE.equals(product.getActive())) {
+                    || Boolean.FALSE.equals(product.getActive())
+                    || product.getCategory() == null
+                    || Boolean.FALSE.equals(
+                    product.getCategory().getActive()
+            )) {
                 return 0;
             }
 

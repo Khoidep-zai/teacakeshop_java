@@ -5,7 +5,6 @@ import { getProduct, getProductSuggestions } from '../api/products';
 import { useCart } from '../hooks/useCart';
 import ProductCard from '../components/products/ProductCard';
 import type { Product, ProductSuggestion } from '../types';
-import { fallbackProducts } from '../data/mockCatalog';
 import { getProductImageUrl } from '../utils/imageHelpers';
 import toast from 'react-hot-toast';
 
@@ -27,39 +26,19 @@ const ProductDetail: React.FC = () => {
       setLoading(true);
       window.scrollTo(0, 0);
 
-      // Find local catalog product by URL parameter id
-      const localMatched = fallbackProducts.find(p => p.id === numId) || fallbackProducts[0];
-
       try {
         const productData = await getProduct(numId);
-        if (productData && productData.id && productData.name) {
-          setProduct(productData);
-        } else {
-          setProduct(localMatched);
+        setProduct(productData);
+        try {
+          const suggestionsData = await getProductSuggestions(numId);
+          setSuggestions(Array.isArray(suggestionsData) ? suggestionsData : []);
+        } catch {
+          setSuggestions([]);
         }
-
-        const suggestionsData = await getProductSuggestions(numId);
-        if (Array.isArray(suggestionsData) && suggestionsData.length > 0) {
-          setSuggestions(suggestionsData);
-        } else {
-          // Fallback suggestions
-          const otherProducts = fallbackProducts.filter(p => p.id !== numId).slice(0, 3);
-          setSuggestions(otherProducts.map((p, idx) => ({
-            id: idx + 1,
-            suggestedProduct: p,
-            reason: 'Phối vị hoàn hảo',
-            priority: idx + 1
-          })));
-        }
-      } catch (error) {
-        setProduct(localMatched);
-        const otherProducts = fallbackProducts.filter(p => p.id !== numId).slice(0, 3);
-        setSuggestions(otherProducts.map((p, idx) => ({
-          id: idx + 1,
-          suggestedProduct: p,
-          reason: 'Phối vị hoàn hảo',
-          priority: idx + 1
-        })));
+      } catch (error: any) {
+        setProduct(null);
+        setSuggestions([]);
+        toast.error(error?.response?.data?.message || 'Không tìm thấy sản phẩm đang bán.');
       } finally {
         setLoading(false);
       }
@@ -176,8 +155,11 @@ const ProductDetail: React.FC = () => {
 
               <div className="flex items-baseline gap-3 mb-6">
                 <span className="text-3xl font-extrabold text-primary dark:text-primary-glow">
-                  {product.price.toLocaleString('vi-VN')}₫
+                  {(product.finalPrice ?? product.price).toLocaleString('vi-VN')}₫
                 </span>
+                {(product.finalPrice ?? product.price) < product.price && (
+                  <span className="text-sm text-slate-400 line-through">{product.price.toLocaleString('vi-VN')}₫</span>
+                )}
                 <span className="text-xs text-slate-400 font-semibold">Bao gồm VAT & Đóng gói Eco-glass</span>
               </div>
 
@@ -221,7 +203,8 @@ const ProductDetail: React.FC = () => {
                     {quantity}
                   </span>
                   <button 
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                    disabled={quantity >= product.stockQuantity}
                     className="p-2 text-slate-600 dark:text-slate-300 hover:text-primary transition-colors"
                   >
                     <Plus className="w-4 h-4" />
@@ -236,7 +219,7 @@ const ProductDetail: React.FC = () => {
                   className="flex-1 btn-primary py-4 text-sm font-extrabold shadow-lg"
                 >
                   {adding ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
-                  <span>{product.stockQuantity <= 0 ? 'Tạm hết hàng' : `Thêm Vào Giỏ — ${(product.price * quantity).toLocaleString('vi-VN')}₫`}</span>
+                  <span>{product.stockQuantity <= 0 ? 'Tạm hết hàng' : `Thêm Vào Giỏ — ${((product.finalPrice ?? product.price) * quantity).toLocaleString('vi-VN')}₫`}</span>
                 </button>
               </div>
             </div>

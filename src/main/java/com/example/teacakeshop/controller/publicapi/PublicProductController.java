@@ -22,10 +22,23 @@ public class PublicProductController {
     public Page<ProductResponse> search(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) ProductType type,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean inStock,
+            @RequestParam(required = false) Boolean hot,
+            @RequestParam(defaultValue = "newest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "8") int size
     ) {
-        return productService.search(keyword, type, page, size);
+        return productService.search(
+                keyword,
+                type,
+                categoryId,
+                inStock,
+                hot,
+                sort,
+                page,
+                size
+        );
     }
 
     @GetMapping("/{id}")

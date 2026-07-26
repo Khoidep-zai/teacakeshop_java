@@ -25,6 +25,11 @@ export const cancelReservation = (code: string, phone: string) =>
 export const getMyReservations = (page = 0, size = 50) =>
   api.get<Page<Reservation>>('/customer/reservations', { params: { page, size } })
     .then(r => r.data.content ?? []);
+export const getMyReservationsPage = (page = 0, size = 10) =>
+  api.get<Page<Reservation>>('/customer/reservations', { params: { page, size } })
+    .then(r => r.data);
+export const getMyReservation = (id: number) =>
+  api.get<Reservation>(`/customer/reservations/${id}`).then(r => r.data);
 
 export const getAdminReservations = (params?: any) =>
   api.get('/admin/reservations', { params }).then(r => r.data);

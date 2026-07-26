@@ -5,6 +5,14 @@ import { getAdminPaymentSummary } from '../../api/payments';
 import type { Order, OrderPaymentSummary, Page } from '../../types';
 import toast from 'react-hot-toast';
 
+const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
+  PENDING: 'Chờ xử lý',
+  CONFIRMED: 'Đã xác nhận',
+  PREPARING: 'Đang chuẩn bị',
+  COMPLETED: 'Hoàn tất',
+  CANCELLED: 'Đã hủy',
+};
+
 // Helper: lấy itemName an toàn từ OrderItem
 const getItemName = (item: any): string => item.itemName || item.name || 'Sản phẩm';
 
@@ -59,8 +67,6 @@ export default function AdminOrders() {
   };
 
   // FIXED: Dùng đúng status backend (PREPARING thay vì SHIPPING)
-  const STATUS_FILTERS = ['ALL', 'PENDING', 'CONFIRMED', 'PREPARING', 'COMPLETED', 'CANCELLED'];
-
   const filtered = orders
     .filter(o => statusFilter === 'ALL' || o.status === statusFilter)
     .filter(o => typeFilter === 'ALL' || o.orderType === typeFilter)
@@ -146,19 +152,12 @@ export default function AdminOrders() {
             <option value="ALL">Mọi loại đơn</option><option value="NORMAL">Giao hàng</option>
             <option value="TAKEAWAY_PREORDER">Đặt trước</option><option value="RESERVATION_COMBO">Combo đặt bàn</option>
           </select>
-          {STATUS_FILTERS.map((st) => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                statusFilter === st
-                  ? 'bg-slate-900 text-white dark:bg-primary dark:text-white shadow-md'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              {st === 'ALL' ? 'Tất cả' : st}
-            </button>
-          ))}
+          <select className="input-field w-48" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <option value="ALL">Mọi trạng thái</option>
+            {(Object.keys(ORDER_STATUS_LABELS) as Order['status'][]).map(status => (
+              <option key={status} value={status}>{ORDER_STATUS_LABELS[status]}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -213,15 +212,24 @@ export default function AdminOrders() {
                     <td className="px-6 py-4">{getStatusBadge(ord.status)}</td>
                     <td className="px-6 py-4">
                       {/* FIXED: Dùng đúng enum backend (PREPARING thay vì SHIPPING) */}
-                      <select
-                        value=""
-                        onChange={(e) => handleStatusChange(ord, e.target.value as Order['status'])}
-                        disabled={!nextStatuses(ord.status).length}
-                        className="input-field text-xs font-extrabold py-1 px-2.5"
-                      >
-                        <option value="">Chọn bước tiếp theo</option>
-                        {nextStatuses(ord.status).map(status => <option key={status} value={status}>{status}</option>)}
-                      </select>
+                      {nextStatuses(ord.status).length ? (
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) void handleStatusChange(ord, e.target.value as Order['status']);
+                          }}
+                          className="input-field text-xs font-extrabold py-1 px-2.5"
+                        >
+                          <option value="">Chọn bước tiếp theo</option>
+                          {nextStatuses(ord.status).map(status => (
+                            <option key={status} value={status}>{ORDER_STATUS_LABELS[status]}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="block text-center text-[11px] font-bold text-slate-400">
+                          Đã kết thúc
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

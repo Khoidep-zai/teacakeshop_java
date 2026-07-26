@@ -41,8 +41,8 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo }) => {
           border: '1px solid rgba(231, 111, 81, 0.3)',
         },
       });
-    } catch {
-      toast.error('Không thể thêm Combo vào giỏ hàng');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể thêm Combo vào giỏ hàng');
     } finally {
       setAdding(false);
     }
@@ -93,7 +93,7 @@ const ComboCard: React.FC<ComboCardProps> = ({ combo }) => {
             {combo.originalPrice.toLocaleString('vi-VN')}₫
           </span>
           <span className="text-xl font-extrabold text-accent">
-            {combo.comboPrice.toLocaleString('vi-VN')}₫
+            {(combo.finalPrice ?? combo.comboPrice).toLocaleString('vi-VN')}₫
           </span>
         </div>
 

@@ -31,11 +31,9 @@ public interface ReservationRepository
             Long userId
     );
 
-    default long countByUserAccount_Id(
+    long countByUserAccount_Id(
             Long userId
-    ) {
-        return 0;
-    }
+    );
 
     /*
      * Kiểm tra mã đặt bàn đã tồn tại.

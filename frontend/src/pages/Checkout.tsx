@@ -6,15 +6,14 @@ import { simulatePayment, cashOnDelivery } from '../api/payments';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { addOrder } from '../data/userStore';
 import type { OrderType, Order } from '../types';
 
 // COD chỉ áp dụng cho đơn NORMAL (giao hàng tận nơi)
 const ALL_PAYMENT_METHODS = [
   { id: 'CASH_ON_DELIVERY', label: 'Thanh toán khi nhận hàng (COD)', icon: Banknote, onlyNormal: true },
-  { id: 'MOMO_SIMULATION', label: 'Momo Ví Điện Tử', icon: Smartphone, onlyNormal: false },
-  { id: 'VNPAY_SIMULATION', label: 'VNPay QR Code', icon: CreditCard, onlyNormal: false },
-  { id: 'BANK_TRANSFER', label: 'Chuyển Khoản Ngân Hàng Quick Pay', icon: Landmark, onlyNormal: false },
+  { id: 'MOMO_SIMULATION', label: 'Mô phỏng ví MoMo', icon: Smartphone, onlyNormal: false },
+  { id: 'VNPAY_SIMULATION', label: 'Mô phỏng VNPay', icon: CreditCard, onlyNormal: false },
+  { id: 'BANK_TRANSFER', label: 'Mô phỏng chuyển khoản ngân hàng', icon: Landmark, onlyNormal: false },
 ];
 
 const ORDER_TYPES: { id: OrderType; label: string }[] = [
@@ -35,7 +34,7 @@ function DepositStep({ order, paymentMethod, customerPhone, onSuccess }: Deposit
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
 
-  const depositAmount = order.depositAmount ?? Math.round((order.totalAmount ?? 0) * 0.5);
+  const depositAmount = order.depositAmount ?? 0;
 
   const handlePayDeposit = async () => {
     setPaying(true);
@@ -65,7 +64,7 @@ function DepositStep({ order, paymentMethod, customerPhone, onSuccess }: Deposit
           <AlertCircle className="w-8 h-8 text-amber-500" />
         </div>
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white font-serif-title">Thanh Toán Tiền Cọc 50%</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white font-serif-title">Thanh Toán Tiền Cọc</h2>
           <p className="text-xs text-slate-500 mt-1">Mã đơn: <span className="font-mono font-bold text-primary">{order.orderCode}</span></p>
         </div>
 
@@ -75,12 +74,12 @@ function DepositStep({ order, paymentMethod, customerPhone, onSuccess }: Deposit
             <span className="font-bold">{(order.totalAmount ?? 0).toLocaleString('vi-VN')}₫</span>
           </div>
           <div className="flex justify-between text-amber-600 dark:text-amber-400 font-extrabold border-t pt-2 dark:border-slate-700">
-            <span>Tiền cọc cần thanh toán (50%):</span>
+            <span>Tiền cọc do hệ thống xác định:</span>
             <span>{depositAmount.toLocaleString('vi-VN')}₫</span>
           </div>
           <div className="flex justify-between text-slate-400 text-xs">
             <span>Phần còn lại (trả khi đến):</span>
-            <span>{((order.totalAmount ?? 0) - depositAmount).toLocaleString('vi-VN')}₫</span>
+            <span>{(order.remainingAmount ?? 0).toLocaleString('vi-VN')}₫</span>
           </div>
         </div>
 
@@ -112,7 +111,7 @@ function DepositStep({ order, paymentMethod, customerPhone, onSuccess }: Deposit
 export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, token, clearCart } = useCart();
+  const { cart, token, clearCart, refreshCart } = useCart();
 
   const [formData, setFormData] = useState({
     customerName: user?.fullName || '',
@@ -180,31 +179,6 @@ export default function Checkout() {
         note: formData.note.trim() || null,
       });
 
-      // Lưu local store
-      addOrder({
-        orderCode: order?.orderCode,
-        customerName: formData.customerName,
-        customerPhone: formData.customerPhone,
-        customerEmail: formData.customerEmail,
-        note: formData.note,
-        status: order?.status || 'PENDING',
-        orderType: order?.orderType || orderType,
-        totalAmount: order?.totalAmount ?? cart.totalAmount,
-        finalAmount: order?.totalAmount ?? cart.totalAmount,
-        shippingAddress: formData.shippingAddress || undefined,
-        items: order?.items?.map((i) => ({
-          id: i.id, itemType: i.itemType, itemName: i.itemName, name: i.itemName,
-          imageUrl: i.imageUrl, quantity: i.quantity, unitPrice: i.unitPrice,
-          lineTotal: i.lineTotal, totalPrice: i.lineTotal,
-        })) ?? cart.items.map((i, idx) => ({
-          id: idx + 1, itemType: i.itemType,
-          itemName: i.productName || i.comboName || 'Sản phẩm',
-          name: i.productName || i.comboName || 'Sản phẩm',
-          imageUrl: i.imageUrl, quantity: i.quantity, unitPrice: i.unitPrice,
-          lineTotal: i.totalPrice, totalPrice: i.totalPrice,
-        })),
-      });
-
       await clearCart();
 
       // Đơn NORMAL + COD: tạo COD payment rồi chuyển sang order tracking
@@ -212,14 +186,18 @@ export default function Checkout() {
         if (paymentMethod === 'CASH_ON_DELIVERY') {
           try {
             await cashOnDelivery({ orderId: order.id, customerPhone: formData.customerPhone.trim(), note: formData.note.trim() || undefined });
-          } catch (payErr) {
-            console.warn('COD payment init warning:', payErr);
+          } catch (payErr: any) {
+            toast.error(payErr?.response?.data?.message || 'Đơn đã tạo nhưng không thể khởi tạo thanh toán COD.');
+            navigate(`/orders/${order.orderCode}?phone=${encodeURIComponent(formData.customerPhone)}&payment=failed`);
+            return;
           }
         } else {
           try {
             await simulatePayment({ orderId: order.id, customerPhone: formData.customerPhone.trim(), paymentMethod, purpose: 'FULL' });
-          } catch (payErr) {
-            console.warn('Online payment warning:', payErr);
+          } catch (payErr: any) {
+            toast.error(payErr?.response?.data?.message || 'Đơn đã tạo nhưng giao dịch thanh toán thất bại.');
+            navigate(`/orders/${order.orderCode}?phone=${encodeURIComponent(formData.customerPhone)}&payment=failed`);
+            return;
           }
         }
         toast.success('Đặt hàng thành công! ✨', {
@@ -229,9 +207,9 @@ export default function Checkout() {
         return;
       }
 
-      // Đơn TAKEAWAY_PREORDER / RESERVATION_COMBO: yêu cầu cọc 50%
+      // Đơn TAKEAWAY_PREORDER / RESERVATION_COMBO: dùng mức cọc backend trả về.
       // Hiển thị màn hình thanh toán cọc riêng biệt (TC10 bước 5-6)
-      toast.success('Đơn hàng đã tạo! Vui lòng thanh toán cọc 50% để xác nhận.', {
+      toast.success('Đơn hàng đã tạo! Vui lòng thanh toán mức cọc hệ thống yêu cầu.', {
         style: { borderRadius: '20px', background: '#0F172A', color: '#fff' },
         duration: 4000,
       });
@@ -239,6 +217,9 @@ export default function Checkout() {
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin.';
       toast.error(msg, { style: { borderRadius: '20px' } });
+      if (/tồn kho|chỉ còn|ngừng bán|hết hạn|giỏ hàng/i.test(msg)) {
+        await refreshCart();
+      }
     } finally {
       setLoading(false);
     }
@@ -251,7 +232,7 @@ export default function Checkout() {
     if (orderType === 'RESERVATION_COMBO') {
       // TC10 bước 8: chuyển sang form đặt bàn
       navigate(
-        `/reservation?orderId=${pendingDepositOrder.id}&phone=${phone}&orderCode=${pendingDepositOrder.orderCode}&depositRequired=false`
+        `/reservation?orderId=${pendingDepositOrder.id}&phone=${phone}&orderCode=${pendingDepositOrder.orderCode}&pickupTime=${encodeURIComponent(pendingDepositOrder.pickupTime || '')}`
       );
     } else {
       // TAKEAWAY_PREORDER: chuyển về order tracking
@@ -320,7 +301,7 @@ export default function Checkout() {
               <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-500/30 rounded-2xl p-3 text-xs">
                 <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <span className="text-amber-700 dark:text-amber-300 font-semibold">
-                  Đơn này yêu cầu thanh toán cọc 50% bằng hình thức online sau khi tạo đơn.
+                  Mức tiền cọc chính xác sẽ do hệ thống tính sau khi tạo đơn.
                   {orderType === 'RESERVATION_COMBO' && ' Sau đó bạn sẽ được chuyển đến form đặt bàn.'}
                 </span>
               </div>
@@ -421,8 +402,8 @@ export default function Checkout() {
               </div>
               {(orderType === 'RESERVATION_COMBO' || orderType === 'TAKEAWAY_PREORDER') && (
                 <div className="flex justify-between text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded-xl">
-                  <span>Tiền cọc (50%) thanh toán ngay:</span>
-                  <span>{Math.round(cart.totalAmount * 0.5).toLocaleString('vi-VN')}₫</span>
+                  <span>Tiền cọc:</span>
+                  <span>Hệ thống sẽ tính chính xác sau khi tạo đơn</span>
                 </div>
               )}
             </div>
