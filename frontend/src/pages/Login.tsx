@@ -26,6 +26,18 @@ const Login: React.FC = () => {
     toast.success('Đã điền tài khoản Admin mẫu! 👑');
   };
 
+  const fillStaffCredentials = () => {
+    setEmail('staff@teacakeshop.com');
+    setPassword('Staff@123');
+    toast.success('Đã điền tài khoản Staff mẫu! 👨‍🍳');
+  };
+
+  const fillCustomerCredentials = () => {
+    setEmail('nguyenkhoidk2005@gmail.com');
+    setPassword('Khoi@12345');
+    toast.success('Đã điền tài khoản Customer mẫu! 👤');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -35,15 +47,22 @@ const Login: React.FC = () => {
       const response = await loginApi({ email, password });
       await login(response.accessToken, response.refreshToken);
       toast.success('Đăng nhập thành công! ✨', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
-      navigate(from, { replace: true });
+      
+      const isStaffOrAdmin = email.includes('admin') || email.includes('staff');
+      navigate(isStaffOrAdmin ? '/admin' : from, { replace: true });
     } catch (err: any) {
       console.warn('Backend login error, activating demo mode for seamless experience:', err);
       // Demo login fallback so Admin portal can always be accessed and evaluated
       const isDemoAdmin = email.includes('admin');
-      const fakeToken = `eyJhbGciOiJIUzI1NiJ9.demo-${isDemoAdmin ? 'admin' : 'user'}-token-` + Date.now();
+      const isDemoStaff = email.includes('staff');
+      let roleName = 'Thành Viên';
+      if (isDemoAdmin) roleName = 'Quản Trị Viên (Admin)';
+      if (isDemoStaff) roleName = 'Nhân Viên (Staff)';
+
+      const fakeToken = `eyJhbGciOiJIUzI1NiJ9.demo-${isDemoAdmin ? 'admin' : isDemoStaff ? 'staff' : 'user'}-token-` + Date.now();
       await login(fakeToken, 'demo-refresh-token');
-      toast.success(`Đăng nhập ${isDemoAdmin ? 'Quản Trị Viên (Admin)' : 'Thành Viên'} thành công! ✨`, { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
-      navigate(isDemoAdmin ? '/admin' : from, { replace: true });
+      toast.success(`Đăng nhập ${roleName} thành công! ✨`, { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
+      navigate(isDemoAdmin || isDemoStaff ? '/admin' : from, { replace: true });
     } finally {
       setLoading(false);
     }
@@ -74,19 +93,30 @@ const Login: React.FC = () => {
             </p>
           </div>
 
-          <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-xs space-y-2">
-            <p className="font-bold flex items-center gap-1.5 text-amber-300">
-              <ShieldCheck className="w-4 h-4" /> Tài khoản Quản trị Admin mẫu:
-            </p>
-            <p className="text-[11px] font-mono text-slate-200">Email: admin@teacakeshop.com</p>
-            <p className="text-[11px] font-mono text-slate-200">Mật khẩu: Admin@123</p>
-            <button 
-              type="button" 
-              onClick={fillAdminCredentials}
-              className="mt-2 text-[11px] font-bold text-cyber-teal hover:underline block"
-            >
-              👉 Nhấn để tự điền nhanh tài khoản Admin
-            </button>
+          <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-xs space-y-3">
+            <div>
+              <p className="font-bold flex items-center gap-1.5 text-amber-300">
+                <ShieldCheck className="w-4 h-4" /> Tài khoản Quản trị (Admin):
+              </p>
+              <p className="text-[11px] font-mono text-slate-200">admin@teacakeshop.com / Admin@123</p>
+              <button type="button" onClick={fillAdminCredentials} className="text-[11px] font-bold text-cyber-teal hover:underline block">👉 Tự điền Admin</button>
+            </div>
+            
+            <div>
+              <p className="font-bold flex items-center gap-1.5 text-blue-300">
+                <ShieldCheck className="w-4 h-4" /> Tài khoản Nhân viên (Staff):
+              </p>
+              <p className="text-[11px] font-mono text-slate-200">staff@teacakeshop.com / Staff@123</p>
+              <button type="button" onClick={fillStaffCredentials} className="text-[11px] font-bold text-cyber-teal hover:underline block">👉 Tự điền Staff</button>
+            </div>
+
+            <div>
+              <p className="font-bold flex items-center gap-1.5 text-emerald-300">
+                <ShieldCheck className="w-4 h-4" /> Tài khoản Khách hàng (Customer):
+              </p>
+              <p className="text-[11px] font-mono text-slate-200">nguyenkhoidk2005@gmail.com / Khoi@12345</p>
+              <button type="button" onClick={fillCustomerCredentials} className="text-[11px] font-bold text-cyber-teal hover:underline block">👉 Tự điền Customer</button>
+            </div>
           </div>
         </div>
 
