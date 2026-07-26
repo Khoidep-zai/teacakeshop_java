@@ -28,6 +28,8 @@ export const getMyReservations = (page = 0, size = 50) =>
 
 export const getAdminReservations = (params?: any) =>
   api.get('/admin/reservations', { params }).then(r => r.data);
+export const getAdminReservation = (id: number) =>
+  api.get<Reservation>(`/admin/reservations/${id}`).then(r => r.data);
 
 export const updateReservationStatus = (id: number, status: string) =>
   api.patch(`/admin/reservations/${id}/status`, { status }).then(r => r.data);

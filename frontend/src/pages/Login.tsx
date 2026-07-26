@@ -20,24 +20,6 @@ const Login: React.FC = () => {
 
   const from = (location.state as any)?.from?.pathname || '/';
 
-  const fillAdminCredentials = () => {
-    setEmail('admin@teacakeshop.com');
-    setPassword('Admin@123');
-    toast.success('Đã điền tài khoản Admin mẫu! 👑');
-  };
-
-  const fillStaffCredentials = () => {
-    setEmail('staff@teacakeshop.com');
-    setPassword('Staff@123');
-    toast.success('Đã điền tài khoản Staff mẫu! 👨‍🍳');
-  };
-
-  const fillCustomerCredentials = () => {
-    setEmail('nguyenkhoidk2005@gmail.com');
-    setPassword('Khoi@12345');
-    toast.success('Đã điền tài khoản Customer mẫu! 👤');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -49,8 +31,7 @@ const Login: React.FC = () => {
       toast.success('Đăng nhập thành công! ✨', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
       
       const role = profile?.role;
-      const isStaffOrAdmin = role === 'ADMIN' || role === 'STAFF';
-      navigate(isStaffOrAdmin ? '/admin' : from, { replace: true });
+      navigate(role === 'ADMIN' ? '/admin' : from, { replace: true });
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || 'Email hoặc mật khẩu không đúng.';
       setError(message);
@@ -85,30 +66,11 @@ const Login: React.FC = () => {
             </p>
           </div>
 
-          <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-xs space-y-3">
-            <div>
-              <p className="font-bold flex items-center gap-1.5 text-amber-300">
-                <ShieldCheck className="w-4 h-4" /> Tài khoản Quản trị (Admin):
-              </p>
-              <p className="text-[11px] font-mono text-slate-200">admin@teacakeshop.com / Admin@123</p>
-              <button type="button" onClick={fillAdminCredentials} className="text-[11px] font-bold text-cyber-teal hover:underline block">👉 Tự điền Admin</button>
-            </div>
-            
-            <div>
-              <p className="font-bold flex items-center gap-1.5 text-blue-300">
-                <ShieldCheck className="w-4 h-4" /> Tài khoản Nhân viên (Staff):
-              </p>
-              <p className="text-[11px] font-mono text-slate-200">staff@teacakeshop.com / Staff@123</p>
-              <button type="button" onClick={fillStaffCredentials} className="text-[11px] font-bold text-cyber-teal hover:underline block">👉 Tự điền Staff</button>
-            </div>
-
-            <div>
-              <p className="font-bold flex items-center gap-1.5 text-emerald-300">
-                <ShieldCheck className="w-4 h-4" /> Tài khoản Khách hàng (Customer):
-              </p>
-              <p className="text-[11px] font-mono text-slate-200">nguyenkhoidk2005@gmail.com / Khoi@12345</p>
-              <button type="button" onClick={fillCustomerCredentials} className="text-[11px] font-bold text-cyber-teal hover:underline block">👉 Tự điền Customer</button>
-            </div>
+          <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-xs">
+            <p className="font-bold flex items-center gap-1.5 text-emerald-300">
+              <ShieldCheck className="w-4 h-4" /> Thông tin đăng nhập được bảo vệ
+            </p>
+            <p className="mt-2 text-slate-300">Không chia sẻ mật khẩu hoặc mã truy cập với bất kỳ ai.</p>
           </div>
         </div>
 
@@ -180,14 +142,6 @@ const Login: React.FC = () => {
           </form>
 
           <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 text-center">
-            <button 
-              type="button" 
-              onClick={fillAdminCredentials} 
-              className="text-xs font-bold text-accent hover:underline mb-3 block w-full"
-            >
-              ⚡ Đăng Nhập Nhanh Quyền Admin (Bảng Quản Trị)
-            </button>
-            
             <p className="text-xs text-slate-500">
               Chưa có tài khoản? &nbsp;
               <Link to="/register" className="font-bold text-primary hover:underline">

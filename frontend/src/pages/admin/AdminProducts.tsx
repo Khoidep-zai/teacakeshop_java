@@ -1,30 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
-import { getProducts, createProduct, updateProduct, deleteProduct } from '../../api/products';
-import type { Product } from '../../types';
-import { getCatalogProducts, saveProduct, deleteCatalogProduct } from '../../data/mockCatalog';
+import { getAdminProducts, createProduct, updateProduct, deleteProduct, uploadProductImage } from '../../api/products';
+import { getAdminCategories } from '../../api/categories';
+import type { Category, Product } from '../../types';
 import toast from 'react-hot-toast';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [featuredOnly, setFeaturedOnly] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await getProducts();
+      const [data, categoryData] = await Promise.all([
+        getAdminProducts({ page: 0, size: 100 }),
+        getAdminCategories(),
+      ]);
       const list = (data as any).content || data;
-      if (Array.isArray(list) && list.length > 0) {
-        setProducts(list);
-      } else {
-        setProducts(getCatalogProducts());
-      }
-    } catch {
-      setProducts(getCatalogProducts());
+      setProducts(Array.isArray(list) ? list : []);
+      setCategories(categoryData);
+    } catch (err: any) {
+      setProducts([]);
+      toast.error(err?.response?.data?.message || 'Không thể tải sản phẩm');
     } finally {
       setLoading(false);
     }
@@ -32,9 +38,6 @@ export default function AdminProducts() {
 
   useEffect(() => {
     fetchProducts();
-    const handleUpdate = () => setProducts(getCatalogProducts());
-    window.addEventListener('catalog_updated', handleUpdate);
-    return () => window.removeEventListener('catalog_updated', handleUpdate);
   }, []);
 
   const handleOpenModal = (prod?: Product) => {
@@ -46,7 +49,7 @@ export default function AdminProducts() {
         description: '',
         price: 75000,
         productType: 'CAKE',
-        categoryId: 1,
+        categoryId: categories[0]?.id,
         categoryName: 'Bánh ngọt Pháp',
         stockQuantity: 20,
         taste: 'Thơm ngon',
@@ -66,16 +69,12 @@ export default function AdminProducts() {
       } else {
         await createProduct(currentProduct as any);
       }
-    } catch (err) {
-      console.warn('Backend product API save warning, saving locally:', err);
+      toast.success(`Đã lưu sản phẩm "${currentProduct.name}" thành công`);
+      setIsModalOpen(false);
+      await fetchProducts();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể lưu sản phẩm');
     }
-    // Synchronize to mockCatalog & Storefront
-    const saved = saveProduct(currentProduct);
-    toast.success(`Đã lưu sản phẩm "${saved.name}" và đồng bộ lên cửa hàng! ✨`, {
-      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
-    });
-    setIsModalOpen(false);
-    setProducts(getCatalogProducts());
   };
 
   const handleDelete = (prod: Product) => {
@@ -87,19 +86,34 @@ export default function AdminProducts() {
     if (!currentProduct.id) return;
     try {
       await deleteProduct(currentProduct.id);
-    } catch (err) {
-      console.warn('Backend product delete warning:', err);
+      toast.success('Đã tắt bán sản phẩm thành công');
+      setIsDeleteModalOpen(false);
+      await fetchProducts();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể tắt sản phẩm');
     }
-    deleteCatalogProduct(currentProduct.id);
-    toast.success('Đã xóa sản phẩm thành công!', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
-    setIsDeleteModalOpen(false);
-    setProducts(getCatalogProducts());
+  };
+
+  const handleImageUpload = async (file?: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const uploaded = await uploadProductImage(file);
+      setCurrentProduct((current) => ({ ...current, imageUrl: uploaded.imageUrl }));
+      toast.success('Upload ảnh thành công');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể upload ảnh');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.categoryName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).filter(p => categoryFilter === 'ALL' || String(p.categoryId) === categoryFilter)
+    .filter(p => statusFilter === 'ALL' || String(p.active) === statusFilter)
+    .filter(p => !featuredOnly || p.hot);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -137,6 +151,15 @@ export default function AdminProducts() {
             className="input-field pl-10 text-xs"
           />
         </div>
+        <select className="input-field w-44" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+          <option value="ALL">Mọi danh mục</option>{categories.map(category =>
+            <option key={category.id} value={category.id}>{category.name}</option>)}
+        </select>
+        <select className="input-field w-36" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="ALL">Mọi trạng thái</option><option value="true">Đang bán</option><option value="false">Đã tắt</option>
+        </select>
+        <label className="font-bold flex gap-2 whitespace-nowrap"><input type="checkbox" checked={featuredOnly}
+          onChange={e => setFeaturedOnly(e.target.checked)} /> Nổi bật</label>
       </div>
 
       {/* Products Table */}
@@ -249,6 +272,20 @@ export default function AdminProducts() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="font-extrabold block mb-1">Danh Mục *</label>
+                  <select
+                    required
+                    value={currentProduct.categoryId || ''}
+                    onChange={e => setCurrentProduct({ ...currentProduct, categoryId: Number(e.target.value) })}
+                    className="input-field"
+                  >
+                    <option value="">Chọn danh mục</option>
+                    {categories.filter(category => category.active !== false).map(category => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="font-extrabold block mb-1">Loại Món *</label>
                   <select
                     value={currentProduct.productType || 'CAKE'}
@@ -301,14 +338,23 @@ export default function AdminProducts() {
                   <input
                     type="number"
                     min={0}
-                    value={currentProduct.stockQuantity || 20}
+                    value={currentProduct.stockQuantity ?? 0}
                     onChange={e => setCurrentProduct({ ...currentProduct, stockQuantity: Number(e.target.value) })}
                     className="input-field"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div>
+                <label className="font-extrabold block mb-1">Upload Hình Ảnh (JPG, PNG, WEBP; tối đa 5MB)</label>
+                <input type="file" accept="image/jpeg,image/png,image/webp"
+                  disabled={uploading} onChange={e => void handleImageUpload(e.target.files?.[0])}
+                  className="input-field" />
+                {currentProduct.imageUrl && <img src={currentProduct.imageUrl} alt="Xem trước"
+                  className="mt-2 h-28 w-28 object-cover rounded-xl" />}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-5 pt-2">
                 <input
                   type="checkbox"
                   id="prodActive"
@@ -318,6 +364,16 @@ export default function AdminProducts() {
                 />
                 <label htmlFor="prodActive" className="font-bold cursor-pointer">
                   Mở bán trực tiếp trên trang chủ & thực đơn
+                </label>
+                <label className="font-bold flex items-center gap-2">
+                  <input type="checkbox" checked={currentProduct.hot ?? false}
+                    onChange={e => setCurrentProduct({ ...currentProduct, hot: e.target.checked })} />
+                  Nổi bật
+                </label>
+                <label className="font-bold flex items-center gap-2">
+                  <input type="checkbox" checked={currentProduct.bestSeller ?? false}
+                    onChange={e => setCurrentProduct({ ...currentProduct, bestSeller: e.target.checked })} />
+                  Bán chạy
                 </label>
               </div>
 

@@ -21,7 +21,10 @@ export interface Product {
   productType: ProductType; categoryId: number; categoryName: string;
   imageUrl: string; stockQuantity: number; taste: string;
   temperatureType: TemperatureType; season: string; active: boolean;
-  hotScore: number; bestSellerScore: number; createdAt: string;
+  soldQuantity?: number; hot?: boolean; bestSeller?: boolean; createdAt: string;
+  hotScore?: number; bestSellerScore?: number;
+  discountAmount?: number; finalPrice?: number; discountCampaignId?: number;
+  discountCampaignName?: string; updatedAt?: string;
 }
 export interface ProductSuggestion { id: number; suggestedProduct: Product; reason: string; priority: number; }
 
@@ -29,12 +32,16 @@ export interface ProductSuggestion { id: number; suggestedProduct: Product; reas
 // COMBO
 // ============================================================
 export type WeatherType = 'CLOUDY' | 'COLD' | 'HOT' | 'NORMAL' | 'RAINY' | 'SUNNY';
-export interface ComboItem { id: number; product: Product; quantity: number; }
+export interface ComboItem {
+  id: number; productId?: number; productName?: string; quantity: number;
+  unitPrice?: number; lineTotal?: number; product?: Product;
+}
 export interface Combo {
   id: number; name: string; description: string; comboPrice: number;
   originalPrice: number; savingAmount: number; imageUrl: string;
-  weatherType: WeatherType; active: boolean; hotScore: number;
-  bestSellerScore: number; items: ComboItem[]; createdAt: string;
+  weatherType: WeatherType; active: boolean; hot?: boolean;
+  bestSeller?: boolean; soldQuantity?: number; hotScore?: number;
+  bestSellerScore?: number; items: ComboItem[]; createdAt: string;
   startDate?: string; endDate?: string;
   /** BE response fields */
   finalPrice?: number; campaignDiscountAmount?: number; discountCampaignName?: string;
@@ -137,8 +144,11 @@ export type PaymentMethod = 'CASH_ON_DELIVERY' | 'BANK_TRANSFER' | 'MOMO_SIMULAT
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 export type PaymentPurpose = 'FULL' | 'DEPOSIT' | 'REMAINING';
 export interface Payment {
-  id: number; paymentMethod: PaymentMethod; status: PaymentStatus;
-  purpose: PaymentPurpose; amount: number; paidAt?: string; createdAt: string;
+  id: number; orderId: number; orderCode: string; transactionCode: string;
+  paymentMethod: PaymentMethod; status: PaymentStatus;
+  purpose: PaymentPurpose; amount: number; orderTotalAmount: number;
+  paidAmount: number; outstandingAmount: number; paidAt?: string;
+  note?: string; createdAt: string;
 }
 
 // ============================================================
@@ -179,20 +189,28 @@ export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT';
 export type DiscountScope = 'STORE' | 'CATEGORY' | 'PRODUCT' | 'COMBO';
 export interface Discount {
   id: number; name: string; code: string; discountType: DiscountType;
-  discountScope: DiscountScope; discountValue: number; minOrderAmount: number;
-  maxDiscountAmount?: number; startDate: string; endDate: string; active: boolean;
+  description?: string; discountScope: DiscountScope; discountValue: number;
+  maximumDiscountAmount?: number; categoryId?: number; productId?: number;
+  comboId?: number; priority: number; startAt: string; endAt: string;
+  active: boolean; currentlyEffective?: boolean;
 }
 
 // ============================================================
 // DASHBOARD
 // ============================================================
 export interface DashboardOverview {
-  totalRevenue: number; totalOrders: number; totalCustomers: number;
-  totalProducts: number; pendingOrders: number; todayRevenue: number;
+  totalRevenue: number; todayRevenue: number; monthRevenue: number;
+  totalOrders: number; todayOrders: number; pendingOrders: number;
+  confirmedOrders: number; preparingOrders: number; completedOrders: number;
+  cancelledOrders: number; totalReservations: number; todayReservations: number;
+  pendingReservations: number; confirmedReservations: number;
+  seatedReservations: number; completedReservations: number;
+  cancelledReservations: number; noShowReservations: number;
+  activeProducts: number; lowStockProducts: number; generatedAt: string;
 }
 export interface DailyRevenue { date: string; revenue: number; orderCount: number; }
-export interface TopProduct { productId: number; productName: string; imageUrl: string; totalSold: number; revenue: number; }
-export interface LowStockProduct { productId: number; productName: string; stockQuantity: number; }
+export interface TopProduct { itemId: number; itemName: string; itemType: CartItemType; soldQuantity: number; revenue: number; }
+export interface LowStockProduct { productId: number; productName: string; categoryId: number; categoryName: string; stockQuantity: number; active: boolean; }
 
 // ============================================================
 // PAGEABLE

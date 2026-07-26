@@ -9,6 +9,7 @@ import com.example.teacakeshop.dto.response.LowStockProductResponse;
 import com.example.teacakeshop.dto.response.TopSellingItemResponse;
 import com.example.teacakeshop.entity.CustomerOrder;
 import com.example.teacakeshop.entity.Product;
+import com.example.teacakeshop.exception.BadRequestException;
 import com.example.teacakeshop.repository.CustomerOrderRepository;
 import com.example.teacakeshop.repository.OrderItemRepository;
 import com.example.teacakeshop.repository.ProductRepository;
@@ -233,6 +234,34 @@ public class DashboardService {
                 endDate.minusDays(
                         safeDays - 1L
                 );
+
+        return buildDailyRevenue(startDate, endDate);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DailyRevenueResponse> getDailyRevenue(
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        LocalDate safeEnd = endDate == null ? LocalDate.now() : endDate;
+        LocalDate safeStart = startDate == null ? safeEnd.minusDays(6) : startDate;
+
+        if (safeStart.isAfter(safeEnd)) {
+            throw new BadRequestException("Ngày bắt đầu không được sau ngày kết thúc");
+        }
+        if (safeStart.plusDays(364).isBefore(safeEnd)) {
+            throw new BadRequestException("Khoảng thống kê tối đa là 365 ngày");
+        }
+
+        return buildDailyRevenue(safeStart, safeEnd);
+    }
+
+    private List<DailyRevenueResponse> buildDailyRevenue(
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        int safeDays = (int) java.time.temporal.ChronoUnit.DAYS
+                .between(startDate, endDate) + 1;
 
         LocalDateTime start =
                 startDate.atStartOfDay();

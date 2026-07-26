@@ -299,16 +299,10 @@ teacakeshop/
 
 ---
 
-## 10. 🔑 Biến Môi Trường & Tài khoản Mặc định
+## 10. 🔑 Biến Môi Trường & Tài khoản Admin
 
-- **Tài khoản Admin (Quản trị viên)**:
-  - **Email**: `admin@teacakeshop.com`
-  - **Password**: `Admin@123`
-  - **Quyền hạn**: `ADMIN` (Truy cập đầy đủ Admin Portal `/admin`)
-
-- **Tài khoản Khách hàng Mẫu**:
-  - **Email**: `nguyenkhoidk2005@gmail.com`
-  - **Password**: `Khoi@12345`
+Tài khoản Admin khởi tạo được cấu hình bằng `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
+`ADMIN_FULL_NAME` và `ADMIN_PHONE`. Không có mật khẩu mặc định trong mã nguồn.
 
 ---
 

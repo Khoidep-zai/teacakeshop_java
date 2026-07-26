@@ -1,5 +1,4 @@
 import axios from 'axios';
-import toast from 'react-hot-toast';
 
 const api = axios.create({ baseURL: '/api', timeout: 15000 });
 

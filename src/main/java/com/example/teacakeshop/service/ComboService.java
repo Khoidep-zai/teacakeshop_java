@@ -112,7 +112,16 @@ public class ComboService {
 
     @Transactional(readOnly = true)
     public ComboResponse getById(Long id) {
-        return toResponse(findEntityById(id));
+        Combo combo = findEntityById(id);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (Boolean.FALSE.equals(combo.getActive())
+                || (combo.getStartDate() != null && today.isBefore(combo.getStartDate()))
+                || (combo.getEndDate() != null && today.isAfter(combo.getEndDate()))) {
+            throw new ResourceNotFoundException(
+                    "Không tìm thấy combo đang bán có ID " + id
+            );
+        }
+        return toResponse(combo);
     }
 
     @Transactional(readOnly = true)
@@ -417,8 +426,8 @@ public class ComboService {
     ) {
         if (request.startDate() != null
                 && request.endDate() != null
-                && request.startDate()
-                .isAfter(request.endDate())) {
+                && !request.startDate()
+                .isBefore(request.endDate())) {
 
             throw new BadRequestException(
                     "Ngày bắt đầu không được sau ngày kết thúc"

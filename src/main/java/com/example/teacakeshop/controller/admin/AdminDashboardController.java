@@ -8,6 +8,7 @@ import com.example.teacakeshop.service.DashboardService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/admin/dashboard")
@@ -38,9 +39,13 @@ public class AdminDashboardController {
      */
     @GetMapping("/revenue/daily")
     public List<DailyRevenueResponse> getDailyRevenue(
-            @RequestParam(defaultValue = "7")
-            int days
+            @RequestParam(defaultValue = "7") int days,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate
     ) {
+        if (startDate != null || endDate != null) {
+            return dashboardService.getDailyRevenue(startDate, endDate);
+        }
         return dashboardService
                 .getDailyRevenue(days);
     }

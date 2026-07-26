@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, PackageSearch, Sparkles, CheckCircle2, XCircle } from 'lucide-react';
-import { getCombos, createCombo, updateCombo, deleteCombo } from '../../api/combos';
-import type { Combo } from '../../types';
-import { getCatalogCombos, saveCombo, deleteCatalogCombo } from '../../data/mockCatalog';
+import { getAdminCombos, createCombo, updateCombo, deleteCombo, uploadComboImage } from '../../api/combos';
+import { getAdminProducts } from '../../api/products';
+import type { Combo, ComboItem, Product } from '../../types';
 import toast from 'react-hot-toast';
 
 export default function AdminCombos() {
@@ -11,19 +11,22 @@ export default function AdminCombos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentCombo, setCurrentCombo] = useState<Partial<Combo>>({});
+  const [products, setProducts] = useState<Product[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const fetchCombos = async () => {
     setLoading(true);
     try {
-      const data = await getCombos();
+      const [data, productPage] = await Promise.all([
+        getAdminCombos({ page: 0, size: 100 }),
+        getAdminProducts({ page: 0, size: 100 }),
+      ]);
       const list = (data as any).content || data;
-      if (Array.isArray(list) && list.length > 0) {
-        setCombos(list);
-      } else {
-        setCombos(getCatalogCombos());
-      }
-    } catch {
-      setCombos(getCatalogCombos());
+      setCombos(Array.isArray(list) ? list : []);
+      setProducts(productPage.content.filter(product => product.active));
+    } catch (err: any) {
+      setCombos([]);
+      toast.error(err?.response?.data?.message || 'Không thể tải combo');
     } finally {
       setLoading(false);
     }
@@ -31,9 +34,6 @@ export default function AdminCombos() {
 
   useEffect(() => {
     fetchCombos();
-    const handleUpdate = () => setCombos(getCatalogCombos());
-    window.addEventListener('catalog_updated', handleUpdate);
-    return () => window.removeEventListener('catalog_updated', handleUpdate);
   }, []);
 
   const handleOpenModal = (cmb?: Combo) => {
@@ -48,7 +48,10 @@ export default function AdminCombos() {
         savingAmount: 30000,
         imageUrl: '/images/combos/royal_tea_set.png',
         weatherType: 'SUNNY',
-        active: true
+        active: true,
+        hot: false,
+        bestSeller: false,
+        items: [],
       });
     }
     setIsModalOpen(true);
@@ -56,21 +59,29 @@ export default function AdminCombos() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (currentCombo.id) {
-        await updateCombo(currentCombo.id, currentCombo as any);
-      } else {
-        await createCombo(currentCombo as any);
-      }
-    } catch (err) {
-      console.warn('Backend combo API save warning:', err);
+    if ((currentCombo.items?.length || 0) < 2) {
+      toast.error('Combo phải có ít nhất 2 sản phẩm');
+      return;
     }
-    const saved = saveCombo(currentCombo);
-    toast.success(`Đã lưu Combo Pass "${saved.name}" và đồng bộ lên cửa hàng! ✨`, {
-      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
-    });
-    setIsModalOpen(false);
-    setCombos(getCatalogCombos());
+    try {
+      const payload = {
+        ...currentCombo,
+        items: (currentCombo.items || []).map(item => ({
+          productId: item.productId ?? item.product?.id,
+          quantity: item.quantity,
+        })),
+      };
+      if (currentCombo.id) {
+        await updateCombo(currentCombo.id, payload);
+      } else {
+        await createCombo(payload);
+      }
+      toast.success(`Đã lưu combo "${currentCombo.name}" thành công`);
+      setIsModalOpen(false);
+      await fetchCombos();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể lưu combo');
+    }
   };
 
   const handleDelete = (cmb: Combo) => {
@@ -82,13 +93,38 @@ export default function AdminCombos() {
     if (!currentCombo.id) return;
     try {
       await deleteCombo(currentCombo.id);
-    } catch (err) {
-      console.warn('Backend combo delete warning:', err);
+      toast.success('Đã tắt combo thành công');
+      setIsDeleteModalOpen(false);
+      await fetchCombos();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể tắt combo');
     }
-    deleteCatalogCombo(currentCombo.id);
-    toast.success('Đã xóa Combo Pass thành công!', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
-    setIsDeleteModalOpen(false);
-    setCombos(getCatalogCombos());
+  };
+
+  const toggleProduct = (product: Product) => {
+    const items = currentCombo.items || [];
+    const exists = items.some(item => (item.productId ?? item.product?.id) === product.id);
+    const next: ComboItem[] = exists
+      ? items.filter(item => (item.productId ?? item.product?.id) !== product.id)
+      : [...items, {
+          id: 0, productId: product.id, productName: product.name,
+          quantity: 1, unitPrice: product.price, lineTotal: product.price,
+        }];
+    setCurrentCombo({ ...currentCombo, items: next });
+  };
+
+  const handleImageUpload = async (file?: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const uploaded = await uploadComboImage(file);
+      setCurrentCombo(current => ({ ...current, imageUrl: uploaded.imageUrl }));
+      toast.success('Upload ảnh combo thành công');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể upload ảnh combo');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -228,13 +264,11 @@ export default function AdminCombos() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="font-extrabold block mb-1">Giá Niêm Yết (VNĐ) *</label>
+                  <label className="font-extrabold block mb-1">Tổng giá sản phẩm (backend tính)</label>
                   <input
                     type="number"
-                    required
-                    min={0}
-                    value={currentCombo.originalPrice || ''}
-                    onChange={e => setCurrentCombo({ ...currentCombo, originalPrice: Number(e.target.value) })}
+                    readOnly
+                    value={(currentCombo.items || []).reduce((sum, item) => sum + (item.unitPrice || item.product?.price || 0) * item.quantity, 0)}
                     className="input-field"
                   />
                 </div>
@@ -250,6 +284,48 @@ export default function AdminCombos() {
                     className="input-field"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="font-extrabold block mb-2">Sản Phẩm Trong Combo * (ít nhất 2)</label>
+                <div className="max-h-48 overflow-y-auto border rounded-xl p-2 space-y-2">
+                  {products.map(product => {
+                    const selected = currentCombo.items?.find(item => (item.productId ?? item.product?.id) === product.id);
+                    return <div key={product.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
+                      <input type="checkbox" checked={Boolean(selected)} onChange={() => toggleProduct(product)} />
+                      <span className="flex-1 font-bold">{product.name}</span>
+                      {selected && <input type="number" min={1} value={selected.quantity}
+                        onChange={e => setCurrentCombo({
+                          ...currentCombo,
+                          items: currentCombo.items?.map(item => (item.productId ?? item.product?.id) === product.id
+                            ? { ...item, quantity: Math.max(1, Number(e.target.value)), lineTotal: (item.unitPrice || item.product?.price || 0) * Math.max(1, Number(e.target.value)) }
+                            : item),
+                        })}
+                        className="input-field w-20" />}
+                    </div>;
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <label className="font-extrabold">Ngày bắt đầu
+                  <input type="date" value={currentCombo.startDate || ''}
+                    onChange={e => setCurrentCombo({ ...currentCombo, startDate: e.target.value || undefined })}
+                    className="input-field mt-1" />
+                </label>
+                <label className="font-extrabold">Ngày kết thúc
+                  <input type="date" value={currentCombo.endDate || ''} min={currentCombo.startDate}
+                    onChange={e => setCurrentCombo({ ...currentCombo, endDate: e.target.value || undefined })}
+                    className="input-field mt-1" />
+                </label>
+              </div>
+
+              <div>
+                <label className="font-extrabold block mb-1">Upload ảnh combo</label>
+                <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading}
+                  onChange={e => void handleImageUpload(e.target.files?.[0])} className="input-field" />
+                {currentCombo.imageUrl && <img src={currentCombo.imageUrl} alt="Xem trước combo"
+                  className="mt-2 h-28 w-28 object-cover rounded-xl" />}
               </div>
 
               <div>
@@ -291,7 +367,7 @@ export default function AdminCombos() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex flex-wrap items-center gap-5 pt-2">
                 <input
                   type="checkbox"
                   id="cmbActive"
@@ -302,6 +378,10 @@ export default function AdminCombos() {
                 <label htmlFor="cmbActive" className="font-bold cursor-pointer">
                   Mở bán trực tiếp trên trang Combo Pass
                 </label>
+                <label className="font-bold flex gap-2"><input type="checkbox" checked={currentCombo.hot ?? false}
+                  onChange={e => setCurrentCombo({ ...currentCombo, hot: e.target.checked })} /> Nổi bật</label>
+                <label className="font-bold flex gap-2"><input type="checkbox" checked={currentCombo.bestSeller ?? false}
+                  onChange={e => setCurrentCombo({ ...currentCombo, bestSeller: e.target.checked })} /> Bán chạy</label>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">

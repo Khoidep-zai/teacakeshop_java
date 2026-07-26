@@ -203,10 +203,7 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/admin/images/**"
                                 )
-                                .hasAnyRole(
-                                        "ADMIN",
-                                        "STAFF"
-                                )
+                                .hasRole("ADMIN")
 
                                 /*
                                  * Chỉ ADMIN được dùng dashboard,
@@ -226,10 +223,7 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/admin/**"
                                 )
-                                .hasAnyRole(
-                                        "ADMIN",
-                                        "STAFF"
-                                )
+                                .hasRole("ADMIN")
 
                                 /*
                                  * API lịch sử tài khoản cá nhân.

@@ -104,30 +104,5 @@ public class AdminAccountSeeder
 
         userAccountRepository.save(admin);
 
-        // Seed Staff Account
-        String staffEmail = "staff@teacakeshop.com";
-        if (!userAccountRepository.existsByEmailIgnoreCase(staffEmail)) {
-            UserAccount staff = new UserAccount();
-            staff.setFullName("Lounge Staff Manager");
-            staff.setEmail(staffEmail);
-            staff.setPhone("0911111111");
-            staff.setPasswordHash(passwordEncoder.encode("Staff@123"));
-            staff.setRole(Role.STAFF);
-            staff.setActive(true);
-            userAccountRepository.save(staff);
-        }
-
-        // Seed Sample Customer Account
-        String customerEmail = "nguyenkhoidk2005@gmail.com";
-        if (!userAccountRepository.existsByEmailIgnoreCase(customerEmail)) {
-            UserAccount customer = new UserAccount();
-            customer.setFullName("Khoi Nguyen");
-            customer.setEmail(customerEmail);
-            customer.setPhone("0902094421");
-            customer.setPasswordHash(passwordEncoder.encode("Khoi@12345"));
-            customer.setRole(Role.CUSTOMER);
-            customer.setActive(true);
-            userAccountRepository.save(customer);
-        }
     }
 }

@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { getUsers } from '../../api/admin';
+import { updateUserActive, updateUserRole } from '../../api/auth';
 import type { UserProfile } from '../../types';
+import toast from 'react-hot-toast';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [activeFilter, setActiveFilter] = useState('ALL');
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const pageData = await getUsers();
       setUsers(pageData?.content ?? []);
-    } catch {
+    } catch (err: any) {
       setUsers([]);
+      toast.error(err?.response?.data?.message || 'Không thể tải người dùng');
     } finally {
       setLoading(false);
     }
@@ -28,7 +33,32 @@ export default function AdminUsers() {
     u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.phone?.includes(searchTerm)
-  );
+  ).filter(u => roleFilter === 'ALL' || u.role === roleFilter)
+    .filter(u => activeFilter === 'ALL' || String(u.active) === activeFilter);
+
+  const changeRole = async (account: UserProfile, role: UserProfile['role']) => {
+    if (role === account.role) return;
+    if (!window.confirm(`Đổi vai trò của ${account.fullName} từ ${account.role} sang ${role}?`)) return;
+    try {
+      await updateUserRole(account.id, role);
+      toast.success('Đã cập nhật vai trò');
+      await fetchUsers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể cập nhật vai trò');
+    }
+  };
+
+  const toggleActive = async (account: UserProfile) => {
+    const next = !account.active;
+    if (!window.confirm(`${next ? 'Mở khóa' : 'Khóa'} tài khoản ${account.email}?`)) return;
+    try {
+      await updateUserActive(account.id, next);
+      toast.success(next ? 'Đã mở khóa tài khoản' : 'Đã khóa tài khoản');
+      await fetchUsers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể cập nhật tài khoản');
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -58,6 +88,13 @@ export default function AdminUsers() {
             className="input-field pl-10 text-xs"
           />
         </div>
+        <select className="input-field w-40" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+          <option value="ALL">Mọi vai trò</option><option value="CUSTOMER">Khách hàng</option>
+          <option value="STAFF">Nhân viên</option><option value="ADMIN">Admin</option>
+        </select>
+        <select className="input-field w-40" value={activeFilter} onChange={e => setActiveFilter(e.target.value)}>
+          <option value="ALL">Mọi trạng thái</option><option value="true">Hoạt động</option><option value="false">Bị khóa</option>
+        </select>
       </div>
 
       {/* Users Table */}
@@ -73,18 +110,19 @@ export default function AdminUsers() {
                 <th className="px-6 py-4">Vai Trò (Role)</th>
                 <th className="px-6 py-4">Trạng Thái</th>
                 <th className="px-6 py-4">Ngày Tham Gia</th>
+                <th className="px-6 py-4">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                  <td colSpan={8} className="text-center py-8 text-slate-400 font-semibold">
                     Đang tải tài khoản thành viên...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
+                  <td colSpan={8} className="text-center py-8 text-slate-400 font-semibold">
                     Chưa có tài khoản nào.
                   </td>
                 </tr>
@@ -116,11 +154,19 @@ export default function AdminUsers() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                        <CheckCircle2 size={12} /> Hoạt động
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold ${usr.active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'}`}>
+                        <CheckCircle2 size={12} /> {usr.active ? 'Hoạt động' : 'Bị khóa'}
                       </span>
                     </td>
                     <td className="px-6 py-4">{new Date(usr.createdAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="px-6 py-4 space-y-2">
+                      <select value={usr.role} onChange={e => void changeRole(usr, e.target.value as UserProfile['role'])}
+                        className="input-field min-w-28">
+                        <option value="CUSTOMER">CUSTOMER</option><option value="STAFF">STAFF</option><option value="ADMIN">ADMIN</option>
+                      </select>
+                      <button className={usr.active ? 'btn-secondary text-red-600' : 'btn-primary'}
+                        onClick={() => void toggleActive(usr)}>{usr.active ? 'Khóa' : 'Mở khóa'}</button>
+                    </td>
                   </tr>
                 ))
               )}

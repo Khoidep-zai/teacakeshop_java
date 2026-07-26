@@ -33,6 +33,8 @@ export const getMyOrder = (id: number) =>
  */
 export const getAdminOrders = (params?: any) =>
   api.get<Page<Order>>('/admin/orders', { params }).then(r => r.data);
+export const getAdminOrder = (id: number) =>
+  api.get<Order>(`/admin/orders/${id}`).then(r => r.data);
 
 /**
  * Admin: cập nhật trạng thái đơn hàng.

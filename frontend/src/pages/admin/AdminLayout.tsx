@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PackageSearch, Tags, Coffee, ShoppingCart, CalendarCheck, Users, Percent, Menu, X, LogOut, Sparkles, Sun, Moon, Globe, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, PackageSearch, Tags, Coffee, ShoppingCart, CalendarCheck, Users, Percent, CreditCard, Boxes, Menu, X, LogOut, Sparkles, Sun, Moon, Globe, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -14,6 +14,8 @@ const sidebarItems = [
   { icon: CalendarCheck, labelKey: 'Đặt Bàn Lounge', path: '/admin/reservations' },
   { icon: Users, labelKey: 'Quản Lý Người Dùng', path: '/admin/users' },
   { icon: Percent, labelKey: 'Mã Khuyến Mãi (Voucher)', path: '/admin/discounts' },
+  { icon: CreditCard, labelKey: 'Quản Lý Thanh Toán', path: '/admin/payments' },
+  { icon: Boxes, labelKey: 'Theo Dõi Tồn Kho', path: '/admin/inventory' },
 ];
 
 export default function AdminLayout() {

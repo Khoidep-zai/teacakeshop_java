@@ -4,6 +4,7 @@ import com.example.teacakeshop.dto.request.ProductRequest;
 import com.example.teacakeshop.dto.response.ProductResponse;
 import com.example.teacakeshop.service.ProductService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,14 @@ public class AdminProductController {
             ProductService productService
     ) {
         this.productService = productService;
+    }
+
+    @GetMapping
+    public Page<ProductResponse> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return productService.getAllForAdmin(page, size);
     }
 
     @PostMapping

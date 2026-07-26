@@ -19,7 +19,7 @@ public record ProductRequest(
         @NotNull(message = "Giá sản phẩm không được để trống")
         @DecimalMin(
                 value = "0.0",
-                inclusive = false,
+                inclusive = true,
                 message = "Giá sản phẩm phải lớn hơn 0"
         )
         BigDecimal price,

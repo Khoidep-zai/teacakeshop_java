@@ -14,14 +14,14 @@ public interface ProductRepository
     /*
      * Lấy danh sách sản phẩm đang hoạt động.
      */
-    Page<Product> findByActiveTrue(
+    Page<Product> findByActiveTrueAndCategory_ActiveTrue(
             Pageable pageable
     );
 
     /*
      * Tìm sản phẩm đang hoạt động theo tên.
      */
-    Page<Product> findByActiveTrueAndNameContainingIgnoreCase(
+    Page<Product> findByActiveTrueAndCategory_ActiveTrueAndNameContainingIgnoreCase(
             String keyword,
             Pageable pageable
     );
@@ -29,7 +29,7 @@ public interface ProductRepository
     /*
      * Lọc sản phẩm đang hoạt động theo loại.
      */
-    Page<Product> findByActiveTrueAndProductType(
+    Page<Product> findByActiveTrueAndCategory_ActiveTrueAndProductType(
             ProductType productType,
             Pageable pageable
     );
@@ -38,7 +38,7 @@ public interface ProductRepository
      * Tìm theo tên và loại sản phẩm.
      */
     Page<Product>
-    findByActiveTrueAndNameContainingIgnoreCaseAndProductType(
+    findByActiveTrueAndCategory_ActiveTrueAndNameContainingIgnoreCaseAndProductType(
             String keyword,
             ProductType productType,
             Pageable pageable
@@ -48,6 +48,10 @@ public interface ProductRepository
      * Đếm tổng số sản phẩm đang hoạt động.
      */
     long countByActiveTrue();
+
+    long countByCategory_Id(Long categoryId);
+
+    long countByCategory_IdAndActiveTrue(Long categoryId);
 
     /*
      * Đếm số sản phẩm đang hoạt động
@@ -70,17 +74,17 @@ public interface ProductRepository
      * Sản phẩm nổi bật.
      */
     List<Product>
-    findTop8ByActiveTrueAndHotTrueOrderByCreatedAtDesc();
+    findTop8ByActiveTrueAndCategory_ActiveTrueAndHotTrueOrderByCreatedAtDesc();
 
     /*
      * Sản phẩm bán chạy.
      */
     List<Product>
-    findTop8ByActiveTrueOrderBySoldQuantityDesc();
+    findTop8ByActiveTrueAndCategory_ActiveTrueOrderBySoldQuantityDesc();
 
     /*
      * Sản phẩm mới nhất.
      */
     List<Product>
-    findTop8ByActiveTrueOrderByCreatedAtDesc();
+    findTop8ByActiveTrueAndCategory_ActiveTrueOrderByCreatedAtDesc();
 }

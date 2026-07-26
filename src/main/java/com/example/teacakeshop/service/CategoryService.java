@@ -6,6 +6,7 @@ import com.example.teacakeshop.entity.Category;
 import com.example.teacakeshop.exception.BadRequestException;
 import com.example.teacakeshop.exception.ResourceNotFoundException;
 import com.example.teacakeshop.repository.CategoryRepository;
+import com.example.teacakeshop.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +16,14 @@ import java.util.List;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(
+            CategoryRepository categoryRepository,
+            ProductRepository productRepository
+    ) {
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     @Transactional(readOnly = true)
@@ -40,7 +46,13 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public CategoryResponse getById(Long id) {
-        return toResponse(findEntityById(id));
+        Category category = findEntityById(id);
+        if (Boolean.FALSE.equals(category.getActive())) {
+            throw new ResourceNotFoundException(
+                    "Không tìm thấy danh mục có ID " + id
+            );
+        }
+        return toResponse(category);
     }
 
     @Transactional
@@ -87,6 +99,14 @@ public class CategoryService {
     @Transactional
     public void deactivate(Long id) {
         Category category = findEntityById(id);
+        long activeProducts = productRepository
+                .countByCategory_IdAndActiveTrue(id);
+        if (activeProducts > 0) {
+            throw new BadRequestException(
+                    "Danh mục đang có " + activeProducts
+                            + " sản phẩm hoạt động. Hãy tắt hoặc chuyển các sản phẩm trước"
+            );
+        }
         category.setActive(false);
         categoryRepository.save(category);
     }
@@ -107,6 +127,7 @@ public class CategoryService {
                 category.getName(),
                 category.getDescription(),
                 category.getActive(),
+                productRepository.countByCategory_Id(category.getId()),
                 category.getCreatedAt(),
                 category.getUpdatedAt()
         );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Search, CheckCircle2, Package, XCircle, Clock, Sparkles } from 'lucide-react';
-import { getAdminOrders, updateOrderStatus as updateApiOrderStatus } from '../../api/orders';
+import { getAdminOrder, getAdminOrders, updateOrderStatus as updateApiOrderStatus } from '../../api/orders';
 import type { Order, Page } from '../../types';
 import toast from 'react-hot-toast';
 
@@ -13,14 +13,17 @@ export default function AdminOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   // FIXED: Dùng đúng enum backend (PREPARING thay vì SHIPPING)
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [detail, setDetail] = useState<Order | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const pageData = await getAdminOrders({ page: 0, size: 100 }) as Page<Order>;
       setOrders(pageData?.content ?? []);
-    } catch {
+    } catch (err: any) {
       setOrders([]);
+      toast.error(err?.response?.data?.message || 'Không thể tải đơn hàng');
     } finally {
       setLoading(false);
     }
@@ -48,11 +51,24 @@ export default function AdminOrders() {
 
   const filtered = orders
     .filter(o => statusFilter === 'ALL' || o.status === statusFilter)
+    .filter(o => typeFilter === 'ALL' || o.orderType === typeFilter)
     .filter(o =>
       o.orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (o.customerName && o.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (o.customerPhone && o.customerPhone.includes(searchTerm))
     );
+
+  const openDetail = async (id: number) => {
+    try { setDetail(await getAdminOrder(id)); }
+    catch (err: any) { toast.error(err?.response?.data?.message || 'Không thể tải chi tiết đơn'); }
+  };
+
+  const nextStatuses = (current: Order['status']): Order['status'][] => ({
+    PENDING: ['CONFIRMED', 'CANCELLED'],
+    CONFIRMED: ['PREPARING', 'CANCELLED'],
+    PREPARING: ['COMPLETED', 'CANCELLED'],
+    COMPLETED: [], CANCELLED: [],
+  }[current] as Order['status'][]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -102,6 +118,10 @@ export default function AdminOrders() {
         </div>
 
         <div className="flex gap-2 flex-wrap w-full sm:w-auto">
+          <select className="input-field w-48" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+            <option value="ALL">Mọi loại đơn</option><option value="NORMAL">Giao hàng</option>
+            <option value="TAKEAWAY_PREORDER">Đặt trước</option><option value="RESERVATION_COMBO">Combo đặt bàn</option>
+          </select>
           {STATUS_FILTERS.map((st) => (
             <button
               key={st}
@@ -151,7 +171,7 @@ export default function AdminOrders() {
                   <tr key={`${ord.id}-${ord.orderCode}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-primary flex items-center gap-1.5">
                       <ShoppingCart size={14} />
-                      <span>#{ord.orderCode}</span>
+                      <button onClick={() => void openDetail(ord.id)} className="underline">#{ord.orderCode}</button>
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-bold text-slate-900 dark:text-white">{ord.customerName || 'Khách Hàng'}</p>
@@ -170,15 +190,13 @@ export default function AdminOrders() {
                     <td className="px-6 py-4">
                       {/* FIXED: Dùng đúng enum backend (PREPARING thay vì SHIPPING) */}
                       <select
-                        value={ord.status}
+                        value=""
                         onChange={(e) => handleStatusChange(ord, e.target.value as Order['status'])}
+                        disabled={!nextStatuses(ord.status).length}
                         className="input-field text-xs font-extrabold py-1 px-2.5"
                       >
-                        <option value="PENDING">Chờ xử lý</option>
-                        <option value="CONFIRMED">Xác nhận & Chế biến</option>
-                        <option value="PREPARING">Đang chế tác 🍵</option>
-                        <option value="COMPLETED">Hoàn tất đơn ✅</option>
-                        <option value="CANCELLED">Hủy đơn</option>
+                        <option value="">Chọn bước tiếp theo</option>
+                        {nextStatuses(ord.status).map(status => <option key={status} value={status}>{status}</option>)}
                       </select>
                     </td>
                   </tr>
@@ -188,6 +206,26 @@ export default function AdminOrders() {
           </table>
         </div>
       </div>
+
+      {detail && <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
+        <div className="glass-card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-4">
+          <h2 className="text-xl font-extrabold">Chi tiết đơn #{detail.orderCode}</h2>
+          <div className="grid md:grid-cols-2 gap-3 text-sm">
+            <p><b>Khách:</b> {detail.customerName}<br />{detail.customerPhone}<br />{detail.customerEmail}</p>
+            <p><b>Loại:</b> {detail.orderType}<br /><b>Trạng thái:</b> {detail.status}</p>
+            <p><b>Địa chỉ:</b> {detail.shippingAddress || '—'}<br /><b>Nhận hàng:</b> {detail.pickupTime ? new Date(detail.pickupTime).toLocaleString('vi-VN') : '—'}</p>
+            <p><b>Tổng:</b> {detail.totalAmount.toLocaleString('vi-VN')}₫<br />
+              <b>Cọc:</b> {(detail.depositAmount || 0).toLocaleString('vi-VN')}₫<br />
+              <b>Còn lại:</b> {(detail.remainingAmount || 0).toLocaleString('vi-VN')}₫</p>
+          </div>
+          <table className="w-full text-sm"><tbody>{detail.items?.map(item => <tr key={item.id} className="border-b">
+            <td className="py-2">{item.itemName}</td><td>x{item.quantity}</td>
+            <td>{item.originalUnitPrice?.toLocaleString('vi-VN')}₫</td><td>-{item.discountAmount?.toLocaleString('vi-VN')}₫</td>
+            <td className="text-right">{item.lineTotal.toLocaleString('vi-VN')}₫</td></tr>)}</tbody></table>
+          <p><b>Ghi chú:</b> {detail.note || '—'}</p>
+          <button className="btn-secondary float-right" onClick={() => setDetail(null)}>Đóng</button>
+        </div>
+      </div>}
 
     </div>
   );

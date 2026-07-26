@@ -99,7 +99,7 @@ Khi log hiển thị `Started TeacakeshopApplication in ... seconds`, bạn có 
   - **Host**: `localhost`
   - **Port**: `3307`
   - **Username**: `root`
-  - **Password**: `732005` (hoặc mật khẩu bạn cấu hình trong `.env`)
+  - **Password**: mật khẩu bạn cấu hình trong `.env`
   - **Database**: `tea_cake_shop`
 
 ---
@@ -111,9 +111,9 @@ Dưới đây là chi tiết các biến trong file `.env` ảnh hưởng trực
 | Biến môi trường | Giá trị mặc định | Mô tả |
 | :--- | :--- | :--- |
 | `MYSQL_DATABASE` | `tea_cake_shop` | Tên cơ sở dữ liệu được MySQL tự động tạo khi khởi chạy lần đầu. |
-| `MYSQL_ROOT_PASSWORD` | `732005` | Mật khẩu tài khoản `root` của MySQL container. |
+| `MYSQL_ROOT_PASSWORD` | Bắt buộc cấu hình | Mật khẩu tài khoản `root` của MySQL container. |
 | `DB_URL` | `jdbc:mysql://mysql:3306/tea_cake_shop?...` | Chuỗi kết nối JDBC cho Spring Boot. Lưu ý hostname phải là `mysql` (tên service trong Docker network). |
-| `DB_USERNAME` / `DB_PASSWORD` | `root` / `732005` | Thông tin đăng nhập DB của Spring Boot. |
+| `DB_USERNAME` / `DB_PASSWORD` | `root` / giá trị bí mật | Thông tin đăng nhập DB của Spring Boot. |
 | `JWT_SECRET` | `replace_with_base64_encoded_32_byte_secret` | Khóa bí mật JWT (hệ thống tự động dùng khóa mẫu an toàn nếu không đổi). |
 | `JWT_EXPIRATION_SECONDS` | `900` | Thời gian sống của Access Token (15 phút). |
 | `REFRESH_TOKEN_EXPIRATION_SECONDS` | `2592000` | Thời gian sống của Refresh Token (30 ngày). |
@@ -154,7 +154,7 @@ docker exec -it tea-cake-shop-backend bash
 
 ### Truy cập vào MySQL CLI bên trong container Database
 ```bash
-docker exec -it tea-cake-shop-mysql mysql -uroot -p732005 tea_cake_shop
+docker exec -it tea-cake-shop-mysql mysql -uroot -p tea_cake_shop
 ```
 
 ---

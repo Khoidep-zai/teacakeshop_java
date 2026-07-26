@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { CalendarCheck, CheckCircle2, XCircle, Sparkles, Clock } from 'lucide-react';
-import { getAdminReservations, updateReservationStatus as updateApiResStatus } from '../../api/reservations';
+import { CalendarCheck, CheckCircle2, XCircle, Sparkles, Clock, Search } from 'lucide-react';
+import { getAdminReservation, getAdminReservations, updateReservationStatus as updateApiResStatus } from '../../api/reservations';
 import type { Reservation } from '../../types';
 import toast from 'react-hot-toast';
 
 export default function AdminReservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [detail, setDetail] = useState<Reservation | null>(null);
 
   const fetchReservations = async () => {
     setLoading(true);
@@ -18,8 +21,9 @@ export default function AdminReservations() {
       } else {
         setReservations([]);
       }
-    } catch {
+    } catch (err: any) {
       setReservations([]);
+      toast.error(err?.response?.data?.message || 'Không thể tải lịch đặt bàn');
     } finally {
       setLoading(false);
     }
@@ -43,6 +47,21 @@ export default function AdminReservations() {
     }
   };
 
+  const nextStatuses = (current: Reservation['status']): Reservation['status'][] => ({
+    PENDING: ['CONFIRMED', 'CANCELLED'],
+    CONFIRMED: ['SEATED', 'CANCELLED', 'NO_SHOW'],
+    SEATED: ['COMPLETED'],
+    COMPLETED: [], CANCELLED: [], NO_SHOW: [],
+  }[current] as Reservation['status'][]);
+
+  const filtered = reservations.filter(item => statusFilter === 'ALL' || item.status === statusFilter)
+    .filter(item => `${item.reservationCode} ${item.customerName} ${item.customerPhone}`.toLowerCase().includes(search.toLowerCase()));
+
+  const openDetail = async (id: number) => {
+    try { setDetail(await getAdminReservation(id)); }
+    catch (err: any) { toast.error(err?.response?.data?.message || 'Không thể tải chi tiết lịch'); }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       
@@ -57,6 +76,16 @@ export default function AdminReservations() {
             Danh Sách Lịch Đặt Bàn Khách Hàng ({reservations.length})
           </h1>
         </div>
+      </div>
+
+      <div className="glass-card p-4 flex gap-3">
+        <div className="relative flex-1"><Search className="absolute left-3 top-3.5 w-4" />
+          <input className="input-field pl-10" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Mã đặt bàn, tên hoặc số điện thoại" /></div>
+        <select className="input-field w-48" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="ALL">Mọi trạng thái</option>{['PENDING','CONFIRMED','SEATED','COMPLETED','CANCELLED','NO_SHOW']
+            .map(value => <option key={value} value={value}>{value}</option>)}
+        </select>
       </div>
 
       {/* Reservations Table */}
@@ -81,18 +110,18 @@ export default function AdminReservations() {
                     Đang tải lịch đặt bàn...
                   </td>
                 </tr>
-              ) : reservations.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-slate-400 font-semibold">
                     Chưa có lịch đặt bàn nào.
                   </td>
                 </tr>
               ) : (
-                reservations.map((res) => (
+                filtered.map((res) => (
                   <tr key={res.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="px-6 py-4 font-mono font-bold text-primary flex items-center gap-1.5">
                       <CalendarCheck size={14} />
-                      <span>#{res.reservationCode}</span>
+                      <button className="underline" onClick={() => void openDetail(res.id)}>#{res.reservationCode}</button>
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-bold text-slate-900 dark:text-white">{res.customerName || 'Khách hàng'}</p>
@@ -130,13 +159,13 @@ export default function AdminReservations() {
                     </td>
                     <td className="px-6 py-4">
                       <select
-                        value={res.status}
+                        value=""
                         onChange={(e) => handleStatusChange(res.id, e.target.value as any)}
+                        disabled={!nextStatuses(res.status).length}
                         className="input-field text-xs font-extrabold py-1 px-2 text-center"
                       >
-                        <option value="CONFIRMED">Xác nhận giữ chỗ ✅</option>
-                        <option value="COMPLETED">Đã đón khách xong</option>
-                        <option value="CANCELLED">Hủy lịch đặt</option>
+                        <option value="">Chọn bước tiếp theo</option>
+                        {nextStatuses(res.status).map(value => <option key={value} value={value}>{value}</option>)}
                       </select>
                     </td>
                   </tr>
@@ -146,6 +175,21 @@ export default function AdminReservations() {
           </table>
         </div>
       </div>
+
+      {detail && <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
+        <div className="glass-card p-6 w-full max-w-xl space-y-4">
+          <h2 className="text-xl font-extrabold">Chi tiết lịch #{detail.reservationCode}</h2>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <p><b>Khách:</b><br />{detail.customerName}<br />{detail.customerPhone}<br />{detail.customerEmail}</p>
+            <p><b>Thời gian:</b><br />{new Date(detail.reservationTime).toLocaleString('vi-VN')}<br />
+              <b>Số người:</b> {detail.numberOfPeople}</p>
+            <p><b>Trạng thái:</b> {detail.status}</p>
+            <p><b>Đơn liên kết:</b> {detail.orderCode || 'Không có'}</p>
+          </div>
+          <p><b>Ghi chú:</b> {detail.note || '—'}</p>
+          <button className="btn-secondary float-right" onClick={() => setDetail(null)}>Đóng</button>
+        </div>
+      </div>}
 
     </div>
   );

@@ -27,10 +27,11 @@ const ORDER_TYPES: { id: OrderType; label: string }[] = [
 interface DepositStepProps {
   order: Order;
   paymentMethod: string;
+  customerPhone: string;
   onSuccess: () => void;
 }
 
-function DepositStep({ order, paymentMethod, onSuccess }: DepositStepProps) {
+function DepositStep({ order, paymentMethod, customerPhone, onSuccess }: DepositStepProps) {
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
 
@@ -41,6 +42,7 @@ function DepositStep({ order, paymentMethod, onSuccess }: DepositStepProps) {
     try {
       await simulatePayment({
         orderId: order.id,
+        customerPhone,
         paymentMethod,
         purpose: 'DEPOSIT',
       });
@@ -209,13 +211,13 @@ export default function Checkout() {
       if (orderType === 'NORMAL') {
         if (paymentMethod === 'CASH_ON_DELIVERY') {
           try {
-            await cashOnDelivery({ orderId: order.id, note: formData.note.trim() || undefined });
+            await cashOnDelivery({ orderId: order.id, customerPhone: formData.customerPhone.trim(), note: formData.note.trim() || undefined });
           } catch (payErr) {
             console.warn('COD payment init warning:', payErr);
           }
         } else {
           try {
-            await simulatePayment({ orderId: order.id, paymentMethod, purpose: 'FULL' });
+            await simulatePayment({ orderId: order.id, customerPhone: formData.customerPhone.trim(), paymentMethod, purpose: 'FULL' });
           } catch (payErr) {
             console.warn('Online payment warning:', payErr);
           }
@@ -263,6 +265,7 @@ export default function Checkout() {
       <DepositStep
         order={pendingDepositOrder}
         paymentMethod={paymentMethod}
+        customerPhone={formData.customerPhone.trim()}
         onSuccess={handleDepositSuccess}
       />
     );

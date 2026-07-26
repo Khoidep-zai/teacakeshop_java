@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Tags, Sparkles } from 'lucide-react';
-import { getCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories';
+import { getAdminCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories';
 import type { Category } from '../../types';
-import { getCatalogCategories, saveCategory, deleteCatalogCategory } from '../../data/mockCatalog';
 import toast from 'react-hot-toast';
 
 export default function AdminCategories() {
@@ -15,14 +14,11 @@ export default function AdminCategories() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const data = await getCategories();
-      if (Array.isArray(data) && data.length > 0) {
-        setCategories(data);
-      } else {
-        setCategories(getCatalogCategories());
-      }
-    } catch {
-      setCategories(getCatalogCategories());
+      const data = await getAdminCategories();
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setCategories([]);
+      toast.error(err?.response?.data?.message || 'Không thể tải danh mục');
     } finally {
       setLoading(false);
     }
@@ -49,15 +45,12 @@ export default function AdminCategories() {
       } else {
         await createCategory(currentCategory as any);
       }
-    } catch (err) {
-      console.warn('Backend category API save warning:', err);
+      toast.success(`Đã lưu danh mục "${currentCategory.name}" thành công`);
+      setIsModalOpen(false);
+      await fetchCategories();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể lưu danh mục');
     }
-    const saved = saveCategory(currentCategory);
-    toast.success(`Đã lưu danh mục "${saved.name}" thành công! ✨`, {
-      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
-    });
-    setIsModalOpen(false);
-    setCategories(getCatalogCategories());
   };
 
   const handleDelete = (cat: Category) => {
@@ -69,13 +62,12 @@ export default function AdminCategories() {
     if (!currentCategory.id) return;
     try {
       await deleteCategory(currentCategory.id);
-    } catch (err) {
-      console.warn('Backend category delete warning:', err);
+      toast.success('Đã tắt danh mục thành công');
+      setIsDeleteModalOpen(false);
+      await fetchCategories();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Không thể tắt danh mục');
     }
-    deleteCatalogCategory(currentCategory.id);
-    toast.success('Đã xóa danh mục thành công!', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
-    setIsDeleteModalOpen(false);
-    setCategories(getCatalogCategories());
   };
 
   return (

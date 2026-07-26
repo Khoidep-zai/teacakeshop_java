@@ -29,13 +29,15 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminReservations from './pages/admin/AdminReservations';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
+import AdminPayments from './pages/admin/AdminPayments';
+import AdminInventory from './pages/admin/AdminInventory';
 import { ActiveTrackerBar } from './components/ui/ActiveTrackerBar';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div></div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (adminOnly && user.role !== 'ADMIN' && user.role !== 'STAFF') return <Navigate to="/" replace />;
+  if (adminOnly && user.role !== 'ADMIN') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -74,6 +76,8 @@ function AppRoutes() {
         <Route path="reservations" element={<AdminReservations />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="discounts" element={<AdminDiscounts />} />
+        <Route path="payments" element={<AdminPayments />} />
+        <Route path="inventory" element={<AdminInventory />} />
       </Route>
       <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
     </Routes>

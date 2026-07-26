@@ -65,7 +65,7 @@ public class ProductService {
         if (hasKeyword && productType != null) {
             productPage =
                     productRepository
-                            .findByActiveTrueAndNameContainingIgnoreCaseAndProductType(
+                            .findByActiveTrueAndCategory_ActiveTrueAndNameContainingIgnoreCaseAndProductType(
                                     keyword.trim(),
                                     productType,
                                     pageable
@@ -73,21 +73,21 @@ public class ProductService {
         } else if (hasKeyword) {
             productPage =
                     productRepository
-                            .findByActiveTrueAndNameContainingIgnoreCase(
+                            .findByActiveTrueAndCategory_ActiveTrueAndNameContainingIgnoreCase(
                                     keyword.trim(),
                                     pageable
                             );
         } else if (productType != null) {
             productPage =
                     productRepository
-                            .findByActiveTrueAndProductType(
+                            .findByActiveTrueAndCategory_ActiveTrueAndProductType(
                                     productType,
                                     pageable
                             );
         } else {
             productPage =
                     productRepository
-                            .findByActiveTrue(pageable);
+                            .findByActiveTrueAndCategory_ActiveTrue(pageable);
         }
 
         return productPage.map(this::toResponse);
@@ -97,13 +97,42 @@ public class ProductService {
     public ProductResponse getById(Long id) {
         Product product = findEntityById(id);
 
+        if (Boolean.FALSE.equals(product.getActive())) {
+            throw new ResourceNotFoundException(
+                    "Không tìm thấy sản phẩm có ID " + id
+            );
+        }
+        if (product.getCategory() == null
+                || Boolean.FALSE.equals(product.getCategory().getActive())) {
+            throw new ResourceNotFoundException(
+                    "Không tìm thấy sản phẩm có ID " + id
+            );
+        }
+
         return toResponse(product);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getAllForAdmin(
+            int page,
+            int size
+    ) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        return productRepository.findAll(pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
     public List<ProductResponse> getHotProducts() {
         return productRepository
-                .findTop8ByActiveTrueAndHotTrueOrderByCreatedAtDesc()
+                .findTop8ByActiveTrueAndCategory_ActiveTrueAndHotTrueOrderByCreatedAtDesc()
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -112,7 +141,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponse> getBestSellers() {
         return productRepository
-                .findTop8ByActiveTrueOrderBySoldQuantityDesc()
+                .findTop8ByActiveTrueAndCategory_ActiveTrueOrderBySoldQuantityDesc()
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -121,7 +150,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponse> getNewestProducts() {
         return productRepository
-                .findTop8ByActiveTrueOrderByCreatedAtDesc()
+                .findTop8ByActiveTrueAndCategory_ActiveTrueOrderByCreatedAtDesc()
                 .stream()
                 .map(this::toResponse)
                 .toList();

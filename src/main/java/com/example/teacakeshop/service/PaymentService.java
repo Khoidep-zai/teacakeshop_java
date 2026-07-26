@@ -51,6 +51,7 @@ public class PaymentService {
                         request.orderId()
                 );
 
+        validateOrderOwnership(order, request.customerPhone());
         validateOrderCanBePaid(order);
 
         BigDecimal paidBefore =
@@ -120,6 +121,7 @@ public class PaymentService {
                         request.orderId()
                 );
 
+        validateOrderOwnership(order, request.customerPhone());
         validateOrderCanBePaid(order);
 
         if (order.getOrderType()
@@ -417,6 +419,19 @@ public class PaymentService {
         throw new BadRequestException(
                 "Mục đích thanh toán không hợp lệ"
         );
+    }
+
+    private void validateOrderOwnership(
+            CustomerOrder order,
+            String customerPhone
+    ) {
+        if (customerPhone == null
+                || order.getCustomerPhone() == null
+                || !order.getCustomerPhone().equals(customerPhone.trim())) {
+            throw new ResourceNotFoundException(
+                    "Không tìm thấy đơn hàng phù hợp với thông tin xác minh"
+            );
+        }
     }
 
     private void validateOnlineMethod(
