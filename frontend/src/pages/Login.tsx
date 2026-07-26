@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Loader2, Mail, Lock } from 'lucide-react';
+import { Loader2, Mail, Lock, Sparkles } from 'lucide-react';
 import { login as loginApi } from '../api/auth';
 import { useAuth } from '../hooks/useAuth';
 
@@ -29,88 +29,91 @@ const Login: React.FC = () => {
       await login(response.accessToken, response.refreshToken);
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || t('login.error', 'Invalid email or password'));
+      setError(err.response?.data?.message || t('login.error', 'Email hoặc mật khẩu không chính xác'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pt-28 pb-20 flex items-center justify-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-4xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row"
+        className="w-full glass-card overflow-hidden flex flex-col md:flex-row border border-white/60 dark:border-slate-800"
       >
-        {/* Left Side: Illustration/Image */}
-        <div className="md:w-1/2 bg-gradient-to-br from-primary to-green-300 p-12 text-white flex flex-col justify-center items-center hidden md:flex relative overflow-hidden">
-          <div className="absolute inset-0 bg-black opacity-20"></div>
-          <div className="relative z-10 text-center">
-            <h2 className="text-4xl font-bold mb-4">{t('login.welcome', 'Welcome Back!')}</h2>
-            <p className="text-green-50 text-lg mb-8">
-              {t('login.subtitle', 'Discover the finest teas and most delicious cakes.')}
+        {/* Left Side: Cyber-Organic Banner */}
+        <div className="md:w-1/2 relative bg-slate-900 p-10 text-white flex flex-col justify-between overflow-hidden hidden md:flex">
+          <div className="absolute -top-24 -left-24 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-cyber-teal/30 rounded-full blur-3xl" />
+
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-bold text-cyber-teal mb-6">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Cyber-Organic 2026</span>
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-extrabold font-serif-title leading-tight">
+              Chào Mừng Bạn Quay Trở Lại Lounge
+            </h2>
+            <p className="text-xs text-slate-300 mt-3 leading-relaxed">
+              Đăng nhập để nhận các đề xuất cá nhân hóa từ AI Sommelier và tích điểm thành viên hoàng gia.
             </p>
-            {/* Simple decorative elements */}
-            <div className="w-32 h-32 bg-white/20 rounded-full blur-2xl absolute -top-10 -left-10"></div>
-            <div className="w-40 h-40 bg-white/10 rounded-full blur-3xl absolute bottom-10 -right-10"></div>
+          </div>
+
+          <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-xs">
+            <p className="italic font-serif-title text-emerald-300">"Hương vị trà hảo hạng kết hợp công nghệ AI đưa cảm xúc thăng hoa."</p>
           </div>
         </div>
 
         {/* Right Side: Form */}
-        <div className="md:w-1/2 p-8 md:p-12">
-          <div className="text-center md:text-left mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('login.title', 'Sign In')}</h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              {t('login.prompt', 'Please sign in to your account')}
+        <div className="md:w-1/2 p-8 sm:p-10 flex flex-col justify-center">
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-serif-title">
+              {t('login.title', 'Đăng Nhập Tài Khoản')}
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Vui lòng điền thông tin bên dưới để tiếp tục
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 text-red-500 p-3 rounded-lg text-sm mb-6 text-center">
+            <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-3 rounded-2xl text-xs mb-4 text-center font-semibold">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('login.email', 'Email Address')}
+              <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider block mb-1.5">
+                {t('login.email', 'Địa chỉ Email')}
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
+                <Mail className="h-4 w-4 absolute left-3.5 top-4 text-slate-400" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:text-white transition-all outline-none"
+                  className="input-field pl-10 text-xs"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('login.password', 'Password')}
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  {t('login.password', 'Mật khẩu')}
                 </label>
-                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:text-green-600 dark:hover:text-green-400">
-                  {t('login.forgotPassword', 'Forgot password?')}
-                </Link>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+                <Lock className="h-4 w-4 absolute left-3.5 top-4 text-slate-400" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:text-white transition-all outline-none"
+                  className="input-field pl-10 text-xs"
                   placeholder="••••••••"
                 />
               </div>
@@ -119,20 +122,20 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full btn-primary py-3.5 text-xs font-extrabold shadow-lg mt-2"
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                t('login.submit', 'Sign In')
+                <span>Đăng Nhập Vào Lounge</span>
               )}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
-            {t('login.noAccount', 'Don\'t have an account?')} &nbsp;
-            <Link to="/register" className="font-medium text-primary hover:text-green-600 dark:hover:text-green-400">
-              {t('login.register', 'Sign up now')}
+          <p className="mt-6 text-center text-xs text-slate-500">
+            Chưa có tài khoản? &nbsp;
+            <Link to="/register" className="font-bold text-primary hover:underline">
+              Đăng ký thành viên ngay
             </Link>
           </p>
         </div>

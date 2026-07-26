@@ -125,6 +125,33 @@ public class SecurityConfig {
                                 .permitAll()
 
                                 /*
+                                 * Cho phép truy cập tài nguyên tĩnh Frontend SPA (index.html, JS, CSS, images).
+                                 */
+                                .requestMatchers(
+                                        "/",
+                                        "/index.html",
+                                        "/favicon.svg",
+                                        "/assets/**",
+                                        "/images/**",
+                                        "/*.js",
+                                        "/*.css",
+                                        "/*.ico",
+                                        "/*.png",
+                                        "/*.svg",
+                                        "/products/**",
+                                        "/combos/**",
+                                        "/reservation/**",
+                                        "/cart/**",
+                                        "/checkout/**",
+                                        "/orders/**",
+                                        "/profile/**",
+                                        "/login/**",
+                                        "/register/**",
+                                        "/admin/**"
+                                )
+                                .permitAll()
+
+                                /*
                                  * Cho phép truy cập Swagger/OpenAPI.
                                  */
                                 .requestMatchers(

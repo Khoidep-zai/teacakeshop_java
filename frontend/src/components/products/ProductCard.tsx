@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Loader2 } from 'lucide-react';
+import { ShoppingCart, Loader2, Sparkles, Star } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -13,64 +13,105 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addItem } = useCart();
   const [adding, setAdding] = useState(false);
 
+  // Fallback high-res generated images depending on product type/name
+  const getProductImage = () => {
+    if (product.imageUrl && product.imageUrl !== '/favicon.svg') return product.imageUrl;
+    const lower = product.name.toLowerCase();
+    if (lower.includes('matcha') || lower.includes('trà xanh')) return '/images/products/matcha_cake.png';
+    if (lower.includes('earl') || lower.includes('chiffon')) return '/images/products/earl_grey.png';
+    if (lower.includes('sakura') || lower.includes('anh đào') || lower.includes('vải')) return '/images/products/sakura_tea.png';
+    return product.productType === 'TEA' ? '/images/products/sakura_tea.png' : '/images/products/matcha_cake.png';
+  };
+
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setAdding(true);
     try {
       await addItem('PRODUCT', product.id, 1);
-      toast.success(`Đã thêm ${product.name} vào giỏ!`, {
+      toast.success(`Đã thêm "${product.name}" vào giỏ! ✨`, {
         style: {
-          borderRadius: '16px',
-          background: '#333',
+          borderRadius: '20px',
+          background: '#0F172A',
           color: '#fff',
+          border: '1px solid rgba(6, 182, 212, 0.3)',
         },
         iconTheme: {
-          primary: '#4CAF82',
-          secondary: '#FFFAEE',
+          primary: '#52B788',
+          secondary: '#FFFFFF',
         },
       });
     } catch {
-      toast.error('Có lỗi xảy ra khi thêm vào giỏ');
+      toast.error('Không thể thêm sản phẩm vào giỏ hàng');
     } finally {
       setAdding(false);
     }
   };
 
   return (
-    <Link to={`/products/${product.id}`} className="group bg-white dark:bg-gray-800 rounded-3xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col h-full transform hover:-translate-y-1">
-      <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-700 mb-4">
+    <Link to={`/products/${product.id}`} className="group glass-card p-4 flex flex-col h-full relative overflow-hidden">
+      {/* Decorative Aura */}
+      <div className="absolute -top-12 -right-12 w-28 h-28 bg-primary/10 rounded-full blur-xl group-hover:bg-cyber-teal/20 transition-colors duration-500 pointer-events-none" />
+
+      {/* Image Container */}
+      <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4 shadow-sm">
         <img 
-          src={product.imageUrl || '/favicon.svg'} 
+          src={getProductImage()} 
           alt={product.name} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" 
         />
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm dark:bg-gray-900/90 px-3 py-1 rounded-full text-xs font-bold text-gray-700 dark:text-gray-200">
-          {product.productType}
+        
+        {/* Product Type Badge */}
+        <div className="absolute top-3 left-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold text-slate-800 dark:text-slate-200 border border-white/50 dark:border-slate-700/50 flex items-center gap-1 shadow-sm">
+          <span>{product.productType === 'TEA' ? '🍵 Trà Thuần' : '🍰 Bánh Thủ Công'}</span>
         </div>
+
+        {/* AI Recommendation Badge */}
+        <div className="absolute top-3 right-3 bg-gradient-to-r from-cyber-teal/90 to-cyber-violet/90 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md flex items-center gap-1">
+          <Sparkles className="w-3 h-3 animate-pulse" />
+          <span>AI Match</span>
+        </div>
+
+        {/* Taste Tag */}
         {product.taste && (
-          <div className="absolute bottom-3 left-3 bg-accent/90 text-white px-2 py-0.5 rounded-md text-[10px] font-bold">
+          <div className="absolute bottom-3 left-3 bg-amber-500/90 text-white backdrop-blur-sm px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-sm">
             {product.taste}
           </div>
         )}
       </div>
       
+      {/* Details */}
       <div className="flex-grow flex flex-col justify-between">
         <div>
-          <h3 className="font-bold text-lg text-gray-900 dark:text-white line-clamp-1">{product.name}</h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 line-clamp-2">{product.description}</p>
+          <div className="flex items-center gap-1 text-amber-400 text-xs font-bold mb-1">
+            <Star className="w-3.5 h-3.5 fill-amber-400" />
+            <span>4.9</span>
+            <span className="text-slate-400 font-normal text-[11px]">(128)</span>
+          </div>
+          <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white line-clamp-1 group-hover:text-primary-light transition-colors font-serif-title">
+            {product.name}
+          </h3>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 line-clamp-2 leading-relaxed">
+            {product.description || 'Thành phần hữu cơ thượng hạng, sáng tạo độc quyền bởi Tea & Cake Lounge.'}
+          </p>
         </div>
         
-        <div className="flex items-center justify-between mt-4">
-          <span className="font-extrabold text-xl text-primary">
-            {product.price.toLocaleString('vi-VN')}₫
-          </span>
+        {/* Price & Action Button */}
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-slate-400 uppercase font-semibold">Giá niêm yết</span>
+            <span className="font-extrabold text-lg text-primary dark:text-primary-glow">
+              {product.price.toLocaleString('vi-VN')}₫
+            </span>
+          </div>
+          
           <button 
             onClick={handleAdd}
             disabled={adding || product.stockQuantity <= 0}
-            className="bg-gray-100 hover:bg-primary dark:bg-gray-700 dark:hover:bg-primary text-gray-900 hover:text-white dark:text-white p-3 rounded-2xl transition-colors active:scale-90 disabled:opacity-50"
+            className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-primary dark:bg-slate-800 dark:hover:bg-primary text-slate-800 hover:text-white dark:text-slate-200 flex items-center justify-center transition-all duration-300 active:scale-95 shadow-sm disabled:opacity-50"
+            title="Thêm vào giỏ hàng"
           >
-            {adding ? <Loader2 size={20} className="animate-spin" /> : <ShoppingCart size={20} />}
+            {adding ? <Loader2 size={18} className="animate-spin text-primary" /> : <ShoppingCart size={18} />}
           </button>
         </div>
       </div>

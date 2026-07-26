@@ -3,20 +3,88 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  
   body {
-    @apply bg-lightBg text-gray-900 transition-colors duration-300;
+    @apply bg-lightBg text-slate-800 transition-colors duration-500 overflow-x-hidden antialiased;
   }
   
   html.dark body {
-    @apply bg-darkBg text-gray-100;
+    @apply bg-darkBg text-slate-100;
+  }
+  
+  h1, h2, h3, .font-serif-title {
+    font-family: 'Playfair Display', serif;
   }
 }
 
 @layer components {
-  .btn-primary { @apply bg-primary text-white px-4 py-2 rounded-xl font-semibold hover:bg-opacity-90 transition-all duration-200 disabled:opacity-50; }
-  .btn-secondary { @apply bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200; }
-  .btn-accent { @apply bg-accent text-white px-4 py-2 rounded-xl font-semibold hover:bg-opacity-90 transition-all duration-200; }
-  .card { @apply bg-white dark:bg-gray-800 rounded-2xl shadow-md p-4; }
-  .input-field { @apply w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all; }
-  .section-title { @apply text-2xl md:text-3xl font-bold text-gray-900 dark:text-white; }
+  /* Glassmorphism 3.0 Card */
+  .glass-card {
+    @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/50 dark:border-slate-800/80 rounded-3xl shadow-glass dark:shadow-glass-dark transition-all duration-300 hover:shadow-glow-primary hover:-translate-y-1;
+  }
+
+  .glass-card-static {
+    @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/50 dark:border-slate-800/80 rounded-3xl shadow-glass dark:shadow-glass-dark;
+  }
+
+  .glass-pill {
+    @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-white/60 dark:border-slate-700/60 rounded-full px-4 py-1.5 shadow-sm;
+  }
+
+  /* Cyber & AI Glow Buttons */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary-light text-white px-6 py-3 rounded-2xl font-semibold shadow-lg shadow-primary/20 hover:shadow-glow-primary hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 px-6 py-3 rounded-2xl font-semibold backdrop-blur-md hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300;
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 bg-gradient-to-r from-accent to-accent-light text-white px-6 py-3 rounded-2xl font-semibold shadow-lg shadow-accent/20 hover:shadow-glow-accent hover:scale-[1.02] active:scale-[0.98] transition-all duration-300;
+  }
+
+  .btn-ai {
+    @apply relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyber-teal to-cyber-violet text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-cyber-teal/30 hover:shadow-glow-cyber hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 overflow-hidden;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 shadow-inner;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight font-serif-title text-slate-900 dark:text-white;
+  }
+
+  .gradient-text-matcha {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-dark via-primary to-primary-glow;
+  }
+
+  .gradient-text-amber {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-600 via-accent to-accent-light;
+  }
+
+  .gradient-text-ai {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyber-teal via-indigo-400 to-cyber-violet;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(45, 106, 79, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 106, 79, 0.6);
 }
