@@ -1,8 +1,12 @@
 import api from './axios';
 import type { Reservation, Page } from '../types';
 
-export const checkAvailability = (date: string, time: string) =>
-  api.get('/reservations/availability', { params: { date, time } }).then(r => r.data);
+/**
+ * Kiểm tra khung giờ còn chỗ.
+ * BE expect: reservationTime (ISO LocalDateTime), numberOfPeople (number)
+ */
+export const checkAvailability = (reservationTime: string, numberOfPeople: number) =>
+  api.get('/reservations/availability', { params: { reservationTime, numberOfPeople } }).then(r => r.data);
 
 export const createReservation = (data: any) =>
   api.post<Reservation>('/reservations', data).then(r => r.data);

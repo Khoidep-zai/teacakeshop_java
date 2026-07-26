@@ -36,6 +36,8 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {
         sessionStorage.removeItem('accessToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
         return Promise.reject(error);
       }
@@ -50,6 +52,7 @@ api.interceptors.response.use(
       } catch (err) {
         processQueue(err, null);
         sessionStorage.removeItem('accessToken');
+        localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/login';
         return Promise.reject(err);

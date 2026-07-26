@@ -45,24 +45,16 @@ const Login: React.FC = () => {
     
     try {
       const response = await loginApi({ email, password });
-      await login(response.accessToken, response.refreshToken);
+      const profile = await login(response.accessToken, response.refreshToken);
       toast.success('Đăng nhập thành công! ✨', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
       
-      const isStaffOrAdmin = email.includes('admin') || email.includes('staff');
+      const role = profile?.role;
+      const isStaffOrAdmin = role === 'ADMIN' || role === 'STAFF';
       navigate(isStaffOrAdmin ? '/admin' : from, { replace: true });
     } catch (err: any) {
-      console.warn('Backend login error, activating demo mode for seamless experience:', err);
-      // Demo login fallback so Admin portal can always be accessed and evaluated
-      const isDemoAdmin = email.includes('admin');
-      const isDemoStaff = email.includes('staff');
-      let roleName = 'Thành Viên';
-      if (isDemoAdmin) roleName = 'Quản Trị Viên (Admin)';
-      if (isDemoStaff) roleName = 'Nhân Viên (Staff)';
-
-      const fakeToken = `eyJhbGciOiJIUzI1NiJ9.demo-${isDemoAdmin ? 'admin' : isDemoStaff ? 'staff' : 'user'}-token-` + Date.now();
-      await login(fakeToken, 'demo-refresh-token');
-      toast.success(`Đăng nhập ${roleName} thành công! ✨`, { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
-      navigate(isDemoAdmin || isDemoStaff ? '/admin' : from, { replace: true });
+      const message = err?.response?.data?.message || err?.message || 'Email hoặc mật khẩu không đúng.';
+      setError(message);
+      toast.error(message, { style: { borderRadius: '20px' } });
     } finally {
       setLoading(false);
     }

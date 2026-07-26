@@ -6,7 +6,6 @@ import { Loader2, Mail, Lock, User, Phone, Sparkles, CheckCircle2 } from 'lucide
 import { register as registerApi } from '../api/auth';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { addUserAccount } from '../data/userStore';
 
 const Register: React.FC = () => {
   const { t } = useTranslation();
@@ -44,12 +43,6 @@ const Register: React.FC = () => {
     setLoading(true);
     
     try {
-      addUserAccount({
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone || '0901234567',
-        role: 'CUSTOMER'
-      });
       const response = await registerApi({
         fullName: formData.fullName,
         email: formData.email,
@@ -60,17 +53,9 @@ const Register: React.FC = () => {
       toast.success('Đăng ký tài khoản thành công! ✨', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
       navigate('/');
     } catch (err: any) {
-      console.warn('Backend register error, activating fallback login:', err);
-      addUserAccount({
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone || '0901234567',
-        role: 'CUSTOMER'
-      });
-      const fakeToken = 'eyJhbGciOiJIUzI1NiJ9.demo-access-token-' + Date.now();
-      await login(fakeToken, 'demo-refresh-token');
-      toast.success('Tạo tài khoản thành công! ✨', { style: { borderRadius: '20px', background: '#0F172A', color: '#fff' } });
-      navigate('/');
+      const message = err?.response?.data?.message || err?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+      setError(message);
+      toast.error(message, { style: { borderRadius: '20px' } });
     } finally {
       setLoading(false);
     }

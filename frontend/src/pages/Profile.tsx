@@ -19,16 +19,13 @@ export default function Profile() {
 
   const loadUserData = async () => {
     setLoading(true);
-    const storeOrders = getUserOrders();
-    const storeReservations = getUserReservations();
 
     try {
       const [ordRes, resRes] = await Promise.allSettled([
-        getMyOrders(),        // Đã sửa: trả về Order[] (unwrapped từ Page)
-        getMyReservations()   // Đã sửa: trả về Reservation[] (unwrapped từ Page)
+        getMyOrders(),
+        getMyReservations()
       ]);
 
-      // getMyOrders() giờ trả về Order[] trực tiếp (không phải Page object)
       const apiOrders: Order[] = (ordRes.status === 'fulfilled' && Array.isArray(ordRes.value))
         ? ordRes.value
         : [];
@@ -37,28 +34,21 @@ export default function Profile() {
         ? resRes.value
         : [];
 
-      // Combine API & Store orders theo orderCode (ưu tiên API data)
-      const combinedOrders = [...apiOrders];
-      storeOrders.forEach(o => {
-        if (!combinedOrders.some(x => x.orderCode === o.orderCode)) {
-          combinedOrders.push(o);
-        }
-      });
-      setOrders(combinedOrders);
-
-      // Combine API & Store reservations theo reservationCode
-      const combinedRes = [...apiReservations];
-      storeReservations.forEach(r => {
-        if (!combinedRes.some(x => x.reservationCode === r.reservationCode)) {
-          combinedRes.push(r);
-        }
-      });
-      setReservations(combinedRes);
-
+      if (apiOrders.length > 0 || apiReservations.length > 0) {
+        // Ưu tiên data từ API – không merge local store để tránh hiển thị data cũ/sai
+        setOrders(apiOrders);
+        setReservations(apiReservations);
+      } else {
+        // Fallback về local store (chỉ dùng khi API fail hoặc chưa đăng nhập)
+        const storeOrders = getUserOrders();
+        const storeReservations = getUserReservations();
+        setOrders(storeOrders);
+        setReservations(storeReservations);
+      }
     } catch {
-      // Fallback về local store nếu API fail hoàn toàn
-      setOrders(storeOrders);
-      setReservations(storeReservations);
+      // Fallback hoàn toàn về local store nếu API lỗi
+      setOrders(getUserOrders());
+      setReservations(getUserReservations());
     } finally {
       setLoading(false);
     }
@@ -228,21 +218,35 @@ export default function Profile() {
                 <div className="py-10 text-center text-slate-400 text-xs">Bạn chưa có lịch đặt bàn nào.</div>
               ) : (
                 <div className="space-y-4">
-                  {reservations.map((res) => (
+                  {reservations.map((res) => {
+                    // BE trả reservationTime dạng ISO: "2026-07-26T15:00:00"
+                    // local store có thể có reservationDate + reservationTime riêng
+                    const dt = res.reservationTime ? new Date(res.reservationTime) : null;
+                    const isValidDate = dt && !isNaN(dt.getTime());
+                    const dateStr = isValidDate
+                      ? dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                      : (res.reservationDate || '---');
+                    const timeStr = isValidDate
+                      ? dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                      : (res.reservationTime || '---');
+                    const guestCount = res.numberOfPeople ?? res.partySize ?? '?';
+
+                    return (
                     <div key={`${res.id}-${res.reservationCode}`} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
                           <span className="font-mono font-extrabold text-slate-900 dark:text-white">Mã Hẹn: #{res.reservationCode}</span>
                           <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 font-extrabold uppercase rounded-full border border-emerald-500/20">
-                            {res.status === 'CONFIRMED' ? 'Đã giữ chỗ ✅' : res.status}
+                            {res.status === 'CONFIRMED' ? 'Đã giữ chỗ ✅' : res.status === 'PENDING' ? 'Chờ xác nhận' : res.status}
                           </span>
                         </div>
                         <p className="font-bold text-slate-800 dark:text-slate-200">
-                          {res.note || 'Lịch hẹn thưởng trà'} - {res.reservationTime} Ngày {res.reservationDate} ({res.partySize} khách)
+                          {res.note || 'Lịch hẹn thưởng trà'} — {timeStr} ngày {dateStr} ({guestCount} khách)
                         </p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

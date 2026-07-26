@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { CalendarCheck, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import { getAdminReservations, updateReservationStatus as updateApiResStatus } from '../../api/reservations';
 import type { Reservation } from '../../types';
-import { getUserReservations, updateReservationStatus } from '../../data/userStore';
 import toast from 'react-hot-toast';
 
 export default function AdminReservations() {
@@ -11,21 +10,16 @@ export default function AdminReservations() {
 
   const fetchReservations = async () => {
     setLoading(true);
-    const storeRes = getUserReservations();
     try {
       const data = await getAdminReservations();
       const list = (data as any).content || data;
-      if (Array.isArray(list) && list.length > 0) {
-        const combined = [...storeRes];
-        list.forEach(r => {
-          if (!combined.some(x => x.reservationCode === r.reservationCode)) combined.push(r);
-        });
-        setReservations(combined);
+      if (Array.isArray(list)) {
+        setReservations(list);
       } else {
-        setReservations(storeRes);
+        setReservations([]);
       }
     } catch {
-      setReservations(storeRes);
+      setReservations([]);
     } finally {
       setLoading(false);
     }
@@ -33,22 +27,20 @@ export default function AdminReservations() {
 
   useEffect(() => {
     fetchReservations();
-    const handleUpdate = () => setReservations(getUserReservations());
-    window.addEventListener('user_store_updated', handleUpdate);
-    return () => window.removeEventListener('user_store_updated', handleUpdate);
   }, []);
 
   const handleStatusChange = async (resId: number, status: Reservation['status']) => {
     try {
       await updateApiResStatus(resId, status);
-    } catch (err) {
-      console.warn('Backend reservation status update warning:', err);
+      toast.success(`Đã cập nhật lịch đặt bàn sang "${status}"! ✨`, {
+        style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
+      });
+      // Refresh từ API để đồng bộ
+      await fetchReservations();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Không thể cập nhật trạng thái.';
+      toast.error(msg);
     }
-    updateReservationStatus(resId, status);
-    toast.success(`Đã cập nhật lịch đặt bàn sang "${status}"! ✨`, {
-      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' }
-    });
-    setReservations(getUserReservations());
   };
 
   return (
@@ -107,9 +99,15 @@ export default function AdminReservations() {
                       <p className="text-[11px] text-slate-400">{res.customerPhone || '0901234567'} - {res.customerEmail || ''}</p>
                     </td>
                     <td className="px-6 py-4 font-bold">
-                      {res.reservationTime} Ngày {res.reservationDate}
+                      {(() => {
+                        const dt = res.reservationTime ? new Date(res.reservationTime) : null;
+                        const valid = dt && !isNaN(dt.getTime());
+                        return valid
+                          ? `${dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} Ngày ${dt.toLocaleDateString('vi-VN')}`
+                          : `${res.reservationTime || '--:--'} Ngày ${res.reservationDate || '---'}`;
+                      })()}
                     </td>
-                    <td className="px-6 py-4 font-semibold">{res.partySize} khách</td>
+                    <td className="px-6 py-4 font-semibold">{res.numberOfPeople ?? res.partySize ?? '?'} khách</td>
                     <td className="px-6 py-4 font-bold text-cyber-teal">{res.note || 'Đặt bàn Lounge'}</td>
                     <td className="px-6 py-4">
                       {res.status === 'CONFIRMED' ? (

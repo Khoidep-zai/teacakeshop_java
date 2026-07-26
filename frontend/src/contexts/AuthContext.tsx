@@ -5,14 +5,14 @@ import { getMe } from '../api/auth';
 export interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (accessToken: string, refreshToken: string) => Promise<void>;
+  login: (accessToken: string, refreshToken: string) => Promise<UserProfile | null>;
   logout: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: async () => {},
+  login: async () => null,
   logout: () => {},
 });
 
@@ -41,11 +41,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchCurrentUser();
   }, []);
 
-  const login = async (accessToken: string, refreshToken: string) => {
+  const login = async (accessToken: string, refreshToken: string): Promise<UserProfile | null> => {
     sessionStorage.setItem('accessToken', accessToken);
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
-    await fetchCurrentUser();
+    // Xóa local store cache cũ khi đăng nhập – để Profile lấy data thật từ API
+    localStorage.removeItem('store_orders');
+    localStorage.removeItem('store_reservations');
+    try {
+      const data = await getMe();
+      setUser(data);
+      setLoading(false);
+      return data;
+    } catch {
+      setUser(null);
+      setLoading(false);
+      return null;
+    }
   };
 
   const logout = () => {

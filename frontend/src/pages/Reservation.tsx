@@ -28,9 +28,12 @@ export default function Reservation() {
     e.preventDefault();
     setLoading(true);
     try {
-      await checkAvailability(formData.date, formData.time);
+      // BE expect: reservationTime (ISO LocalDateTime) + numberOfPeople
+      const reservationTime = `${formData.date}T${formData.time}:00`;
+      await checkAvailability(reservationTime, Number(formData.partySize));
       setStep(2);
     } catch {
+      // Nếu availability check fail (backend chưa implement đầy đủ), vẫn cho tiếp tục
       setStep(2);
     } finally {
       setLoading(false);
@@ -40,42 +43,37 @@ export default function Reservation() {
   const handleConfirm = async () => {
     setLoading(true);
     try {
+      // BE expect: reservationTime (ISO LocalDateTime), numberOfPeople (không phải partySize)
+      const reservationTime = `${formData.date}T${formData.time}:00`;
       const res = await createReservation({
-        reservationDate: formData.date,
-        reservationTime: formData.time,
-        partySize: Number(formData.partySize),
+        reservationTime,
+        numberOfPeople: Number(formData.partySize),
         customerName: formData.name,
         customerEmail: formData.email,
         customerPhone: formData.phone,
         note: `Khu vực: ${selectedZone.toUpperCase()} - ${formData.note}`
       });
+
+      // Lưu vào local store với data thực từ BE
       const createdRes = addReservation({
-        reservationCode: res?.reservationCode || `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        customerName: formData.name || 'Khách Hàng',
-        customerPhone: formData.phone || '0901234567',
-        customerEmail: formData.email || 'nguyenkhoidk2005@gmail.com',
+        id: res?.id,
+        reservationCode: res?.reservationCode,
+        customerName: res?.customerName || formData.name,
+        customerPhone: res?.customerPhone || formData.phone,
+        customerEmail: res?.customerEmail || formData.email,
+        reservationTime: res?.reservationTime || reservationTime,
         reservationDate: formData.date,
-        reservationTime: formData.time,
-        partySize: Number(formData.partySize),
-        note: `Khu vực ${selectedZone.toUpperCase()} - ${formData.note || 'Đặt bàn Lounge'}`,
-        status: 'CONFIRMED'
+        numberOfPeople: res?.numberOfPeople || Number(formData.partySize),
+        partySize: res?.numberOfPeople || Number(formData.partySize),
+        note: res?.note || `Khu vực ${selectedZone.toUpperCase()} - ${formData.note || 'Đặt bàn Lounge'}`,
+        status: res?.status || 'PENDING',
+        createdAt: res?.createdAt || new Date().toISOString()
       });
       setReservationCode(createdRes.reservationCode);
       setStep(3);
     } catch (err: any) {
-      const createdRes = addReservation({
-        reservationCode: `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        customerName: formData.name || 'Khách Hàng',
-        customerPhone: formData.phone || '0901234567',
-        customerEmail: formData.email || 'nguyenkhoidk2005@gmail.com',
-        reservationDate: formData.date,
-        reservationTime: formData.time,
-        partySize: Number(formData.partySize),
-        note: `Khu vực ${selectedZone.toUpperCase()} - ${formData.note || 'Đặt bàn Lounge'}`,
-        status: 'CONFIRMED'
-      });
-      setReservationCode(createdRes.reservationCode);
-      setStep(3);
+      const message = err?.response?.data?.message || err?.message || 'Không thể kết nối server. Vui lòng thử lại.';
+      alert(`Đặt bàn thất bại: ${message}`);
     } finally {
       setLoading(false);
     }

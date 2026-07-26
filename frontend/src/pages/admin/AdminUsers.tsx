@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Users, Search, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { getUsers } from '../../api/admin';
 import type { UserProfile } from '../../types';
-import { getUserAccounts } from '../../data/userStore';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -11,21 +10,11 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const storeUsers = getUserAccounts();
     try {
-      const data = await getUsers();
-      const list = (data as any).content || data;
-      if (Array.isArray(list) && list.length > 0) {
-        const combined = [...storeUsers];
-        list.forEach(u => {
-          if (!combined.some(x => x.email.toLowerCase() === u.email.toLowerCase())) combined.push(u);
-        });
-        setUsers(combined);
-      } else {
-        setUsers(storeUsers);
-      }
+      const pageData = await getUsers();
+      setUsers(pageData?.content ?? []);
     } catch {
-      setUsers(storeUsers);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -33,9 +22,6 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-    const handleUpdate = () => setUsers(getUserAccounts());
-    window.addEventListener('user_store_updated', handleUpdate);
-    return () => window.removeEventListener('user_store_updated', handleUpdate);
   }, []);
 
   const filtered = users.filter(u =>
@@ -118,6 +104,10 @@ export default function AdminUsers() {
                       {usr.role === 'ADMIN' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-purple-500/10 text-purple-600 border border-purple-500/20">
                           <ShieldCheck size={12} /> Quản Trị Viên (ADMIN)
+                        </span>
+                      ) : usr.role === 'STAFF' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                          <ShieldCheck size={12} /> Nhân Viên (STAFF)
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-600 border border-sky-500/20">

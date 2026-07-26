@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { ShoppingCart, Search, CheckCircle2, Package, XCircle, Clock, Sparkles } from 'lucide-react';
 import { getAdminOrders, updateOrderStatus as updateApiOrderStatus } from '../../api/orders';
 import type { Order, Page } from '../../types';
-import { getUserOrders, updateOrderStatus } from '../../data/userStore';
 import toast from 'react-hot-toast';
 
 // Helper: lấy itemName an toàn từ OrderItem
@@ -17,26 +16,11 @@ export default function AdminOrders() {
 
   const fetchOrders = async () => {
     setLoading(true);
-    const storeOrders = getUserOrders();
     try {
-      // getAdminOrders() trả về Page<Order> object
       const pageData = await getAdminOrders({ page: 0, size: 100 }) as Page<Order>;
-      const apiList: Order[] = pageData?.content ?? [];
-
-      if (apiList.length > 0) {
-        // Merge: API orders trước, local store orders chưa có trong API thêm sau
-        const combined: Order[] = [...apiList];
-        storeOrders.forEach(o => {
-          if (!combined.some(x => x.orderCode === o.orderCode)) {
-            combined.push(o);
-          }
-        });
-        setOrders(combined);
-      } else {
-        setOrders(storeOrders);
-      }
+      setOrders(pageData?.content ?? []);
     } catch {
-      setOrders(storeOrders);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -44,35 +28,19 @@ export default function AdminOrders() {
 
   useEffect(() => {
     fetchOrders();
-    const handleUpdate = () => fetchOrders();
-    window.addEventListener('user_store_updated', handleUpdate);
-    return () => window.removeEventListener('user_store_updated', handleUpdate);
   }, []);
 
   const handleStatusChange = async (ord: Order, newStatus: Order['status']) => {
-    // Dùng ord.id từ API (nếu có) để gọi backend
-    // ord.id từ API sẽ là số nhỏ, từ local store sẽ là Date.now() lớn
-    const isApiOrder = ord.id < 1_000_000_000; // heuristic: API IDs nhỏ
-    
-    if (isApiOrder) {
-      try {
-        await updateApiOrderStatus(ord.id, newStatus);
-      } catch (err: any) {
-        const msg = err?.response?.data?.message || 'Không thể cập nhật trạng thái';
-        toast.error(msg);
-        return;
-      }
+    try {
+      await updateApiOrderStatus(ord.id, newStatus);
+      toast.success(`Đã cập nhật trạng thái → "${newStatus}" ✨`, {
+        style: { borderRadius: '20px', background: '#0F172A', color: '#fff' },
+      });
+      await fetchOrders();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Không thể cập nhật trạng thái';
+      toast.error(msg);
     }
-    
-    // Cập nhật local store
-    updateOrderStatus(ord.id, newStatus);
-    
-    toast.success(`Đã cập nhật trạng thái → "${newStatus}" ✨`, {
-      style: { borderRadius: '20px', background: '#0F172A', color: '#fff' },
-    });
-    
-    // Re-fetch để đồng bộ
-    await fetchOrders();
   };
 
   // FIXED: Dùng đúng status backend (PREPARING thay vì SHIPPING)

@@ -117,11 +117,31 @@ export interface Payment {
 // RESERVATION
 // ============================================================
 export type ReservationStatus = 'PENDING' | 'CONFIRMED' | 'SEATED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+/**
+ * Khớp chính xác với backend ReservationResponse.
+ * BE trả reservationTime là ISO LocalDateTime (yyyy-MM-ddTHH:mm:ss).
+ * numberOfPeople thay vì partySize.
+ * reservationDate và partySize là alias tương thích ngược cho local store.
+ */
 export interface Reservation {
-  id: number; reservationCode: string; reservationDate: string; reservationTime: string;
-  partySize: number; status: ReservationStatus; note: string;
-  customerName: string; customerEmail: string; customerPhone: string;
+  id: number;
+  reservationCode: string;
+  /** BE: reservationTime dạng ISO datetime, ví dụ "2026-07-26T15:00:00" */
+  reservationTime: string;
+  /** alias tương thích ngược: local store dùng reservationDate (YYYY-MM-DD) */
+  reservationDate?: string;
+  numberOfPeople: number;
+  /** alias tương thích ngược: local store dùng partySize */
+  partySize?: number;
+  status: ReservationStatus;
+  note: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  orderId?: number;
+  orderCode?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 // ============================================================

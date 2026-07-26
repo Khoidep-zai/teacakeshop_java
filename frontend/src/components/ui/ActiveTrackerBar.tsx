@@ -75,7 +75,13 @@ export const ActiveTrackerBar: React.FC = () => {
               </p>
             ) : (
               <p className="text-xs font-bold text-white">
-                {activeRes?.note || 'Đặt bàn Lounge'} - {activeRes?.reservationTime} ({activeRes?.partySize} khách)
+                {activeRes?.note || 'Đặt bàn Lounge'} - {(() => {
+                  const dt = activeRes?.reservationTime ? new Date(activeRes.reservationTime) : null;
+                  if (dt && !isNaN(dt.getTime())) {
+                    return dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ngày ' + dt.toLocaleDateString('vi-VN');
+                  }
+                  return activeRes?.reservationTime || '--:--';
+                })()} ({(activeRes?.numberOfPeople ?? activeRes?.partySize) || '?'} khách)
               </p>
             )}
 

@@ -1,85 +1,5 @@
 import type { Order, Reservation, UserProfile } from '../types';
 
-// Initial sample data if storage is empty
-const initialOrders: Order[] = [
-  {
-    id: 1,
-    orderCode: 'ORD-2026-8801',
-    orderType: 'NORMAL',
-    status: 'CONFIRMED',
-    totalAmount: 143000,
-    discountAmount: 0,
-    finalAmount: 143000,
-    note: 'Giao hàng nhanh giúp tôi nhé!',
-    customerName: 'Khoi Nguyen',
-    customerEmail: 'nguyenkhoidk2005@gmail.com',
-    customerPhone: '0902094421',
-    items: [
-      {
-        id: 1,
-        itemType: 'PRODUCT',
-        itemName: 'Bánh Matcha Mousse Layered 2026', // field chính (khớp BE)
-        name: 'Bánh Matcha Mousse Layered 2026',     // alias tương thích ngược
-        imageUrl: '/images/products/matcha_cake.png',
-        quantity: 1,
-        unitPrice: 75000,
-        lineTotal: 75000,    // field chính (khớp BE)
-        totalPrice: 75000    // alias tương thích ngược
-      },
-      {
-        id: 2,
-        itemType: 'PRODUCT',
-        itemName: 'Trà Sakura Lychee Rose Ủ Lạnh',
-        name: 'Trà Sakura Lychee Rose Ủ Lạnh',
-        imageUrl: '/images/products/sakura_tea.png',
-        quantity: 1,
-        unitPrice: 68000,
-        lineTotal: 68000,
-        totalPrice: 68000
-      }
-    ],
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
-
-const initialReservations: Reservation[] = [
-  {
-    id: 1,
-    reservationCode: 'RES-2026-9901',
-    customerName: 'Khoi Nguyen',
-    customerPhone: '0902094421',
-    customerEmail: 'nguyenkhoidk2005@gmail.com',
-    reservationDate: new Date().toISOString().slice(0, 10),
-    reservationTime: '18:30',
-    partySize: 2,
-    note: 'Góc Trà Chill Ban Công Cyber - Bàn cạnh cửa sổ',
-    status: 'CONFIRMED',
-    createdAt: new Date(Date.now() - 7200000).toISOString()
-  }
-];
-
-const initialUsers: UserProfile[] = [
-  {
-    id: 1,
-    fullName: 'Khoi Nguyen',
-    email: 'nguyenkhoidk2005@gmail.com',
-    phone: '0902094421',
-    role: 'CUSTOMER',
-    active: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 2,
-    fullName: 'Admin Manager',
-    email: 'admin@teacakeshop.com',
-    phone: '0900000000',
-    role: 'ADMIN',
-    active: true,
-    createdAt: new Date().toISOString()
-  }
-];
-
 const loadStorage = <T,>(key: string, fallbackVal: T): T => {
   try {
     const raw = localStorage.getItem(key);
@@ -99,7 +19,7 @@ const saveStorage = <T,>(key: string, val: T) => {
 };
 
 // Orders CRUD
-export const getUserOrders = (): Order[] => loadStorage('store_orders', initialOrders);
+export const getUserOrders = (): Order[] => loadStorage('store_orders', []);
 
 export const addOrder = (orderData: Partial<Order>): Order => {
   const orders = getUserOrders();
@@ -151,7 +71,7 @@ export const updateOrderStatus = (orderId: number, status: Order['status']) => {
 };
 
 // Reservations CRUD
-export const getUserReservations = (): Reservation[] => loadStorage('store_reservations', initialReservations);
+export const getUserReservations = (): Reservation[] => loadStorage('store_reservations', []);
 
 export const addReservation = (resData: Partial<Reservation>): Reservation => {
   const list = getUserReservations();
@@ -159,14 +79,16 @@ export const addReservation = (resData: Partial<Reservation>): Reservation => {
 
   const newRes: Reservation = {
     id: resData.id || Date.now(),
-    reservationCode: resData.reservationCode || `RES-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+    reservationCode: resData.reservationCode || `RES-LOCAL-${Math.floor(1000 + Math.random() * 9000)}`,
     customerName: resData.customerName || '',
     customerPhone: resData.customerPhone || '',
     customerEmail: resData.customerEmail || '',
-    reservationDate: resData.reservationDate || new Date().toISOString().slice(0, 10),
-    reservationTime: resData.reservationTime || '18:00',
-    partySize: resData.partySize || 2,
-    note: resData.note || 'Đặt bàn Lounge 2026',
+    // reservationTime là ISO datetime từ BE hoặc ghép từ local store
+    reservationTime: resData.reservationTime || `${resData.reservationDate || new Date().toISOString().slice(0, 10)}T18:00:00`,
+    reservationDate: resData.reservationDate,
+    numberOfPeople: resData.numberOfPeople ?? resData.partySize ?? 2,
+    partySize: resData.partySize ?? resData.numberOfPeople ?? 2,
+    note: resData.note || 'Đặt bàn Lounge',
     status: resData.status || 'PENDING',
     createdAt: resData.createdAt || new Date().toISOString()
   };
@@ -191,7 +113,7 @@ export const updateReservationStatus = (resId: number, status: Reservation['stat
 };
 
 // Users CRUD
-export const getUserAccounts = (): UserProfile[] => loadStorage('store_users', initialUsers);
+export const getUserAccounts = (): UserProfile[] => loadStorage('store_users', []);
 
 export const addUserAccount = (userData: Partial<UserProfile>): UserProfile => {
   const list = getUserAccounts();
