@@ -6,16 +6,16 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
 const sidebarItems = [
-  { icon: LayoutDashboard, labelKey: 'Dashboard AI (Thống kê)', path: '/admin' },
-  { icon: Coffee, labelKey: 'Sản Phẩm (Bánh & Trà)', path: '/admin/products' },
-  { icon: Tags, labelKey: 'Danh Mục Món', path: '/admin/categories' },
-  { icon: PackageSearch, labelKey: 'Set Combo Pass', path: '/admin/combos' },
-  { icon: ShoppingCart, labelKey: 'Đơn Hàng', path: '/admin/orders' },
-  { icon: CalendarCheck, labelKey: 'Đặt Bàn Lounge', path: '/admin/reservations' },
-  { icon: Users, labelKey: 'Quản Lý Người Dùng', path: '/admin/users' },
-  { icon: Percent, labelKey: 'Mã Khuyến Mãi (Voucher)', path: '/admin/discounts' },
-  { icon: CreditCard, labelKey: 'Quản Lý Thanh Toán', path: '/admin/payments' },
-  { icon: Boxes, labelKey: 'Theo Dõi Tồn Kho', path: '/admin/inventory' },
+  { icon: LayoutDashboard, labelKey: 'Tổng quan công việc', path: '/admin', roles: ['ADMIN', 'STAFF'] },
+  { icon: Coffee, labelKey: 'Sản Phẩm (Bánh & Trà)', path: '/admin/products', roles: ['ADMIN', 'STAFF'] },
+  { icon: Tags, labelKey: 'Danh Mục Món', path: '/admin/categories', roles: ['ADMIN'] },
+  { icon: PackageSearch, labelKey: 'Set Combo Pass', path: '/admin/combos', roles: ['ADMIN', 'STAFF'] },
+  { icon: ShoppingCart, labelKey: 'Đơn Hàng', path: '/admin/orders', roles: ['ADMIN', 'STAFF'] },
+  { icon: CalendarCheck, labelKey: 'Đặt Bàn Lounge', path: '/admin/reservations', roles: ['ADMIN', 'STAFF'] },
+  { icon: Users, labelKey: 'Quản Lý Người Dùng', path: '/admin/users', roles: ['ADMIN'] },
+  { icon: Percent, labelKey: 'Mã Khuyến Mãi (Voucher)', path: '/admin/discounts', roles: ['ADMIN'] },
+  { icon: CreditCard, labelKey: 'Theo Dõi Thanh Toán', path: '/admin/payments', roles: ['ADMIN', 'STAFF'] },
+  { icon: Boxes, labelKey: 'Theo Dõi Tồn Kho', path: '/admin/inventory', roles: ['ADMIN', 'STAFF'] },
 ];
 
 export default function AdminLayout() {
@@ -44,7 +44,10 @@ export default function AdminLayout() {
     toast.success(`Đã chuyển ngôn ngữ sang ${nextLang.toUpperCase()} 🌐`);
   };
 
-  const activeItem = sidebarItems.find(item => item.path === location.pathname) || sidebarItems[0];
+  const visibleSidebarItems = sidebarItems.filter(
+    item => user && item.roles.includes(user.role)
+  );
+  const activeItem = visibleSidebarItems.find(item => item.path === location.pathname) || visibleSidebarItems[0];
 
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col md:flex-row font-sans transition-colors duration-300">
@@ -77,14 +80,18 @@ export default function AdminLayout() {
             <Sparkles size={20} />
           </div>
           <div>
-            <h1 className="font-extrabold text-base text-slate-900 dark:text-white font-serif-title leading-tight">Cyber Admin 2026</h1>
-            <p className="text-[10px] text-primary dark:text-cyber-teal font-extrabold tracking-wider uppercase">Lounge Executive System</p>
+            <h1 className="font-extrabold text-base text-slate-900 dark:text-white font-serif-title leading-tight">
+              {user?.role === 'STAFF' ? 'Staff Operations' : 'Cyber Admin 2026'}
+            </h1>
+            <p className="text-[10px] text-primary dark:text-cyber-teal font-extrabold tracking-wider uppercase">
+              {user?.role === 'STAFF' ? 'Order & Reservation Portal' : 'Lounge Executive System'}
+            </p>
           </div>
         </div>
 
         {/* Navigation Items */}
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-          {sidebarItems.map((item) => {
+          {visibleSidebarItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -136,7 +143,7 @@ export default function AdminLayout() {
         {/* Desktop Top Header Control Bar */}
         <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-bold">
-            <span>Bảng Quản Trị</span>
+            <span>{user?.role === 'STAFF' ? 'Khu vực nhân viên' : 'Bảng Quản Trị'}</span>
             <ChevronRight size={14} />
             <span className="text-slate-900 dark:text-white font-extrabold">{activeItem.labelKey}</span>
           </div>

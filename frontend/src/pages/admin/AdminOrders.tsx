@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Search, CheckCircle2, Package, XCircle, Clock, Sparkles } from 'lucide-react';
 import { getAdminOrder, getAdminOrders, updateOrderStatus as updateApiOrderStatus } from '../../api/orders';
-import type { Order, Page } from '../../types';
+import { getAdminPaymentSummary } from '../../api/payments';
+import type { Order, OrderPaymentSummary, Page } from '../../types';
 import toast from 'react-hot-toast';
 
 // Helper: lấy itemName an toàn từ OrderItem
@@ -14,12 +15,23 @@ export default function AdminOrders() {
   // FIXED: Dùng đúng enum backend (PREPARING thay vì SHIPPING)
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [detail, setDetail] = useState<Order | null>(null);
+  const [paymentSummary, setPaymentSummary] = useState<OrderPaymentSummary | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const pageData = await getAdminOrders({ page: 0, size: 100 }) as Page<Order>;
+      const pageData = await getAdminOrders({
+        page: 0,
+        size: 100,
+        keyword: searchTerm || undefined,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+        orderType: typeFilter === 'ALL' ? undefined : typeFilter,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      }) as Page<Order>;
       setOrders(pageData?.content ?? []);
     } catch (err: any) {
       setOrders([]);
@@ -59,7 +71,14 @@ export default function AdminOrders() {
     );
 
   const openDetail = async (id: number) => {
-    try { setDetail(await getAdminOrder(id)); }
+    try {
+      const [order, payment] = await Promise.all([
+        getAdminOrder(id),
+        getAdminPaymentSummary(id),
+      ]);
+      setDetail(order);
+      setPaymentSummary(payment);
+    }
     catch (err: any) { toast.error(err?.response?.data?.message || 'Không thể tải chi tiết đơn'); }
   };
 
@@ -105,7 +124,8 @@ export default function AdminOrders() {
       </div>
 
       {/* Filter Bar */}
-      <div className="glass-card p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
+      <div className="glass-card p-4 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
           <input
@@ -116,8 +136,12 @@ export default function AdminOrders() {
             className="input-field pl-10 text-xs"
           />
         </div>
+        <input type="date" className="input-field sm:w-44" value={startDate} onChange={e => setStartDate(e.target.value)} title="Từ ngày" />
+        <input type="date" className="input-field sm:w-44" value={endDate} onChange={e => setEndDate(e.target.value)} title="Đến ngày" />
+        <button className="btn-primary text-xs px-4" onClick={() => void fetchOrders()}>Áp dụng</button>
+        </div>
 
-        <div className="flex gap-2 flex-wrap w-full sm:w-auto">
+        <div className="flex gap-2 flex-wrap w-full">
           <select className="input-field w-48" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
             <option value="ALL">Mọi loại đơn</option><option value="NORMAL">Giao hàng</option>
             <option value="TAKEAWAY_PREORDER">Đặt trước</option><option value="RESERVATION_COMBO">Combo đặt bàn</option>
@@ -223,7 +247,16 @@ export default function AdminOrders() {
             <td>{item.originalUnitPrice?.toLocaleString('vi-VN')}₫</td><td>-{item.discountAmount?.toLocaleString('vi-VN')}₫</td>
             <td className="text-right">{item.lineTotal.toLocaleString('vi-VN')}₫</td></tr>)}</tbody></table>
           <p><b>Ghi chú:</b> {detail.note || '—'}</p>
-          <button className="btn-secondary float-right" onClick={() => setDetail(null)}>Đóng</button>
+          {paymentSummary && <div className="rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 text-sm">
+            <h3 className="font-extrabold mb-2">Thanh toán</h3>
+            <p>Đã thanh toán: <b>{paymentSummary.paidAmount.toLocaleString('vi-VN')}₫</b> ·
+              Còn lại: <b>{paymentSummary.outstandingAmount.toLocaleString('vi-VN')}₫</b> ·
+              Cọc: <b>{paymentSummary.requiredDepositAmount.toLocaleString('vi-VN')}₫</b></p>
+            <p>Trạng thái: {paymentSummary.fullyPaid ? 'Đã thanh toán đủ' :
+              paymentSummary.paidAmount >= paymentSummary.requiredDepositAmount && paymentSummary.depositRequired
+                ? 'Đã thanh toán cọc' : 'Chưa hoàn tất'}</p>
+          </div>}
+          <button className="btn-secondary float-right" onClick={() => { setDetail(null); setPaymentSummary(null); }}>Đóng</button>
         </div>
       </div>}
 

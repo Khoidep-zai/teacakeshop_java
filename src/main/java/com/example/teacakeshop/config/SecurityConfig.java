@@ -217,8 +217,43 @@ public class SecurityConfig {
                                 .hasRole("ADMIN")
 
                                 /*
-                                 * Các API admin còn lại:
-                                 * STAFF và ADMIN.
+                                 * STAFF chỉ được đọc dữ liệu phục vụ vận hành.
+                                 * Các thao tác ghi vẫn rơi xuống luật ADMIN.
+                                 */
+                                .requestMatchers(
+                                        HttpMethod.GET,
+                                        "/api/admin/payments/**",
+                                        "/api/admin/products/**",
+                                        "/api/admin/categories/**",
+                                        "/api/admin/combos/**"
+                                )
+                                .hasAnyRole(
+                                        "ADMIN",
+                                        "STAFF"
+                                )
+
+                                .requestMatchers(
+                                        "/api/staff/**"
+                                )
+                                .hasAnyRole(
+                                        "ADMIN",
+                                        "STAFF"
+                                )
+
+                                /*
+                                 * Nhân viên vận hành đơn hàng và đặt bàn.
+                                 */
+                                .requestMatchers(
+                                        "/api/admin/orders/**",
+                                        "/api/admin/reservations/**"
+                                )
+                                .hasAnyRole(
+                                        "ADMIN",
+                                        "STAFF"
+                                )
+
+                                /*
+                                 * Các API quản trị còn lại chỉ dành cho ADMIN.
                                  */
                                 .requestMatchers(
                                         "/api/admin/**"

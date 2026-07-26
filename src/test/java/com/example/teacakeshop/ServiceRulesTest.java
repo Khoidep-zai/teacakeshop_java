@@ -5,12 +5,14 @@ import com.example.teacakeshop.dto.request.ComboRequest;
 import com.example.teacakeshop.dto.request.PaymentRequest;
 import com.example.teacakeshop.entity.CustomerOrder;
 import com.example.teacakeshop.entity.Product;
+import com.example.teacakeshop.entity.Reservation;
 import com.example.teacakeshop.exception.BadRequestException;
 import com.example.teacakeshop.exception.ResourceNotFoundException;
 import com.example.teacakeshop.repository.ComboRepository;
 import com.example.teacakeshop.repository.CustomerOrderRepository;
 import com.example.teacakeshop.repository.PaymentRepository;
 import com.example.teacakeshop.repository.ProductRepository;
+import com.example.teacakeshop.repository.ReservationRepository;
 import com.example.teacakeshop.service.*;
 import org.junit.jupiter.api.Test;
 
@@ -79,5 +81,88 @@ class ServiceRulesTest {
 
         assertThrows(ResourceNotFoundException.class,
                 () -> service.simulateOnlinePayment(request));
+    }
+
+    @Test
+    void depositOrderCannotBeConfirmedBeforeDepositIsPaid() {
+        CustomerOrderRepository orderRepository =
+                mock(CustomerOrderRepository.class);
+        PaymentRepository paymentRepository =
+                mock(PaymentRepository.class);
+
+        CustomerOrder order = new CustomerOrder();
+        order.setId(20L);
+        order.setStatus(OrderStatus.PENDING);
+        order.setDepositRequired(true);
+
+        when(orderRepository.findById(20L))
+                .thenReturn(Optional.of(order));
+        when(paymentRepository
+                .existsByCustomerOrder_IdAndPurposeAndStatus(
+                        20L,
+                        PaymentPurpose.DEPOSIT,
+                        PaymentStatus.PAID
+                ))
+                .thenReturn(false);
+
+        OrderService service = new OrderService(
+                orderRepository,
+                mock(ProductRepository.class),
+                mock(com.example.teacakeshop.repository.ComboRepository.class),
+                mock(com.example.teacakeshop.repository.CartRepository.class),
+                mock(com.example.teacakeshop.repository.UserAccountRepository.class),
+                mock(CartService.class),
+                mock(DiscountService.class),
+                paymentRepository
+        );
+
+        assertThrows(
+                BadRequestException.class,
+                () -> service.updateStatus(
+                        20L,
+                        OrderStatus.CONFIRMED
+                )
+        );
+    }
+
+    @Test
+    void paidReservationCannotBeCancelledDirectly() {
+        ReservationRepository reservationRepository =
+                mock(ReservationRepository.class);
+        PaymentRepository paymentRepository =
+                mock(PaymentRepository.class);
+
+        CustomerOrder order = new CustomerOrder();
+        order.setId(30L);
+
+        Reservation reservation = new Reservation();
+        reservation.setId(40L);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservation.setCustomerOrder(order);
+
+        when(reservationRepository.findById(40L))
+                .thenReturn(Optional.of(reservation));
+        when(paymentRepository
+                .existsByCustomerOrder_IdAndPurposeAndStatus(
+                        30L,
+                        PaymentPurpose.DEPOSIT,
+                        PaymentStatus.PAID
+                ))
+                .thenReturn(true);
+
+        ReservationService service = new ReservationService(
+                reservationRepository,
+                mock(OrderService.class),
+                paymentRepository,
+                mock(com.example.teacakeshop.repository.UserAccountRepository.class)
+        );
+
+        assertThrows(
+                BadRequestException.class,
+                () -> service.updateStatus(
+                        40L,
+                        ReservationStatus.CANCELLED
+                )
+        );
     }
 }

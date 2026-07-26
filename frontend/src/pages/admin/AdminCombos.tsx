@@ -4,8 +4,11 @@ import { getAdminCombos, createCombo, updateCombo, deleteCombo, uploadComboImage
 import { getAdminProducts } from '../../api/products';
 import type { Combo, ComboItem, Product } from '../../types';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function AdminCombos() {
+  const { user } = useAuth();
+  const canManage = user?.role === 'ADMIN';
   const [combos, setCombos] = useState<Combo[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -142,13 +145,13 @@ export default function AdminCombos() {
           </h1>
         </div>
 
-        <button
+        {canManage && <button
           onClick={() => handleOpenModal()}
           className="btn-accent px-5 py-3 text-xs font-extrabold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm Combo Pass Mới</span>
-        </button>
+        </button>}
       </div>
 
       {/* Combos Table */}
@@ -192,7 +195,11 @@ export default function AdminCombos() {
                     </td>
                     <td className="px-6 py-3 font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <PackageSearch className="w-4 h-4 text-accent" />
-                      <span>{cmb.name}</span>
+                      <span>{cmb.name}<br />
+                        <small className="font-normal text-slate-400">
+                          {cmb.items?.map(item => `${item.productName || item.product?.name} ×${item.quantity}`).join(', ') || 'Chưa có thành phần'}
+                        </small>
+                      </span>
                     </td>
                     <td className="px-6 py-3 text-slate-400 line-through">
                       {cmb.originalPrice.toLocaleString('vi-VN')}₫
@@ -203,7 +210,10 @@ export default function AdminCombos() {
                     <td className="px-6 py-3 font-bold text-emerald-600 dark:text-emerald-400">
                       -{cmb.savingAmount ? cmb.savingAmount.toLocaleString('vi-VN') : (cmb.originalPrice - cmb.comboPrice).toLocaleString('vi-VN')}₫
                     </td>
-                    <td className="px-6 py-3 font-semibold uppercase">{cmb.weatherType || 'SUNNY'}</td>
+                    <td className="px-6 py-3 font-semibold uppercase">{cmb.weatherType || 'SUNNY'}<br />
+                      <small className="normal-case text-slate-400">
+                        {cmb.startDate || 'Không giới hạn'} → {cmb.endDate || 'Không giới hạn'} · Đã bán {cmb.soldQuantity || 0}
+                      </small></td>
                     <td className="px-6 py-3">
                       {cmb.active ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
@@ -216,7 +226,7 @@ export default function AdminCombos() {
                       )}
                     </td>
                     <td className="px-6 py-3">
-                      <div className="flex items-center justify-center gap-2">
+                      {canManage ? <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleOpenModal(cmb)}
                           className="p-2 rounded-xl bg-slate-100 hover:bg-accent dark:bg-slate-800 dark:hover:bg-accent text-slate-700 hover:text-white dark:text-slate-300 transition-colors"
@@ -231,7 +241,7 @@ export default function AdminCombos() {
                         >
                           <Trash2 size={14} />
                         </button>
-                      </div>
+                      </div> : <span className="text-[10px] font-bold text-slate-400">Chỉ xem</span>}
                     </td>
                   </tr>
                 ))
@@ -242,7 +252,7 @@ export default function AdminCombos() {
       </div>
 
       {/* Add / Edit Combo Modal */}
-      {isModalOpen && (
+      {canManage && isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="glass-card w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white font-serif-title">
@@ -402,7 +412,7 @@ export default function AdminCombos() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
+      {canManage && isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="glass-card w-full max-w-sm p-6 text-center space-y-4">
             <h3 className="text-lg font-extrabold text-slate-900 dark:text-white font-serif-title">

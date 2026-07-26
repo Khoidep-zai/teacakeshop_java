@@ -31,14 +31,32 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminInventory from './pages/admin/AdminInventory';
+import StaffDashboard from './pages/admin/StaffDashboard';
 import { ActiveTrackerBar } from './components/ui/ActiveTrackerBar';
 
-function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
+type AppRole = 'ADMIN' | 'CUSTOMER' | 'STAFF';
+
+function ProtectedRoute({
+  children,
+  allowedRoles
+}: {
+  children: React.ReactNode;
+  allowedRoles?: AppRole[];
+}) {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div></div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (adminOnly && user.role !== 'ADMIN') return <Navigate to="/" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={user.role === 'STAFF' ? '/admin/orders' : '/'} replace />;
+  }
   return <>{children}</>;
+}
+
+function AdminIndex() {
+  const { user } = useAuth();
+  return user?.role === 'STAFF'
+    ? <StaffDashboard />
+    : <Dashboard />;
 }
 
 function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -67,15 +85,15 @@ function AppRoutes() {
       <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
       <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
       <Route path="/profile" element={<ProtectedRoute><PublicLayout><Profile /></PublicLayout></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
-        <Route index element={<Dashboard />} />
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={['ADMIN', 'STAFF']}><AdminLayout /></ProtectedRoute>}>
+        <Route index element={<AdminIndex />} />
         <Route path="products" element={<AdminProducts />} />
-        <Route path="categories" element={<AdminCategories />} />
+        <Route path="categories" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminCategories /></ProtectedRoute>} />
         <Route path="combos" element={<AdminCombos />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="reservations" element={<AdminReservations />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="discounts" element={<AdminDiscounts />} />
+        <Route path="users" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminUsers /></ProtectedRoute>} />
+        <Route path="discounts" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDiscounts /></ProtectedRoute>} />
         <Route path="payments" element={<AdminPayments />} />
         <Route path="inventory" element={<AdminInventory />} />
       </Route>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { CalendarCheck, CheckCircle2, XCircle, Sparkles, Clock, Search } from 'lucide-react';
 import { getAdminReservation, getAdminReservations, updateReservationStatus as updateApiResStatus } from '../../api/reservations';
-import type { Reservation } from '../../types';
+import { getAdminPaymentSummary } from '../../api/payments';
+import type { OrderPaymentSummary, Reservation } from '../../types';
 import toast from 'react-hot-toast';
 
 export default function AdminReservations() {
@@ -9,12 +10,24 @@ export default function AdminReservations() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('');
+  const [fromTime, setFromTime] = useState('');
+  const [toTime, setToTime] = useState('');
   const [detail, setDetail] = useState<Reservation | null>(null);
+  const [paymentSummary, setPaymentSummary] = useState<OrderPaymentSummary | null>(null);
 
   const fetchReservations = async () => {
     setLoading(true);
     try {
-      const data = await getAdminReservations();
+      const data = await getAdminReservations({
+        page: 0,
+        size: 100,
+        keyword: search || undefined,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+        date: dateFilter || undefined,
+        fromTime: fromTime || undefined,
+        toTime: toTime || undefined,
+      });
       const list = (data as any).content || data;
       if (Array.isArray(list)) {
         setReservations(list);
@@ -58,7 +71,15 @@ export default function AdminReservations() {
     .filter(item => `${item.reservationCode} ${item.customerName} ${item.customerPhone}`.toLowerCase().includes(search.toLowerCase()));
 
   const openDetail = async (id: number) => {
-    try { setDetail(await getAdminReservation(id)); }
+    try {
+      const reservation = await getAdminReservation(id);
+      setDetail(reservation);
+      setPaymentSummary(
+        reservation.orderId
+          ? await getAdminPaymentSummary(reservation.orderId)
+          : null
+      );
+    }
     catch (err: any) { toast.error(err?.response?.data?.message || 'Không thể tải chi tiết lịch'); }
   };
 
@@ -78,7 +99,7 @@ export default function AdminReservations() {
         </div>
       </div>
 
-      <div className="glass-card p-4 flex gap-3">
+      <div className="glass-card p-4 flex flex-wrap gap-3">
         <div className="relative flex-1"><Search className="absolute left-3 top-3.5 w-4" />
           <input className="input-field pl-10" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Mã đặt bàn, tên hoặc số điện thoại" /></div>
@@ -86,6 +107,10 @@ export default function AdminReservations() {
           <option value="ALL">Mọi trạng thái</option>{['PENDING','CONFIRMED','SEATED','COMPLETED','CANCELLED','NO_SHOW']
             .map(value => <option key={value} value={value}>{value}</option>)}
         </select>
+        <input type="date" className="input-field w-44" value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
+        <input type="time" className="input-field w-36" value={fromTime} onChange={e => setFromTime(e.target.value)} title="Từ giờ" />
+        <input type="time" className="input-field w-36" value={toTime} onChange={e => setToTime(e.target.value)} title="Đến giờ" />
+        <button className="btn-primary text-xs px-4" onClick={() => void fetchReservations()}>Áp dụng</button>
       </div>
 
       {/* Reservations Table */}
@@ -125,7 +150,7 @@ export default function AdminReservations() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-bold text-slate-900 dark:text-white">{res.customerName || 'Khách hàng'}</p>
-                      <p className="text-[11px] text-slate-400">{res.customerPhone || '0901234567'} - {res.customerEmail || ''}</p>
+                      <p className="text-[11px] text-slate-400">{res.customerPhone || 'Không có SĐT'} - {res.customerEmail || ''}</p>
                     </td>
                     <td className="px-6 py-4 font-bold">
                       {(() => {
@@ -143,13 +168,21 @@ export default function AdminReservations() {
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                           <CheckCircle2 size={12} /> Đã giữ chỗ
                         </span>
-                      ) : res.status === 'COMPLETED' ? (
+                      ) : res.status === 'SEATED' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-500/10 text-sky-500 border border-sky-500/20">
                           <CheckCircle2 size={12} /> Đã đón khách
+                        </span>
+                      ) : res.status === 'COMPLETED' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <CheckCircle2 size={12} /> Hoàn thành
                         </span>
                       ) : res.status === 'PENDING' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-500 border border-amber-500/20">
                           <Clock size={12} /> Đang chờ xác nhận
+                        </span>
+                      ) : res.status === 'NO_SHOW' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-orange-500/10 text-orange-600 border border-orange-500/20">
+                          <XCircle size={12} /> Khách không đến
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/10 text-red-500 border border-red-500/20">
@@ -187,7 +220,13 @@ export default function AdminReservations() {
             <p><b>Đơn liên kết:</b> {detail.orderCode || 'Không có'}</p>
           </div>
           <p><b>Ghi chú:</b> {detail.note || '—'}</p>
-          <button className="btn-secondary float-right" onClick={() => setDetail(null)}>Đóng</button>
+          {paymentSummary && <div className="rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 text-sm">
+            <h3 className="font-extrabold">Tiền cọc và thanh toán</h3>
+            <p>Cọc yêu cầu: <b>{paymentSummary.requiredDepositAmount.toLocaleString('vi-VN')}₫</b></p>
+            <p>Đã trả: <b>{paymentSummary.paidAmount.toLocaleString('vi-VN')}₫</b> ·
+              Còn lại: <b>{paymentSummary.outstandingAmount.toLocaleString('vi-VN')}₫</b></p>
+          </div>}
+          <button className="btn-secondary float-right" onClick={() => { setDetail(null); setPaymentSummary(null); }}>Đóng</button>
         </div>
       </div>}
 

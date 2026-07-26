@@ -3,6 +3,8 @@ package com.example.teacakeshop.service;
 import com.example.teacakeshop.constant.CartItemType;
 import com.example.teacakeshop.constant.OrderStatus;
 import com.example.teacakeshop.constant.OrderType;
+import com.example.teacakeshop.constant.PaymentPurpose;
+import com.example.teacakeshop.constant.PaymentStatus;
 import com.example.teacakeshop.dto.request.CheckoutRequest;
 import com.example.teacakeshop.dto.response.DiscountPriceResponse;
 import com.example.teacakeshop.dto.response.OrderItemResponse;
@@ -22,11 +24,13 @@ import com.example.teacakeshop.repository.CartRepository;
 import com.example.teacakeshop.repository.ComboRepository;
 import com.example.teacakeshop.repository.CustomerOrderRepository;
 import com.example.teacakeshop.repository.ProductRepository;
+import com.example.teacakeshop.repository.PaymentRepository;
 import com.example.teacakeshop.repository.UserAccountRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +59,7 @@ public class OrderService {
     private final UserAccountRepository userAccountRepository;
     private final CartService cartService;
     private final DiscountService discountService;
+    private final PaymentRepository paymentRepository;
 
     public OrderService(
             CustomerOrderRepository orderRepository,
@@ -63,7 +68,8 @@ public class OrderService {
             CartRepository cartRepository,
             UserAccountRepository userAccountRepository,
             CartService cartService,
-            DiscountService discountService
+            DiscountService discountService,
+            PaymentRepository paymentRepository
     ) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
@@ -73,6 +79,7 @@ public class OrderService {
                 userAccountRepository;
         this.cartService = cartService;
         this.discountService = discountService;
+        this.paymentRepository = paymentRepository;
     }
 
     /*
@@ -424,6 +431,10 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Page<OrderSummaryResponse> getAllForAdmin(
             OrderStatus status,
+            OrderType orderType,
+            String keyword,
+            LocalDate startDate,
+            LocalDate endDate,
             int page,
             int size
     ) {
@@ -446,20 +457,85 @@ public class OrderService {
                         )
                 );
 
-        Page<CustomerOrder> orderPage;
+        Specification<CustomerOrder> specification =
+                (root, query, builder) -> {
+                    List<jakarta.persistence.criteria.Predicate> predicates =
+                            new ArrayList<>();
 
-        if (status == null) {
-            orderPage =
-                    orderRepository.findAll(
-                            pageable
+                    if (status != null) {
+                        predicates.add(
+                                builder.equal(
+                                        root.get("status"),
+                                        status
+                                )
+                        );
+                    }
+
+                    if (orderType != null) {
+                        predicates.add(
+                                builder.equal(
+                                        root.get("orderType"),
+                                        orderType
+                                )
+                        );
+                    }
+
+                    if (keyword != null
+                            && !keyword.isBlank()) {
+                        String pattern =
+                                "%"
+                                        + keyword.trim()
+                                        .toLowerCase(Locale.ROOT)
+                                        + "%";
+
+                        predicates.add(
+                                builder.or(
+                                        builder.like(
+                                                builder.lower(root.get("orderCode")),
+                                                pattern
+                                        ),
+                                        builder.like(
+                                                builder.lower(root.get("customerName")),
+                                                pattern
+                                        ),
+                                        builder.like(
+                                                root.get("customerPhone"),
+                                                pattern
+                                        )
+                                )
+                        );
+                    }
+
+                    if (startDate != null) {
+                        predicates.add(
+                                builder.greaterThanOrEqualTo(
+                                        root.get("createdAt"),
+                                        startDate.atStartOfDay()
+                                )
+                        );
+                    }
+
+                    if (endDate != null) {
+                        predicates.add(
+                                builder.lessThan(
+                                        root.get("createdAt"),
+                                        endDate.plusDays(1).atStartOfDay()
+                                )
+                        );
+                    }
+
+                    return builder.and(
+                            predicates.toArray(
+                                    jakarta.persistence.criteria.Predicate[]::new
+                            )
                     );
-        } else {
-            orderPage =
-                    orderRepository.findByStatus(
-                            status,
-                            pageable
-                    );
-        }
+                };
+
+        Page<CustomerOrder> orderPage =
+                orderRepository.findAll(
+                        specification,
+                        pageable
+                );
 
         return orderPage.map(
                 this::toSummaryResponse
@@ -508,10 +584,34 @@ public class OrderService {
             );
         }
 
+        if (newStatus == OrderStatus.CONFIRMED
+                && Boolean.TRUE.equals(order.getDepositRequired())
+                && !paymentRepository
+                .existsByCustomerOrder_IdAndPurposeAndStatus(
+                        orderId,
+                        PaymentPurpose.DEPOSIT,
+                        PaymentStatus.PAID
+                )) {
+            throw new BadRequestException(
+                    "Không thể xác nhận đơn khi tiền cọc chưa được thanh toán"
+            );
+        }
+
         /*
          * Khi hủy đơn, hoàn lại tồn kho.
          */
         if (newStatus == OrderStatus.CANCELLED) {
+            if (paymentRepository
+                    .existsByCustomerOrder_IdAndStatus(
+                            orderId,
+                            PaymentStatus.PAID
+                    )) {
+                throw new BadRequestException(
+                        "Đơn hàng đã có thanh toán. "
+                                + "Cần Admin xử lý hoàn tiền trước khi hủy"
+                );
+            }
+
             restoreStock(order);
         }
 

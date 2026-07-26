@@ -150,6 +150,17 @@ export interface Payment {
   paidAmount: number; outstandingAmount: number; paidAt?: string;
   note?: string; createdAt: string;
 }
+export interface OrderPaymentSummary {
+  orderId: number; orderCode: string; orderType: OrderType; orderStatus: OrderStatus;
+  totalAmount: number; depositRequired: boolean; requiredDepositAmount: number;
+  paidAmount: number; outstandingAmount: number; fullyPaid: boolean;
+  payments: Payment[];
+}
+export interface InventoryAdjustment {
+  id: number; productId: number; productName: string;
+  previousQuantity: number; newQuantity: number; quantityChange: number;
+  note: string; adjustedBy: string; createdAt: string;
+}
 
 // ============================================================
 // RESERVATION

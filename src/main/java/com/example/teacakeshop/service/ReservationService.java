@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -349,6 +351,9 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public Page<ReservationSummaryResponse> getAllForAdmin(
             ReservationStatus status,
+            String keyword,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
             int page,
             int size
     ) {
@@ -371,20 +376,76 @@ public class ReservationService {
                         )
                 );
 
-        Page<Reservation> reservationPage;
+        Specification<Reservation> specification =
+                (root, query, builder) -> {
+                    List<jakarta.persistence.criteria.Predicate> predicates =
+                            new ArrayList<>();
 
-        if (status == null) {
-            reservationPage =
-                    reservationRepository.findAll(
-                            pageable
+                    if (status != null) {
+                        predicates.add(
+                                builder.equal(
+                                        root.get("status"),
+                                        status
+                                )
+                        );
+                    }
+
+                    if (keyword != null
+                            && !keyword.isBlank()) {
+                        String pattern =
+                                "%"
+                                        + keyword.trim()
+                                        .toLowerCase(Locale.ROOT)
+                                        + "%";
+
+                        predicates.add(
+                                builder.or(
+                                        builder.like(
+                                                builder.lower(root.get("reservationCode")),
+                                                pattern
+                                        ),
+                                        builder.like(
+                                                builder.lower(root.get("customerName")),
+                                                pattern
+                                        ),
+                                        builder.like(
+                                                root.get("customerPhone"),
+                                                pattern
+                                        )
+                                )
+                        );
+                    }
+
+                    if (startAt != null) {
+                        predicates.add(
+                                builder.greaterThanOrEqualTo(
+                                        root.get("reservationTime"),
+                                        startAt
+                                )
+                        );
+                    }
+
+                    if (endAt != null) {
+                        predicates.add(
+                                builder.lessThanOrEqualTo(
+                                        root.get("reservationTime"),
+                                        endAt
+                                )
+                        );
+                    }
+
+                    return builder.and(
+                            predicates.toArray(
+                                    jakarta.persistence.criteria.Predicate[]::new
+                            )
                     );
-        } else {
-            reservationPage =
-                    reservationRepository.findByStatus(
-                            status,
-                            pageable
-                    );
-        }
+                };
+
+        Page<Reservation> reservationPage =
+                reservationRepository.findAll(
+                        specification,
+                        pageable
+                );
 
         return reservationPage.map(
                 this::toSummaryResponse
@@ -434,6 +495,34 @@ public class ReservationService {
                             + " sang "
                             + newStatus
             );
+        }
+
+        if (reservation.getCustomerOrder() != null) {
+            Long orderId =
+                    reservation.getCustomerOrder().getId();
+
+            boolean depositPaid =
+                    paymentRepository
+                            .existsByCustomerOrder_IdAndPurposeAndStatus(
+                                    orderId,
+                                    PaymentPurpose.DEPOSIT,
+                                    PaymentStatus.PAID
+                            );
+
+            if (newStatus == ReservationStatus.CONFIRMED
+                    && !depositPaid) {
+                throw new BadRequestException(
+                        "Không thể xác nhận giữ chỗ khi tiền cọc chưa được thanh toán"
+                );
+            }
+
+            if (newStatus == ReservationStatus.CANCELLED
+                    && depositPaid) {
+                throw new BadRequestException(
+                        "Lịch đặt bàn đã thanh toán cọc. "
+                                + "Cần Admin xử lý hoàn tiền trước khi hủy"
+                );
+            }
         }
 
         reservation.setStatus(

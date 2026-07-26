@@ -3,10 +3,13 @@ import { CreditCard, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAdminPayments, markPaymentPaid } from '../../api/payments';
 import type { Page, Payment } from '../../types';
+import { useAuth } from '../../hooks/useAuth';
 
 const money = (value: number) => `${Number(value).toLocaleString('vi-VN')}₫`;
 
 export default function AdminPayments() {
+  const { user } = useAuth();
+  const canConfirmPayment = user?.role === 'ADMIN';
   const [payments, setPayments] = useState<Payment[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('ALL');
@@ -57,7 +60,7 @@ export default function AdminPayments() {
         <td>{item.purpose}<br /><small>{item.paymentMethod}</small></td>
         <td><b>{money(item.amount)}</b><br /><small>Còn {money(item.outstandingAmount)}</small></td>
         <td>{item.status}</td><td>{new Date(item.paidAt || item.createdAt).toLocaleString('vi-VN')}</td>
-        <td className="pr-4">{item.paymentMethod === 'CASH_ON_DELIVERY' && item.status === 'PENDING' &&
+        <td className="pr-4">{canConfirmPayment && item.paymentMethod === 'CASH_ON_DELIVERY' && item.status === 'PENDING' &&
           <button className="btn-primary" onClick={() => void confirmCash(item)}>Xác nhận đã thu</button>}</td>
       </tr>)}
       {!loading && !filtered.length && <tr><td colSpan={7} className="p-10 text-center text-slate-500">Không có giao dịch phù hợp</td></tr>}

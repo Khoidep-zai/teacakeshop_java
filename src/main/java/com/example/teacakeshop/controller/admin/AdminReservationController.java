@@ -6,7 +6,12 @@ import com.example.teacakeshop.dto.response.*;
 import com.example.teacakeshop.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @RestController
 @RequestMapping("/api/admin/reservations")
@@ -26,15 +31,49 @@ public class AdminReservationController {
             @RequestParam(required = false)
             ReservationStatus status,
 
+            @RequestParam(required = false)
+            String keyword,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate date,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)
+            LocalTime fromTime,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)
+            LocalTime toTime,
+
             @RequestParam(defaultValue = "0")
             int page,
 
             @RequestParam(defaultValue = "10")
             int size
     ) {
+        LocalDateTime startAt = date == null
+                ? null
+                : date.atTime(
+                        fromTime == null
+                                ? LocalTime.MIN
+                                : fromTime
+                );
+
+        LocalDateTime endAt = date == null
+                ? null
+                : date.atTime(
+                        toTime == null
+                                ? LocalTime.MAX
+                                : toTime
+                );
+
         return reservationService
                 .getAllForAdmin(
                         status,
+                        keyword,
+                        startAt,
+                        endAt,
                         page,
                         size
                 );

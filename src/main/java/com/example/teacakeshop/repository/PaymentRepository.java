@@ -43,6 +43,11 @@ public interface PaymentRepository
             PaymentStatus status
     );
 
+    boolean existsByCustomerOrder_IdAndStatus(
+            Long orderId,
+            PaymentStatus status
+    );
+
     boolean
     existsByCustomerOrder_IdAndPaymentMethodAndStatus(
             Long orderId,

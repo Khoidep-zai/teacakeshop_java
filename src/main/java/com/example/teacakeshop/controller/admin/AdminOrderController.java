@@ -1,13 +1,17 @@
 package com.example.teacakeshop.controller.admin;
 
 import com.example.teacakeshop.constant.OrderStatus;
+import com.example.teacakeshop.constant.OrderType;
 import com.example.teacakeshop.dto.request.OrderStatusUpdateRequest;
 import com.example.teacakeshop.dto.response.OrderResponse;
 import com.example.teacakeshop.dto.response.OrderSummaryResponse;
 import com.example.teacakeshop.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/admin/orders")
@@ -26,6 +30,20 @@ public class AdminOrderController {
             @RequestParam(required = false)
             OrderStatus status,
 
+            @RequestParam(required = false)
+            OrderType orderType,
+
+            @RequestParam(required = false)
+            String keyword,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+
             @RequestParam(defaultValue = "0")
             int page,
 
@@ -34,6 +52,10 @@ public class AdminOrderController {
     ) {
         return orderService.getAllForAdmin(
                 status,
+                orderType,
+                keyword,
+                startDate,
+                endDate,
                 page,
                 size
         );
