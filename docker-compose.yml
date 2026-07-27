@@ -7,6 +7,8 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in Codespaces secrets or .env}
     volumes:
       - tea_cake_shop_mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
     healthcheck:
       test:
         [
