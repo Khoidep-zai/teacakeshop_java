@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api', timeout: 15000 });
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+const api = axios.create({ baseURL: API_BASE_URL, timeout: 15000 });
 
 // Attach access token
 api.interceptors.request.use((config) => {
@@ -41,7 +43,7 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
       try {
-        const res = await axios.post('/api/auth/refresh', { refreshToken });
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
         const { accessToken } = res.data;
         sessionStorage.setItem('accessToken', accessToken);
         api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;

@@ -2,6 +2,7 @@ package com.example.teacakeshop.config;
 
 import com.example.teacakeshop.security.RestAccessDeniedHandler;
 import com.example.teacakeshop.security.RestAuthenticationEntryPoint;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,11 +22,17 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173,https://*.netlify.app}")
+    private String allowedOrigins;
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -298,12 +305,13 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
-                List.of(
-                        "http://localhost:3000",
-                        "http://localhost:5173"
-                )
-        );
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+
+        configuration.setAllowedOriginPatterns(origins);
+
 
         configuration.setAllowedMethods(
                 List.of(
